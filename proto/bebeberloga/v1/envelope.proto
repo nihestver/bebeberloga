@@ -1,0 +1,172 @@
+// SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+// SPDX-License-Identifier: Apache-2.0
+
+// Конверт application-сообщения MLS: то, что лежит внутри шифртекста
+// `MessageMeta.ciphertext`. Сервер этот файл не использует — он не видит
+// открытого текста. Правила и лимиты — docs/protocol/MESSAGES.md.
+syntax = "proto3";
+
+package bebeberloga.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Конверт. Внутри повторяется `message_id`, чтобы связать шифртекст с открытым id:
+// сервер не может подставить чужой шифртекст под другой id незаметно.
+message MessageEnvelope {
+  string message_id = 1;
+  // Время отправки по часам клиента; сервер хранит своё `created_at`.
+  google.protobuf.Timestamp sent_at = 2;
+  oneof body {
+    TextBody text = 10;
+    EditBody edit = 11;
+    DeleteBody delete = 12;
+    ReactionBody reaction = 13;
+    PinBody pin = 14;
+    FileKeyBody file_key = 15;
+    CallKeyBody call_key = 16;
+    HistoryKeysBody history_keys = 17;
+    DeviceNoticeBody device_notice = 18;
+  }
+  // 19 — poll_vote (C, опросы), зарезервировано.
+  reserved 19;
+  reserved "poll_vote";
+}
+
+// Упоминание в тексте. Клиент отправителя для каждого упоминания пользователя или роли
+// добавляет mention-hint в открытые метаданные (message.proto).
+message Mention {
+  oneof target {
+    string user_id = 1;
+    string role_id = 2;
+    // «#канал» — переход, без уведомления.
+    string channel_id = 3;
+    // «@все».
+    bool all = 4;
+    // «@здесь».
+    bool online = 5;
+  }
+}
+
+// Ссылка на зашифрованное вложение: всё, что нужно для скачивания и расшифровки.
+message FileRef {
+  // Id вложения на сервере (Attachment.id).
+  string attachment_id = 1;
+  // Имя файла, до 255 символов.
+  string name = 2;
+  // MIME-тип.
+  string mime_type = 3;
+  // Размер открытого файла в байтах.
+  uint64 size = 4;
+  // Ключ XChaCha20-Poly1305 (32 байта). Схема чанков по 1 МиБ и nonce — CRYPTO.md (B2).
+  bytes key = 5;
+  // Хэш открытого файла (BLAKE3, 32 байта).
+  bytes content_hash = 6;
+  // Хэш шифртекста, чтобы сверить с Attachment.ciphertext_hash.
+  bytes ciphertext_hash = 7;
+  // Для изображений и видео: размеры, чтобы нарисовать Skeleton до расшифровки.
+  uint32 width = 8;
+  uint32 height = 9;
+  // Миниатюра до 64 px (WebP), зашифрованная тем же ключом; до 8 КиБ.
+  bytes thumbnail = 10;
+  // Скрыть за плашкой «спойлер».
+  bool spoiler = 11;
+  // Описание (альтернативный текст), до 1024 символов.
+  string description = 12;
+}
+
+// Превью ссылки (S): генерирует клиент отправителя (ARCHITECTURE.md §8).
+message LinkPreview {
+  string url = 1;
+  string site_name = 2;
+  string title = 3;
+  string description = 4;
+  // Картинка превью как зашифрованное вложение.
+  FileRef image = 5;
+}
+
+// Обычное сообщение.
+message TextBody {
+  // Markdown-подмножество (FEATURES 3.4); до 4 000 символов (code points).
+  string text = 1;
+  // Id сообщения, на которое это ответ.
+  string reply_to = 2;
+  // Упоминать ли автора ответа (переключатель «@ упомянуть»).
+  bool reply_mention = 3;
+  repeated Mention mentions = 4;
+  // До 10 вложений.
+  repeated FileRef attachments = 5;
+  repeated LinkPreview link_previews = 6;
+}
+
+// Правка своего сообщения. Клиент подменяет текст и ставит «(изменено)».
+message EditBody {
+  string target_id = 1;
+  string text = 2;
+  repeated Mention mentions = 3;
+  repeated LinkPreview link_previews = 4;
+}
+
+// Удаление: дублирует команду REST, чтобы участники с опозданием (офлайн) тоже
+// убрали сообщение из локальной базы, даже если событие MessageDeleted не дошло.
+message DeleteBody {
+  string target_id = 1;
+}
+
+// Реакция; агрегация на клиенте.
+message ReactionBody {
+  string target_id = 1;
+  // Unicode-эмодзи (своих эмодзи в 1.0 нет).
+  string emoji = 2;
+  // true — поставить, false — снять.
+  bool on = 3;
+}
+
+// Закреп/откреп — сопровождает команду REST; нужен для локальной истории офлайн-участников.
+message PinBody {
+  string target_id = 1;
+  bool pinned = 2;
+}
+
+// Ключ вложения отдельно от сообщения (повторная отправка ключа участнику, который не смог
+// расшифровать исходное сообщение).
+message FileKeyBody {
+  string target_message_id = 1;
+  FileRef file = 2;
+}
+
+// Материал ключа звонка. Основной путь вывода SFrame-ключей — MLS exporter группы звонка
+// (ADR-0004 п. 4); этот тип зарезервирован для случаев, которые опишет CRYPTO.md (B2).
+message CallKeyBody {
+  string channel_id = 1;
+  uint64 epoch = 2;
+  bytes key_material = 3;
+}
+
+// Ключи истории канала (ADR-0015), передаваемые внутри группы при вступлении или ротации.
+// Точный состав и порядок поколений — CRYPTO.md (B2).
+message HistoryKeysBody {
+  repeated HistoryKey keys = 1;
+}
+
+message HistoryKey {
+  // Поколение ключа; растёт при каждой смене.
+  uint32 generation = 1;
+  bytes key = 2;
+  // С какого момента ключ действует.
+  google.protobuf.Timestamp valid_from = 3;
+}
+
+// Системная заметка, которую создаёт клиент как зашифрованное сообщение (SCREENS/08 §10,
+// FLOWS/02): «новое устройство», «ключи изменились», «больше не использует устройство».
+// Показывается только в ЛС и малых группах (≤ 50 участников).
+message DeviceNoticeBody {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_DEVICE_ADDED = 1;
+    KIND_IDENTITY_KEY_CHANGED = 2;
+    KIND_DEVICE_REMOVED = 3;
+  }
+  Kind kind = 1;
+  string user_id = 2;
+  string device_name = 3;
+}

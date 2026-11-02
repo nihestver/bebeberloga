@@ -1,0 +1,279 @@
+// SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+// SPDX-License-Identifier: Apache-2.0
+
+// Сообщества («серверы» в интерфейсе), категории, каналы, роли, участники,
+// приглашения, баны, доступ к каналам, состояние голоса, настройки уведомлений,
+// состояние чтения. Термины — GLOSSARY.md; права — PERMISSIONS.md.
+syntax = "proto3";
+
+package bebeberloga.v1;
+
+import "bebeberloga/v1/identity.proto";
+import "google/protobuf/timestamp.proto";
+
+// Сообщество.
+message Community {
+  string id = 1;
+  string owner_id = 2;
+  // 2–100 символов.
+  string name = 3;
+  // Id иконки из встроенного набора; своя картинка — S (`icon_url` зарезервировано).
+  string icon_id = 4;
+  // До 120 символов.
+  string description = 5;
+  // Канал для системных сообщений (входы участников, закрепы); пусто — не показывать.
+  string system_channel_id = 6;
+  // «Новые участники видят историю» по умолчанию для каналов (ADR-0015 п. 3).
+  bool history_visible_to_new_members = 7;
+  // Все ссылки-приглашения перестают работать, пока включено.
+  bool invites_paused = 8;
+  google.protobuf.Timestamp created_at = 9;
+  uint32 member_count = 10;
+  uint32 online_count = 11;
+}
+
+// Категория каналов.
+message Category {
+  string id = 1;
+  string community_id = 2;
+  string name = 3;
+  // Порядок в боковой панели, от 0.
+  uint32 position = 4;
+  // Приватная категория: видна только по переопределениям `channel.see`.
+  bool private = 5;
+}
+
+enum ChannelType {
+  CHANNEL_TYPE_UNSPECIFIED = 0;
+  // Текстовый канал сообщества; одна MLS-группа.
+  CHANNEL_TYPE_TEXT = 1;
+  // Голосовой канал; у него постоянная MLS-группа чата (создаётся первым сообщением)
+  // и короткоживущая группа звонка (создаётся первым вошедшим).
+  CHANNEL_TYPE_VOICE = 2;
+  // Личные сообщения 1:1; `community_id` пуст, участники — в `recipient_ids`.
+  CHANNEL_TYPE_DM = 3;
+  // Групповой чат до 10 участников (S).
+  CHANNEL_TYPE_GROUP_DM = 4;
+  // Ветка (S); `parent_id` — канал, `root_message_id` — исходное сообщение.
+  CHANNEL_TYPE_THREAD = 5;
+}
+
+// Наследование настройки «Новые участники видят историю».
+enum HistoryVisibility {
+  HISTORY_VISIBILITY_UNSPECIFIED = 0;
+  // Как на сервере (`Community.history_visible_to_new_members`).
+  HISTORY_VISIBILITY_INHERIT = 1;
+  HISTORY_VISIBILITY_VISIBLE = 2;
+  HISTORY_VISIBILITY_HIDDEN = 3;
+}
+
+// Канал любого типа, включая ЛС: история, закрепы и read-state адресуются
+// одинаково через `/channels/{id}`.
+message Channel {
+  string id = 1;
+  ChannelType type = 2;
+  // Пусто для DM и GROUP_DM.
+  string community_id = 3;
+  // Пусто, если канал вне категории.
+  string category_id = 4;
+  // Для TEXT/VOICE: нормализованное имя (строчные, дефисы, без пробелов), 1–100 символов.
+  // Для GROUP_DM — имя группы (S). Для DM пусто.
+  string name = 5;
+  // Тема канала, до 1024 символов.
+  string topic = 6;
+  uint32 position = 7;
+  // Канал виден только по явным разрешениям `channel.see` (PERMISSIONS.md §3).
+  bool private = 8;
+  HistoryVisibility history_visibility = 9;
+  // Id MLS-группы чата канала (DM, GROUP_DM, TEXT, чат VOICE). Пусто, пока группа не создана.
+  string mls_group_id = 10;
+  // Для DM и GROUP_DM: участники разговора.
+  repeated string recipient_ids = 11;
+  // Для THREAD (S): канал-родитель и исходное сообщение.
+  string parent_id = 12;
+  string root_message_id = 13;
+  // Для VOICE: лимит участников голоса, 0 — без лимита (0–99).
+  uint32 voice_user_limit = 14;
+  // Для VOICE: битрейт голоса, кбит/с (64–256).
+  uint32 voice_bitrate_kbps = 15;
+  // Id короткоживущей MLS-группы звонка; пусто, пока в канале никого нет.
+  string call_group_id = 16;
+  google.protobuf.Timestamp created_at = 17;
+  // Id последнего сообщения — для бейджей непрочитанного без запроса истории.
+  string last_message_id = 18;
+}
+
+// Пресеты ролей (PERMISSIONS.md §2). Порядок старшинства в 1.0 фиксирован:
+// OWNER > ADMIN > MODERATOR > свои роли > ALL.
+enum RolePreset {
+  ROLE_PRESET_UNSPECIFIED = 0;
+  // Своя роль, созданная участниками.
+  ROLE_PRESET_CUSTOM = 1;
+  ROLE_PRESET_OWNER = 2;
+  ROLE_PRESET_ADMIN = 3;
+  ROLE_PRESET_MODERATOR = 4;
+  // Встроенная роль каждого участника («@все» в интерфейсе).
+  ROLE_PRESET_ALL = 5;
+}
+
+message Role {
+  string id = 1;
+  string community_id = 2;
+  // 1–100 символов. У пресетов имя задаёт сервер и менять его нельзя.
+  string name = 3;
+  RolePreset preset = 4;
+  // Коды прав `<область>.<действие>` (PERMISSIONS.md §1), только включённые.
+  repeated string permission_codes = 5;
+  // Разрешить всем упоминать эту роль (без права `chat.ping_all` упоминание идёт без уведомления).
+  bool mentionable = 6;
+  // Старшинство: меньше — старше. У пресетов фиксировано, у своих — порядок создания (перестановка — C).
+  uint32 position = 7;
+  // Цвет роли — токен палитры (C, зарезервировано).
+  string color = 8;
+  // Показывать отдельной группой в списке участников (C, зарезервировано).
+  bool show_separately = 9;
+  uint32 member_count = 10;
+}
+
+// Участник сообщества.
+message Member {
+  string community_id = 1;
+  User user = 2;
+  // Роли без встроенной «@все» (она есть у всех).
+  repeated string role_ids = 3;
+  google.protobuf.Timestamp joined_at = 4;
+  // Код приглашения, по которому вошёл; пусто для владельца.
+  string invite_code = 5;
+}
+
+// Вычисленные сервером права участника: по сообществу и по каждому видимому каналу.
+// Приходит в `Ready` и в событии `PermissionsUpdated`; клиент не вычисляет права сам.
+message EffectivePermissions {
+  string community_id = 1;
+  // Права на уровне сообщества (объединение ролей).
+  repeated string permission_codes = 2;
+  // Каналы, которые участник видит; для каждого — действующие права.
+  repeated ChannelPermissions channels = 3;
+  // Участник — владелец (все права, переопределениями не ограничивается).
+  bool owner = 4;
+}
+
+message ChannelPermissions {
+  string channel_id = 1;
+  repeated string permission_codes = 2;
+}
+
+// Переопределение «Видеть канал» для роли или участника (единственное переопределение в 1.0).
+message ChannelAccess {
+  string channel_id = 1;
+  oneof subject {
+    string role_id = 2;
+    string user_id = 3;
+  }
+  // true — разрешить видеть, false — запретить (для «@все» у приватного канала).
+  bool allow_see = 4;
+}
+
+// Ссылка-приглашение. Параметра истории нет: историю определяет канал (ADR-0013 п. 7).
+message Invite {
+  // Код в ссылке `https://<инстанс>/join/<code>`: 8–12 символов [A-Za-z0-9].
+  string code = 1;
+  string community_id = 2;
+  // Канал, в который ведёт ссылка.
+  string channel_id = 3;
+  string creator_id = 4;
+  google.protobuf.Timestamp created_at = 5;
+  // Пусто — бессрочное. По умолчанию created_at + 7 дней.
+  google.protobuf.Timestamp expires_at = 6;
+  // 0 — без лимита.
+  uint32 max_uses = 7;
+  uint32 uses = 8;
+  bool revoked = 9;
+}
+
+// Превью приглашения для неавторизованного или не вступившего пользователя (SCREENS/06 §2.2).
+message InvitePreview {
+  string code = 1;
+  string community_name = 2;
+  string community_icon_id = 3;
+  string channel_name = 4;
+  ChannelType channel_type = 5;
+  uint32 member_count = 6;
+  uint32 online_count = 7;
+  google.protobuf.Timestamp community_created_at = 8;
+  google.protobuf.Timestamp expires_at = 9;
+}
+
+message Ban {
+  string community_id = 1;
+  User user = 2;
+  string moderator_id = 3;
+  // Причина (видна в списке банов и журнале), до 512 символов.
+  string reason = 4;
+  google.protobuf.Timestamp created_at = 5;
+  // За сколько секунд назад удалены сообщения при бане; 0 — не удалялись.
+  uint32 deleted_messages_window_seconds = 6;
+}
+
+// Состояние пользователя в голосовом канале. Отсутствие записи = не в голосе.
+message VoiceState {
+  string channel_id = 1;
+  string user_id = 2;
+  string device_id = 3;
+  // Выключил микрофон сам.
+  bool self_mute = 4;
+  // Выключил звук сам (подразумевает self_mute).
+  bool self_deaf = 5;
+  // Микрофон выключен сервером (право `voice.moderate`).
+  bool server_mute = 6;
+  // Звук выключен сервером.
+  bool server_deaf = 7;
+  bool camera = 8;
+  // Ведёт стрим экрана/окна/приложения.
+  bool streaming = 9;
+  google.protobuf.Timestamp joined_at = 10;
+}
+
+// Уровень уведомлений.
+enum NotificationLevel {
+  NOTIFICATION_LEVEL_UNSPECIFIED = 0;
+  // Как на сервере (для канала) или как по умолчанию у пользователя (для сервера).
+  NOTIFICATION_LEVEL_INHERIT = 1;
+  NOTIFICATION_LEVEL_ALL_MESSAGES = 2;
+  NOTIFICATION_LEVEL_MENTIONS_ONLY = 3;
+  NOTIFICATION_LEVEL_NOTHING = 4;
+}
+
+// Настройки уведомлений пользователя для сообщества или канала. Хранятся на сервере
+// и синхронизируются между устройствами (OPEN-QUESTIONS №6).
+message NotificationSettings {
+  oneof scope {
+    string community_id = 1;
+    string channel_id = 2;
+  }
+  bool muted = 3;
+  // Mute на время (S): пусто — пока не включат обратно.
+  google.protobuf.Timestamp muted_until = 4;
+  NotificationLevel level = 5;
+  // Не уведомлять об упоминаниях всех и тех, кто в сети.
+  bool suppress_mention_all = 6;
+  // Не уведомлять об упоминаниях ролей.
+  bool suppress_role_mentions = 7;
+}
+
+// Состояние чтения канала. На сервере — только id последнего прочитанного.
+message ReadState {
+  string channel_id = 1;
+  string last_read_message_id = 2;
+  // Число непрочитанных сообщений с упоминанием меня (по mention-hint).
+  uint32 mention_count = 3;
+}
+
+// Сводка MLS-группы канала для раздела «Шифрование и история» (SCREENS/06 §5.2).
+message GroupSummary {
+  string channel_id = 1;
+  string group_id = 2;
+  uint64 epoch = 3;
+  uint32 device_count = 4;
+  google.protobuf.Timestamp last_rotation_at = 5;
+}
