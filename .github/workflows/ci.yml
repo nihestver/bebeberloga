@@ -62,6 +62,9 @@ jobs:
         with:
           args: --offline --no-progress --exclude-path LICENSES './**/*.md'
           fail: true
+      - uses: extractions/setup-just@v2
+      - name: OpenAPI contract
+        run: just openapi
 
   go:
     needs: changes
