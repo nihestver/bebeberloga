@@ -13,7 +13,7 @@ SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
 
 [[annotations]]
-path = ["crypto-core/**", "media-engine/**", "proto/**", "sdk/**", "tools/**", "design/**", "spikes/**"]
+path = ["crypto-core/**", "media-engine/**", "proto/**", "sdk/**", "tools/**", "design/**", "spikes/**", "docs/protocol/openapi.yaml"]
 SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
 SPDX-License-Identifier = "Apache-2.0"
 

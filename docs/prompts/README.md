@@ -83,7 +83,7 @@ flowchart LR
 | S4 | Спайк: MLS Delivery Service | [`S4-mls-ds.md`](S4-mls-ds.md) | 0 | — | не начат |
 | S5 | Спайк: звук приложения | [`S5-app-audio.md`](S5-app-audio.md) | 0 | — | не начат |
 | S6 | Спайк: E2EE-стрим 1080p60 | [`S6-e2ee-stream.md`](S6-e2ee-stream.md) | 0 | S2, S3, S5 | не начат |
-| B1 | Протокол: Protobuf, gateway, REST | [`B01-protocol.md`](B01-protocol.md) | 0 | A1–A5 | в работе (ветка `feat/B01-protocol`) |
+| B1 | Протокол: Protobuf, gateway, REST | [`B01-protocol.md`](B01-protocol.md) | 0 | A1–A5 | готово (PR #3) |
 | B2 | Криптографический дизайн | [`B02-crypto-design.md`](B02-crypto-design.md) | 0 | B1 (S1, S4 желательно) | не начат |
 | B3 | Crypto-core (Rust) | [`B03-crypto-core.md`](B03-crypto-core.md) | 1 | B2 | не начат |
 | B4 | Сервер: каркас, identity, community | [`B04-server-core.md`](B04-server-core.md) | 0 (ч.0), 1 | ч.0 — нет; остальное — B1, B17 ч.1 | не начат |

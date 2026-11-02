@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2026 Bebeberloga contributors
-# SPDX-License-Identifier: CC-BY-SA-4.0
+# SPDX-License-Identifier: Apache-2.0
 #
 # Контракт REST Bebeberloga. Источник правды: Go-обработчики (oapi-codegen) и TS-клиент
 # (openapi-typescript) генерируются из этого файла (`just gen`, ADR-0016). Пояснения,
@@ -14,9 +14,14 @@ info:
     REST-часть протокола Bebeberloga: всё, что не нужно мгновенно. События реального времени —
     через gateway (docs/protocol/GATEWAY.md). Сервер хранит и передаёт только шифртекст и
     метаданные; ключей и открытого текста в этом API нет.
+
+    Модели сущностей — Protobuf-сообщения `bebeberloga.v1` в JSON-форме protojson с именами
+    полей как в `.proto` (ADR-0016): схема с `x-proto-message` в коде заменяется на тип,
+    сгенерированный из Protobuf (`x-go-type` для oapi-codegen, импорт `*_pb` для TS);
+    64-битные целые в телах — строки.
   license:
-    name: CC BY-SA 4.0
-    url: https://creativecommons.org/licenses/by-sa/4.0/
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
 servers:
   - url: https://{instance}/api/v1
     description: Инстанс Bebeberloga
@@ -133,7 +138,7 @@ paths:
               properties:
                 email: { type: string, format: email }
                 username: { $ref: '#/components/schemas/Username' }
-                display_name: { type: string, maxLength: 32 }
+                display_name: { type: string, maxLength: 48 }
                 password: { type: string, minLength: 10, maxLength: 256 }
                 accept_rules:
                   type: boolean
@@ -439,7 +444,7 @@ paths:
             schema:
               type: object
               properties:
-                display_name: { type: string, maxLength: 32 }
+                display_name: { type: string, maxLength: 48 }
                 avatar_id: { type: string, description: Id иконки из встроенного набора }
                 about: { type: string, maxLength: 190 }
                 banner_color: { type: string, description: Токен палитры }
@@ -575,6 +580,7 @@ paths:
     get:
       tags: [devices]
       summary: Устройства пользователя (для вкладки «Безопасность»)
+      description: Только тип, дата добавления, статус проверки и открытые ключи; город и время входа видит лишь владелец.
       operationId: listUserDevices
       responses:
         '200':
@@ -587,7 +593,7 @@ paths:
                 properties:
                   devices:
                     type: array
-                    items: { $ref: '#/components/schemas/Device' }
+                    items: { $ref: '#/components/schemas/PublicDevice' }
         default:
           $ref: '#/components/responses/Error'
   /users/{user_id}/key-packages/claim:
@@ -991,16 +997,17 @@ paths:
           application/json:
             schema:
               type: object
-              required: [recipient_ids]
+              required: [participant_ids]
               properties:
-                recipient_ids:
+                participant_ids:
                   type: array
                   minItems: 1
                   maxItems: 9
+                  description: Собеседники без вызывающего.
                   items: { $ref: '#/components/schemas/Id' }
                 name:
                   type: string
-                  maxLength: 100
+                  maxLength: 64
                   description: Имя группового чата (S).
       responses:
         '200':
@@ -1043,7 +1050,7 @@ paths:
               type: object
               required: [name]
               properties:
-                name: { type: string, minLength: 2, maxLength: 100 }
+                name: { type: string, minLength: 1, maxLength: 64 }
                 icon_id: { type: string }
       responses:
         '201':
@@ -1082,7 +1089,7 @@ paths:
             schema:
               type: object
               properties:
-                name: { type: string, minLength: 2, maxLength: 100 }
+                name: { type: string, minLength: 1, maxLength: 64 }
                 icon_id: { type: string }
                 description: { type: string, maxLength: 120 }
                 system_channel_id:
@@ -1180,6 +1187,38 @@ paths:
         default:
           $ref: '#/components/responses/Error'
 
+  /users/me/community-removals:
+    get:
+      tags: [communities]
+      summary: Непоказанные записи о выходе из сообществ
+      description: То же, что `Ready.community_removals`; для `Modal` «Тебя выгнали с сервера …» (FLOWS/10 ш. 3) после долгого офлайна.
+      operationId: listCommunityRemovals
+      responses:
+        '200':
+          description: Записи
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [removals]
+                properties:
+                  removals:
+                    type: array
+                    items: { $ref: '#/components/schemas/CommunityRemoval' }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/community-removals/{community_id}:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    delete:
+      tags: [communities]
+      summary: Подтвердить показ записи о выходе из сообщества
+      operationId: ackCommunityRemoval
+      responses:
+        '204': { description: Подтверждено }
+        default:
+          $ref: '#/components/responses/Error'
+
   # ---------------------------------------------------------------------------
   # categories
   # ---------------------------------------------------------------------------
@@ -1199,7 +1238,7 @@ paths:
               type: object
               required: [name]
               properties:
-                name: { type: string, minLength: 1, maxLength: 100 }
+                name: { type: string, minLength: 1, maxLength: 64 }
                 private: { type: boolean }
                 position: { type: integer, minimum: 0 }
       responses:
@@ -1225,7 +1264,7 @@ paths:
             schema:
               type: object
               properties:
-                name: { type: string, minLength: 1, maxLength: 100 }
+                name: { type: string, minLength: 1, maxLength: 64 }
                 private: { type: boolean }
                 position: { type: integer, minimum: 0 }
       responses:
@@ -1383,6 +1422,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChannelAccessList'
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/access/self:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    post:
+      tags: [channels]
+      summary: Добавить себя в приватный канал (владелец или администратор)
+      description: |
+        PERMISSIONS.md §3 п. 2: владелец и администратор не попадают в приватный канал автоматически,
+        видят его как «🔒 закрытый для тебя» (`CommunitySnapshot.locked_channels`) и могут добавить
+        себя. Сервер ставит разрешение `channel.see` для пользователя, шлёт Add-proposals для его
+        устройств, рассылает ChannelCreated ему, LockedChannelsUpdated и системное сообщение
+        KIND_CHANNEL_SELF_JOINED участникам канала.
+      operationId: grantSelfChannelAccess
+      responses:
+        '200':
+          description: Канал
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
         default:
           $ref: '#/components/responses/Error'
   /channels/{channel_id}/mls/rotate:
@@ -1619,7 +1680,7 @@ paths:
             schema:
               type: object
               properties:
-                reason: { type: string, maxLength: 512 }
+                reason: { type: string, maxLength: 300 }
                 delete_messages_window_seconds:
                   type: integer
                   enum: [0, 3600, 86400, 604800]
@@ -1804,7 +1865,7 @@ paths:
       description: |
         Сервер проверяет `chat.post`, при вложениях — `chat.upload`, при `broadcast_mention` или
         хинтах ролей — `chat.ping_all` (без права упоминание сохраняется, но без уведомлений),
-        членство устройства в группе и эпоху. Ошибки: PERMISSION_DENIED, EPOCH_MISMATCH (клиент
+        членство устройства в группе, эпоху и размер шифртекста (≤ 128 КиБ). Ошибки: PERMISSION_DENIED, EPOCH_MISMATCH (клиент
         догоняет commit-ы и повторяет до 3 раз), MESSAGE_EXISTS, ATTACHMENT_INVALID,
         TOO_MANY_ATTACHMENTS, PAYLOAD_TOO_LARGE, BLOCKED (ЛС). Рассылает MessageCreated и push без текста.
       operationId: createMessage
@@ -1911,7 +1972,7 @@ paths:
               type: object
               required: [epoch, hints]
               properties:
-                epoch: { type: integer, format: int64, minimum: 0 }
+                epoch: { $ref: '#/components/schemas/Int64' }
                 hints:
                   type: array
                   maxItems: 64
@@ -2077,9 +2138,7 @@ paths:
               properties:
                 channel_id: { $ref: '#/components/schemas/Id' }
                 size:
-                  type: integer
-                  format: int64
-                  minimum: 1
+                  allOf: [{ $ref: '#/components/schemas/Int64' }]
                   description: Размер шифртекста в байтах.
                 ciphertext_hash: { $ref: '#/components/schemas/Bytes' }
       responses:
@@ -2240,7 +2299,7 @@ paths:
               type: object
               required: [epoch, kind, blob]
               properties:
-                epoch: { type: integer, format: int64, minimum: 0 }
+                epoch: { $ref: '#/components/schemas/Int64' }
                 kind: { $ref: '#/components/schemas/HandshakeKind' }
                 blob:
                   allOf: [{ $ref: '#/components/schemas/Bytes' }]
@@ -2299,10 +2358,14 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [epoch, encrypted_group_info]
+                x-proto-message: bebeberloga.v1.EncryptedGroupInfo
+                x-go-type: bebeberlogav1.EncryptedGroupInfo
+                x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+                required: [group_id, epoch, blob]
                 properties:
-                  epoch: { type: integer, format: int64 }
-                  encrypted_group_info: { $ref: '#/components/schemas/Bytes' }
+                  group_id: { $ref: '#/components/schemas/Id' }
+                  epoch: { $ref: '#/components/schemas/Int64' }
+                  blob: { $ref: '#/components/schemas/Bytes' }
         default:
           $ref: '#/components/responses/Error'
   /mls/groups/{group_id}/history-key-bundle:
@@ -2386,7 +2449,8 @@ paths:
         лимит канала. Права `voice.talk` и `voice.share` попадают в токен SFU как разрешения
         публикации треков (FLOWS/07 ш. 3). Если звонок уже идёт — возвращает id его MLS-группы;
         иначе `call_group_exists: false`, и вошедший создаёт группу (`POST /mls/groups`, kind CALL).
-        В ЛС первый вход рассылает CallStarted. Ошибка UNAVAILABLE, если медиасервер недоступен.
+        До подтверждения от медиасервера присутствие помечено `connecting`. В ЛС первый вход
+        рассылает CallStarted. Ошибка UNAVAILABLE, если медиасервер недоступен.
       operationId: joinVoice
       responses:
         '200':
@@ -2413,54 +2477,54 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/UserId'
-    put:
+    post:
       tags: [voice]
       summary: Выключить или включить микрофон участнику на сервере
-      description: Право `voice.moderate`, только младшей роли. SFU блокирует трек; всем уходит VoiceStateUpdated (OPEN-QUESTIONS №4).
-      operationId: setServerMute
+      description: Право `voice.moderate`, только младшей роли. SFU блокирует трек; всем уходит VoicePresenceChanged (OPEN-QUESTIONS №4).
+      operationId: setServerMicOff
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [muted]
+              required: [server_mic_off]
               properties:
-                muted: { type: boolean }
+                server_mic_off: { type: boolean }
       responses:
         '200':
-          description: Состояние
+          description: Присутствие в голосе
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VoiceState'
+                $ref: '#/components/schemas/VoicePresence'
         default:
           $ref: '#/components/responses/Error'
   /channels/{channel_id}/voice/members/{user_id}/deafen:
     parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/UserId'
-    put:
+    post:
       tags: [voice]
       summary: Выключить или включить звук участнику на сервере
-      description: Право `voice.moderate`. Выключение звука подразумевает выключение микрофона.
-      operationId: setServerDeafen
+      description: Право `voice.moderate`. Выключение звука выключает и микрофон.
+      operationId: setServerSoundOff
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [deafened]
+              required: [server_sound_off]
               properties:
-                deafened: { type: boolean }
+                server_sound_off: { type: boolean }
       responses:
         '200':
-          description: Состояние
+          description: Присутствие в голосе
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VoiceState'
+                $ref: '#/components/schemas/VoicePresence'
         default:
           $ref: '#/components/responses/Error'
 
@@ -2502,7 +2566,8 @@ paths:
       summary: Загрузить звук сообщества
       description: |
         Право `community.admin`. Файл — Opus в ogg, уже обрезанный до 5 с и нормализованный клиентом
-        (FLOWS/09). Ошибки: SOUND_INVALID, SOUND_SLOTS_FULL, PAYLOAD_TOO_LARGE. Рассылает SoundAdded.
+        (FLOWS/09 ш. 2; исходные ogg/mp3 проверяет клиент). Ошибки: SOUND_INVALID (не Opus/ogg или
+        длиннее 5 с), SOUND_SLOTS_FULL, PAYLOAD_TOO_LARGE. Рассылает SoundAdded.
       operationId: createCommunitySound
       requestBody:
         $ref: '#/components/requestBodies/SoundUpload'
@@ -2621,7 +2686,7 @@ paths:
       summary: Webhook медиасервера (участник вошёл или вышел из комнаты)
       description: |
         Вызывается SFU, подпись проверяется общим секретом (заголовок `Authorization`). Сервер обновляет
-        VoiceState и как external sender добавляет или удаляет устройство в группе звонка
+        VoicePresence и как external sender добавляет или удаляет устройство в группе звонка
         (FLOWS/07 «В звонке»). Формат тела задаёт SFU; здесь он непрозрачен.
       operationId: mediaWebhook
       security:
@@ -2707,7 +2772,7 @@ components:
       required: true
       schema:
         type: string
-        pattern: '^[A-Za-z0-9]{8,12}$'
+        pattern: '^[a-z0-9]{10}$'
     Before:
       name: before
       in: query
@@ -2724,7 +2789,7 @@ components:
       schema:
         type: integer
         minimum: 1
-        maximum: 100
+        maximum: 150
         default: 50
 
   responses:
@@ -2767,29 +2832,40 @@ components:
       type: string
       format: byte
       description: Бинарные данные в base64 (стандартный алфавит, с выравниванием).
+    Int64:
+      type: string
+      pattern: '^[0-9]+$'
+      description: 64-битное целое без знака строкой, как в protojson (JS не хранит такие числа точно).
+      example: '42'
     Username:
       type: string
       pattern: '^[a-z0-9._]{2,32}$'
     ChannelName:
       type: string
-      pattern: '^[\p{Ll}\p{Nd}_-]{1,100}$'
+      pattern: '^[\p{Ll}\p{Nd}_-]{1,64}$'
       description: Нормализованное имя канала (строчные буквы, цифры, дефис, подчёркивание).
     PageInfo:
       type: object
+      x-proto-message: bebeberloga.v1.PageInfo
+      x-go-type: bebeberlogav1.PageInfo
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [has_before, has_after]
       properties:
         has_before: { type: boolean }
         has_after: { type: boolean }
     Error:
       type: object
+      x-proto-message: bebeberloga.v1.Error
+      x-go-type: bebeberlogav1.Error
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [code, message]
       properties:
         code: { $ref: '#/components/schemas/ErrorCode' }
         message: { type: string, description: Служебное описание для журналов. }
         missing_permission: { type: string, description: Для PERMISSION_DENIED. }
         retry_after_ms: { type: integer, minimum: 0, description: Для RATE_LIMITED. }
-        limit: { type: integer, format: int64, description: 'Значение лимита, который превышен.' }
-        current_epoch: { type: integer, format: int64, description: Для EPOCH_MISMATCH. }
+        limit: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Значение лимита, который превышен.' }
+        current_epoch: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: Для EPOCH_MISMATCH. }
         field_errors:
           type: array
           items:
@@ -2804,60 +2880,68 @@ components:
           description: Дополнительные данные по коду (например, список сообществ для CONFLICT при удалении аккаунта).
     ErrorCode:
       type: string
-      description: Имена значений `bebeberloga.v1.ErrorCode` без префикса `ERROR_CODE_`.
+      x-proto-enum: bebeberloga.v1.ErrorCode
+      x-go-type: bebeberlogav1.ErrorCode
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      description: Имена значений `bebeberloga.v1.ErrorCode`; в REST.md коды приводятся без префикса `ERROR_CODE_`.
       enum:
-        - VALIDATION_FAILED
-        - UNAUTHENTICATED
-        - PERMISSION_DENIED
-        - NOT_FOUND
-        - CONFLICT
-        - RATE_LIMITED
-        - PAYLOAD_TOO_LARGE
-        - INTERNAL
-        - UNAVAILABLE
-        - USERNAME_TAKEN
-        - EMAIL_IN_USE
-        - REGISTRATION_CLOSED
-        - INVALID_CREDENTIALS
-        - EMAIL_NOT_VERIFIED
-        - TOKEN_INVALID
-        - PASSWORD_MISMATCH
-        - DEVICE_UNVERIFIED
-        - RECOVERY_KEY_INVALID
-        - NO_KEY_PACKAGES
-        - VERIFICATION_EXPIRED
-        - SIGNATURE_INVALID
-        - CHANNEL_MEMBER_LIMIT
-        - COMMUNITY_LIMIT
-        - BANNED
-        - INVITE_EXPIRED
-        - INVITE_REVOKED
-        - INVITE_USES_EXHAUSTED
-        - INVITES_PAUSED
-        - ROLE_HIERARCHY
-        - OWNER_CANNOT_LEAVE
-        - PRESET_ROLE_IMMUTABLE
-        - VOICE_CHANNEL_FULL
-        - NOT_IN_VOICE
-        - BLOCKED
-        - RELATIONSHIP_EXISTS
-        - EPOCH_MISMATCH
-        - NOT_GROUP_MEMBER
-        - MESSAGE_EXISTS
-        - ATTACHMENT_INVALID
-        - TOO_MANY_ATTACHMENTS
-        - SOUND_INVALID
-        - SOUND_SLOTS_FULL
+        - ERROR_CODE_VALIDATION_FAILED
+        - ERROR_CODE_UNAUTHENTICATED
+        - ERROR_CODE_PERMISSION_DENIED
+        - ERROR_CODE_NOT_FOUND
+        - ERROR_CODE_CONFLICT
+        - ERROR_CODE_RATE_LIMITED
+        - ERROR_CODE_PAYLOAD_TOO_LARGE
+        - ERROR_CODE_INTERNAL
+        - ERROR_CODE_UNAVAILABLE
+        - ERROR_CODE_USERNAME_TAKEN
+        - ERROR_CODE_EMAIL_IN_USE
+        - ERROR_CODE_REGISTRATION_CLOSED
+        - ERROR_CODE_INVALID_CREDENTIALS
+        - ERROR_CODE_EMAIL_NOT_VERIFIED
+        - ERROR_CODE_TOKEN_INVALID
+        - ERROR_CODE_PASSWORD_MISMATCH
+        - ERROR_CODE_DEVICE_UNVERIFIED
+        - ERROR_CODE_NO_KEY_PACKAGES
+        - ERROR_CODE_VERIFICATION_EXPIRED
+        - ERROR_CODE_SIGNATURE_INVALID
+        - ERROR_CODE_CHANNEL_MEMBER_LIMIT
+        - ERROR_CODE_COMMUNITY_LIMIT
+        - ERROR_CODE_BANNED
+        - ERROR_CODE_INVITE_EXPIRED
+        - ERROR_CODE_INVITE_REVOKED
+        - ERROR_CODE_INVITE_USES_EXHAUSTED
+        - ERROR_CODE_INVITES_PAUSED
+        - ERROR_CODE_ROLE_HIERARCHY
+        - ERROR_CODE_OWNER_CANNOT_LEAVE
+        - ERROR_CODE_PRESET_ROLE_IMMUTABLE
+        - ERROR_CODE_VOICE_CHANNEL_FULL
+        - ERROR_CODE_NOT_IN_VOICE
+        - ERROR_CODE_BLOCKED
+        - ERROR_CODE_RELATIONSHIP_EXISTS
+        - ERROR_CODE_EPOCH_MISMATCH
+        - ERROR_CODE_NOT_GROUP_MEMBER
+        - ERROR_CODE_MESSAGE_EXISTS
+        - ERROR_CODE_ATTACHMENT_INVALID
+        - ERROR_CODE_TOO_MANY_ATTACHMENTS
+        - ERROR_CODE_SOUND_INVALID
+        - ERROR_CODE_SOUND_SLOTS_FULL
 
     # --- инстанс -------------------------------------------------------------
     InstanceInfo:
       type: object
+      x-proto-message: bebeberloga.v1.InstanceInfo
+      x-go-type: bebeberlogav1.InstanceInfo
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [name, registration_policy, limits, protocol_version]
       properties:
         name: { type: string }
         registration_policy:
           type: string
-          enum: [open, invite_only, closed]
+          x-proto-enum: bebeberloga.v1.RegistrationPolicy
+          x-go-type: bebeberlogav1.RegistrationPolicy
+          x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+          enum: [REGISTRATION_POLICY_OPEN, REGISTRATION_POLICY_INVITE_ONLY, REGISTRATION_POLICY_CLOSED]
         rules_url: { type: string, format: uri }
         privacy_url: { type: string, format: uri }
         server_version: { type: string }
@@ -2865,20 +2949,32 @@ components:
         limits: { $ref: '#/components/schemas/InstanceLimits' }
     InstanceLimits:
       type: object
-      required: [max_text_length, max_attachments, max_file_size, channel_member_limit, user_sound_slots, community_sound_slots, max_stream_preset, max_client_frame_size]
+      x-proto-message: bebeberloga.v1.InstanceLimits
+      x-go-type: bebeberlogav1.InstanceLimits
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [max_text_length, max_attachments, max_file_size, channel_member_limit, user_sound_slots, community_sound_slots, max_stream_preset, max_client_frame_size, communities_per_user]
       properties:
         max_text_length: { type: integer, example: 4000 }
         max_attachments: { type: integer, example: 10 }
-        max_file_size: { type: integer, format: int64 }
+        max_file_size: { $ref: '#/components/schemas/Int64' }
         channel_member_limit: { type: integer, example: 2000 }
         user_sound_slots: { type: integer, example: 10 }
         community_sound_slots: { type: integer }
-        max_stream_preset: { type: string, enum: [1080p60, 1080p30, 720p30] }
+        max_stream_preset:
+          type: string
+          x-proto-enum: bebeberloga.v1.StreamPreset
+          x-go-type: bebeberlogav1.StreamPreset
+          x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+          enum: [STREAM_PRESET_SAVER, STREAM_PRESET_BALANCED, STREAM_PRESET_SMOOTH]
         max_client_frame_size: { type: integer, example: 65536 }
+        communities_per_user: { type: integer }
 
     # --- пользователи и устройства ------------------------------------------
     User:
       type: object
+      x-proto-message: bebeberloga.v1.User
+      x-go-type: bebeberlogav1.User
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [id, username, display_name, avatar_id, created_at]
       properties:
         id: { $ref: '#/components/schemas/Id' }
@@ -2892,6 +2988,9 @@ components:
         deleted: { type: boolean }
     UserProfile:
       type: object
+      x-proto-message: bebeberloga.v1.UserProfile
+      x-go-type: bebeberlogav1.UserProfile
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [user]
       properties:
         user: { $ref: '#/components/schemas/User' }
@@ -2905,6 +3004,9 @@ components:
           items: { $ref: '#/components/schemas/Id' }
     Account:
       type: object
+      x-proto-message: bebeberloga.v1.Account
+      x-go-type: bebeberlogav1.Account
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [user, email, email_verified]
       properties:
         user: { $ref: '#/components/schemas/User' }
@@ -2914,12 +3016,21 @@ components:
         recovery_key_created_at: { $ref: '#/components/schemas/Timestamp' }
     DevicePlatform:
       type: string
+      x-proto-enum: bebeberloga.v1.DevicePlatform
+      x-go-type: bebeberlogav1.DevicePlatform
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       enum: [DEVICE_PLATFORM_DESKTOP_WINDOWS, DEVICE_PLATFORM_DESKTOP_MACOS, DEVICE_PLATFORM_DESKTOP_LINUX, DEVICE_PLATFORM_WEB, DEVICE_PLATFORM_ANDROID, DEVICE_PLATFORM_IOS]
     DeviceVerification:
       type: string
+      x-proto-enum: bebeberloga.v1.DeviceVerification
+      x-go-type: bebeberlogav1.DeviceVerification
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       enum: [DEVICE_VERIFICATION_UNVERIFIED, DEVICE_VERIFICATION_VERIFIED]
     DeviceRegistration:
       type: object
+      x-proto-message: bebeberloga.v1.DeviceRegistration
+      x-go-type: bebeberlogav1.DeviceRegistration
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [name, platform, client_version]
       properties:
         name: { type: string, maxLength: 64 }
@@ -2930,6 +3041,9 @@ components:
           description: Id уже существующего устройства при повторном входе на нём.
     Device:
       type: object
+      x-proto-message: bebeberloga.v1.Device
+      x-go-type: bebeberlogav1.Device
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [id, user_id, name, platform, verification, created_at]
       properties:
         id: { $ref: '#/components/schemas/Id' }
@@ -2946,13 +3060,33 @@ components:
         current: { type: boolean }
     DeviceVerificationRequest:
       type: object
+      x-proto-message: bebeberloga.v1.DeviceVerificationRequest
+      x-go-type: bebeberlogav1.DeviceVerificationRequest
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [id, device, expires_at]
       properties:
         id: { $ref: '#/components/schemas/Id' }
         device: { $ref: '#/components/schemas/Device' }
         expires_at: { $ref: '#/components/schemas/Timestamp' }
+    PublicDevice:
+      type: object
+      x-proto-message: bebeberloga.v1.PublicDevice
+      x-go-type: bebeberlogav1.PublicDevice
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [id, user_id, platform, verification, created_at]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        user_id: { $ref: '#/components/schemas/Id' }
+        platform: { $ref: '#/components/schemas/DevicePlatform' }
+        signature_pubkey: { $ref: '#/components/schemas/Bytes' }
+        identity_signature: { $ref: '#/components/schemas/Bytes' }
+        verification: { $ref: '#/components/schemas/DeviceVerification' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
     Session:
       type: object
+      x-proto-message: bebeberloga.v1.Session
+      x-go-type: bebeberlogav1.Session
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [access_token, refresh_token, expires_in, account, device]
       properties:
         access_token: { type: string }
@@ -2962,6 +3096,9 @@ components:
         device: { $ref: '#/components/schemas/Device' }
     KeyPackage:
       type: object
+      x-proto-message: bebeberloga.v1.KeyPackage
+      x-go-type: bebeberlogav1.KeyPackage
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [device_id, ciphersuite, blob]
       properties:
         device_id: { $ref: '#/components/schemas/Id' }
@@ -2969,12 +3106,21 @@ components:
         blob: { $ref: '#/components/schemas/Bytes' }
     PushTransport:
       type: string
+      x-proto-enum: bebeberloga.v1.PushTransport
+      x-go-type: bebeberlogav1.PushTransport
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       enum: [PUSH_TRANSPORT_UNIFIED_PUSH, PUSH_TRANSPORT_FCM, PUSH_TRANSPORT_APNS]
     RelationshipKind:
       type: string
+      x-proto-enum: bebeberloga.v1.RelationshipKind
+      x-go-type: bebeberlogav1.RelationshipKind
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       enum: [RELATIONSHIP_KIND_FRIEND, RELATIONSHIP_KIND_REQUEST_INCOMING, RELATIONSHIP_KIND_REQUEST_OUTGOING, RELATIONSHIP_KIND_BLOCKED]
     Relationship:
       type: object
+      x-proto-message: bebeberloga.v1.Relationship
+      x-go-type: bebeberlogav1.Relationship
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [user, kind, since]
       properties:
         user: { $ref: '#/components/schemas/User' }
@@ -2984,6 +3130,9 @@ components:
     # --- сообщества ----------------------------------------------------------
     Community:
       type: object
+      x-proto-message: bebeberloga.v1.Community
+      x-go-type: bebeberlogav1.Community
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [id, owner_id, name, icon_id, history_visible_to_new_members, invites_paused, created_at, member_count, online_count]
       properties:
         id: { $ref: '#/components/schemas/Id' }
@@ -2999,6 +3148,9 @@ components:
         online_count: { type: integer }
     Category:
       type: object
+      x-proto-message: bebeberloga.v1.Category
+      x-go-type: bebeberlogav1.Category
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [id, community_id, name, position, private]
       properties:
         id: { $ref: '#/components/schemas/Id' }
@@ -3008,12 +3160,21 @@ components:
         private: { type: boolean }
     ChannelType:
       type: string
+      x-proto-enum: bebeberloga.v1.ChannelType
+      x-go-type: bebeberlogav1.ChannelType
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       enum: [CHANNEL_TYPE_TEXT, CHANNEL_TYPE_VOICE, CHANNEL_TYPE_DM, CHANNEL_TYPE_GROUP_DM, CHANNEL_TYPE_THREAD]
     HistoryVisibility:
       type: string
+      x-proto-enum: bebeberloga.v1.HistoryVisibility
+      x-go-type: bebeberlogav1.HistoryVisibility
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       enum: [HISTORY_VISIBILITY_INHERIT, HISTORY_VISIBILITY_VISIBLE, HISTORY_VISIBILITY_HIDDEN]
     Channel:
       type: object
+      x-proto-message: bebeberloga.v1.Channel
+      x-go-type: bebeberlogav1.Channel
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [id, type, created_at]
       properties:
         id: { $ref: '#/components/schemas/Id' }
@@ -3026,7 +3187,7 @@ components:
         private: { type: boolean }
         history_visibility: { $ref: '#/components/schemas/HistoryVisibility' }
         mls_group_id: { $ref: '#/components/schemas/Id' }
-        recipient_ids:
+        participant_ids:
           type: array
           items: { $ref: '#/components/schemas/Id' }
         parent_id: { $ref: '#/components/schemas/Id' }
@@ -3038,6 +3199,9 @@ components:
         last_message_id: { $ref: '#/components/schemas/Id' }
     RolePreset:
       type: string
+      x-proto-enum: bebeberloga.v1.RolePreset
+      x-go-type: bebeberlogav1.RolePreset
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       enum: [ROLE_PRESET_CUSTOM, ROLE_PRESET_OWNER, ROLE_PRESET_ADMIN, ROLE_PRESET_MODERATOR, ROLE_PRESET_ALL]
     PermissionCode:
       type: string
@@ -3060,7 +3224,10 @@ components:
         - voice.moderate
     Role:
       type: object
-      required: [id, community_id, name, preset, permission_codes, mentionable, position, member_count]
+      x-proto-message: bebeberloga.v1.Role
+      x-go-type: bebeberlogav1.Role
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [id, community_id, name, preset, permission_codes, position, member_count]
       properties:
         id: { $ref: '#/components/schemas/Id' }
         community_id: { $ref: '#/components/schemas/Id' }
@@ -3069,7 +3236,6 @@ components:
         permission_codes:
           type: array
           items: { $ref: '#/components/schemas/PermissionCode' }
-        mentionable: { type: boolean }
         position: { type: integer }
         color: { type: string }
         show_separately: { type: boolean }
@@ -3077,13 +3243,15 @@ components:
     RoleInput:
       type: object
       properties:
-        name: { type: string, minLength: 1, maxLength: 100 }
+        name: { type: string, minLength: 1, maxLength: 64 }
         permission_codes:
           type: array
           items: { $ref: '#/components/schemas/PermissionCode' }
-        mentionable: { type: boolean }
     Member:
       type: object
+      x-proto-message: bebeberloga.v1.Member
+      x-go-type: bebeberlogav1.Member
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [community_id, user, role_ids, joined_at]
       properties:
         community_id: { $ref: '#/components/schemas/Id' }
@@ -3095,6 +3263,9 @@ components:
         invite_code: { type: string }
     ChannelPermissions:
       type: object
+      x-proto-message: bebeberloga.v1.ChannelPermissions
+      x-go-type: bebeberlogav1.ChannelPermissions
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [channel_id, permission_codes]
       properties:
         channel_id: { $ref: '#/components/schemas/Id' }
@@ -3103,6 +3274,9 @@ components:
           items: { $ref: '#/components/schemas/PermissionCode' }
     EffectivePermissions:
       type: object
+      x-proto-message: bebeberloga.v1.EffectivePermissions
+      x-go-type: bebeberlogav1.EffectivePermissions
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [community_id, permission_codes, channels, owner]
       properties:
         community_id: { $ref: '#/components/schemas/Id' }
@@ -3115,6 +3289,9 @@ components:
         owner: { type: boolean }
     ChannelAccess:
       type: object
+      x-proto-message: bebeberloga.v1.ChannelAccess
+      x-go-type: bebeberlogav1.ChannelAccess
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [allow_see]
       properties:
         role_id: { $ref: '#/components/schemas/Id' }
@@ -3129,23 +3306,30 @@ components:
         entries:
           type: array
           items: { $ref: '#/components/schemas/ChannelAccess' }
-    VoiceState:
+    VoicePresence:
       type: object
-      required: [channel_id, user_id, device_id, self_mute, self_deaf, server_mute, server_deaf, camera, streaming, joined_at]
+      x-proto-message: bebeberloga.v1.VoicePresence
+      x-go-type: bebeberlogav1.VoicePresence
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [channel_id, user_id, device_id, connecting, mic_off, sound_off, server_mic_off, server_sound_off, camera_on, streaming, joined_at]
       properties:
         channel_id: { $ref: '#/components/schemas/Id' }
         user_id: { $ref: '#/components/schemas/Id' }
         device_id: { $ref: '#/components/schemas/Id' }
-        self_mute: { type: boolean }
-        self_deaf: { type: boolean }
-        server_mute: { type: boolean }
-        server_deaf: { type: boolean }
-        camera: { type: boolean }
+        connecting: { type: boolean, description: Медиасервер ещё не подтвердил подключение. }
+        mic_off: { type: boolean }
+        sound_off: { type: boolean }
+        server_mic_off: { type: boolean }
+        server_sound_off: { type: boolean }
+        camera_on: { type: boolean }
         streaming: { type: boolean }
         joined_at: { $ref: '#/components/schemas/Timestamp' }
     CommunitySnapshot:
       type: object
-      required: [community, categories, channels, roles, me, permissions, voice_states]
+      x-proto-message: bebeberloga.v1.CommunitySnapshot
+      x-go-type: bebeberlogav1.CommunitySnapshot
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [community, categories, channels, roles, me, permissions, voice_presences, locked_channels]
       properties:
         community: { $ref: '#/components/schemas/Community' }
         categories:
@@ -3159,20 +3343,59 @@ components:
           items: { $ref: '#/components/schemas/Role' }
         me: { $ref: '#/components/schemas/Member' }
         permissions: { $ref: '#/components/schemas/EffectivePermissions' }
-        voice_states:
+        voice_presences:
           type: array
-          items: { $ref: '#/components/schemas/VoiceState' }
+          items: { $ref: '#/components/schemas/VoicePresence' }
+        locked_channels:
+          type: array
+          description: Для владельца и администраторов — приватные каналы, куда они себя не добавили.
+          items: { $ref: '#/components/schemas/LockedChannel' }
+    LockedChannel:
+      type: object
+      x-proto-message: bebeberloga.v1.LockedChannel
+      x-go-type: bebeberlogav1.LockedChannel
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [id, community_id, type, name, position]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        community_id: { $ref: '#/components/schemas/Id' }
+        category_id: { $ref: '#/components/schemas/Id' }
+        type: { $ref: '#/components/schemas/ChannelType' }
+        name: { type: string }
+        position: { type: integer }
+    CommunityRemoval:
+      type: object
+      x-proto-message: bebeberloga.v1.CommunityRemoval
+      x-go-type: bebeberlogav1.CommunityRemoval
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [community_id, community_name, reason, at]
+      properties:
+        community_id: { $ref: '#/components/schemas/Id' }
+        community_name: { type: string }
+        reason:
+          type: string
+          x-proto-enum: bebeberloga.v1.CommunityRemovalReason
+          x-go-type: bebeberlogav1.CommunityRemovalReason
+          x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+          enum: [COMMUNITY_REMOVAL_REASON_DELETED, COMMUNITY_REMOVAL_REASON_LEFT, COMMUNITY_REMOVAL_REASON_KICKED, COMMUNITY_REMOVAL_REASON_BANNED]
+        at: { $ref: '#/components/schemas/Timestamp' }
     GroupSummary:
       type: object
+      x-proto-message: bebeberloga.v1.GroupSummary
+      x-go-type: bebeberlogav1.GroupSummary
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [channel_id, group_id, epoch, device_count]
       properties:
         channel_id: { $ref: '#/components/schemas/Id' }
         group_id: { $ref: '#/components/schemas/Id' }
-        epoch: { type: integer, format: int64 }
+        epoch: { $ref: '#/components/schemas/Int64' }
         device_count: { type: integer }
         last_rotation_at: { $ref: '#/components/schemas/Timestamp' }
     Invite:
       type: object
+      x-proto-message: bebeberloga.v1.Invite
+      x-go-type: bebeberlogav1.Invite
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [code, community_id, channel_id, creator_id, created_at, max_uses, uses, revoked]
       properties:
         code: { type: string }
@@ -3197,6 +3420,9 @@ components:
           items: { $ref: '#/components/schemas/Invite' }
     InvitePreview:
       type: object
+      x-proto-message: bebeberloga.v1.InvitePreview
+      x-go-type: bebeberlogav1.InvitePreview
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [code, community_name, community_icon_id, channel_name, channel_type, member_count, online_count]
       properties:
         code: { type: string }
@@ -3213,19 +3439,28 @@ components:
           description: Вызывающий уже участник этого сообщества.
     Ban:
       type: object
-      required: [community_id, user, moderator_id, created_at, deleted_messages_window_seconds]
+      x-proto-message: bebeberloga.v1.Ban
+      x-go-type: bebeberlogav1.Ban
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [community_id, user, moderator_id, created_at, delete_messages_window_seconds]
       properties:
         community_id: { $ref: '#/components/schemas/Id' }
         user: { $ref: '#/components/schemas/User' }
         moderator_id: { $ref: '#/components/schemas/Id' }
         reason: { type: string }
         created_at: { $ref: '#/components/schemas/Timestamp' }
-        deleted_messages_window_seconds: { type: integer }
+        delete_messages_window_seconds: { type: integer }
     NotificationLevel:
       type: string
+      x-proto-enum: bebeberloga.v1.NotificationLevel
+      x-go-type: bebeberlogav1.NotificationLevel
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       enum: [NOTIFICATION_LEVEL_INHERIT, NOTIFICATION_LEVEL_ALL_MESSAGES, NOTIFICATION_LEVEL_MENTIONS_ONLY, NOTIFICATION_LEVEL_NOTHING]
     NotificationSettings:
       type: object
+      x-proto-message: bebeberloga.v1.NotificationSettings
+      x-go-type: bebeberlogav1.NotificationSettings
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [muted, level, suppress_mention_all, suppress_role_mentions]
       properties:
         community_id: { $ref: '#/components/schemas/Id' }
@@ -3249,6 +3484,9 @@ components:
         suppress_role_mentions: { type: boolean }
     ReadState:
       type: object
+      x-proto-message: bebeberloga.v1.ReadState
+      x-go-type: bebeberlogav1.ReadState
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [channel_id, last_read_message_id, mention_count]
       properties:
         channel_id: { $ref: '#/components/schemas/Id' }
@@ -3258,37 +3496,50 @@ components:
     # --- сообщения и файлы ---------------------------------------------------
     BroadcastMention:
       type: string
+      x-proto-enum: bebeberloga.v1.BroadcastMention
+      x-go-type: bebeberlogav1.BroadcastMention
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       enum: [BROADCAST_MENTION_NONE, BROADCAST_MENTION_ONLINE, BROADCAST_MENTION_ALL]
     Attachment:
       type: object
+      x-proto-message: bebeberloga.v1.Attachment
+      x-go-type: bebeberlogav1.Attachment
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [id, size, uploaded]
       properties:
         id: { $ref: '#/components/schemas/Id' }
-        size: { type: integer, format: int64 }
+        size: { $ref: '#/components/schemas/Int64' }
         ciphertext_hash: { $ref: '#/components/schemas/Bytes' }
         uploaded: { type: boolean }
     SystemMessage:
       type: object
+      x-proto-message: bebeberloga.v1.SystemMessage
+      x-go-type: bebeberlogav1.SystemMessage
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [kind]
       properties:
         kind:
           type: string
-          enum: [KIND_MEMBER_JOINED, KIND_MESSAGE_PINNED, KIND_OWNERSHIP_TRANSFERRED]
+          enum: [KIND_MEMBER_JOINED, KIND_MESSAGE_PINNED, KIND_OWNERSHIP_TRANSFERRED, KIND_CHANNEL_SELF_JOINED]
         actor_id: { $ref: '#/components/schemas/Id' }
         target_user_id: { $ref: '#/components/schemas/Id' }
         target_message_id: { $ref: '#/components/schemas/Id' }
     MessageMeta:
       type: object
+      x-proto-message: bebeberloga.v1.MessageMeta
+      x-go-type: bebeberlogav1.MessageMeta
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [id, channel_id, author_user_id, created_at, pinned, deleted]
       properties:
         id: { $ref: '#/components/schemas/Id' }
         channel_id: { $ref: '#/components/schemas/Id' }
         group_id: { $ref: '#/components/schemas/Id' }
-        epoch: { type: integer, format: int64 }
+        epoch: { $ref: '#/components/schemas/Int64' }
         author_user_id: { $ref: '#/components/schemas/Id' }
         author_device_id: { $ref: '#/components/schemas/Id' }
         created_at: { $ref: '#/components/schemas/Timestamp' }
         ciphertext: { $ref: '#/components/schemas/Bytes' }
+        size: { type: integer, description: Размер шифртекста в байтах. }
         wrapped_message_key: { $ref: '#/components/schemas/Bytes' }
         history_key_generation: { type: integer }
         mention_hints:
@@ -3310,10 +3561,10 @@ components:
           allOf: [{ $ref: '#/components/schemas/Id' }]
           description: UUIDv7, сгенерирован клиентом; повтор с тем же id идемпотентен (MESSAGE_EXISTS, если тело отличается).
         group_id: { $ref: '#/components/schemas/Id' }
-        epoch: { type: integer, format: int64 }
+        epoch: { $ref: '#/components/schemas/Int64' }
         ciphertext:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
-          description: MLS PrivateMessage с MessageEnvelope внутри; до 64 КиБ.
+          description: MLS PrivateMessage с MessageEnvelope внутри; до 128 КиБ (MESSAGES.md §3).
         wrapped_message_key: { $ref: '#/components/schemas/Bytes' }
         history_key_generation: { type: integer }
         mention_hints:
@@ -3327,6 +3578,9 @@ components:
           items: { $ref: '#/components/schemas/Id' }
     Pin:
       type: object
+      x-proto-message: bebeberloga.v1.Pin
+      x-go-type: bebeberlogav1.Pin
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [channel_id, message_id, pinned_by, pinned_at]
       properties:
         channel_id: { $ref: '#/components/schemas/Id' }
@@ -3351,32 +3605,44 @@ components:
     # --- MLS -----------------------------------------------------------------
     GroupKind:
       type: string
+      x-proto-enum: bebeberloga.v1.GroupKind
+      x-go-type: bebeberlogav1.GroupKind
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       enum: [GROUP_KIND_CHAT, GROUP_KIND_CALL]
     HandshakeKind:
       type: string
+      x-proto-enum: bebeberloga.v1.HandshakeKind
+      x-go-type: bebeberlogav1.HandshakeKind
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       enum: [HANDSHAKE_KIND_PROPOSAL, HANDSHAKE_KIND_COMMIT, HANDSHAKE_KIND_EXTERNAL_COMMIT]
     Group:
       type: object
+      x-proto-message: bebeberloga.v1.Group
+      x-go-type: bebeberlogav1.Group
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [id, channel_id, kind, ciphersuite, epoch, device_count, last_seq, created_at]
       properties:
         id: { $ref: '#/components/schemas/Id' }
         channel_id: { $ref: '#/components/schemas/Id' }
         kind: { $ref: '#/components/schemas/GroupKind' }
         ciphersuite: { type: integer }
-        epoch: { type: integer, format: int64 }
+        epoch: { $ref: '#/components/schemas/Int64' }
         device_count: { type: integer }
-        last_seq: { type: integer, format: int64 }
+        last_seq: { $ref: '#/components/schemas/Int64' }
         created_at: { $ref: '#/components/schemas/Timestamp' }
         last_rotation_at: { $ref: '#/components/schemas/Timestamp' }
         has_group_info: { type: boolean }
         has_history_key_bundle: { type: boolean }
     Handshake:
       type: object
+      x-proto-message: bebeberloga.v1.Handshake
+      x-go-type: bebeberlogav1.Handshake
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [group_id, epoch, seq, kind, from_external_sender, blob]
       properties:
         group_id: { $ref: '#/components/schemas/Id' }
-        epoch: { type: integer, format: int64 }
-        seq: { type: integer, format: int64 }
+        epoch: { $ref: '#/components/schemas/Int64' }
+        seq: { $ref: '#/components/schemas/Int64' }
         kind: { $ref: '#/components/schemas/HandshakeKind' }
         sender_device_id: { $ref: '#/components/schemas/Id' }
         from_external_sender: { type: boolean }
@@ -3384,17 +3650,25 @@ components:
         created_at: { $ref: '#/components/schemas/Timestamp' }
     Welcome:
       type: object
-      required: [group_id, channel_id, call_group, blob]
+      x-proto-message: bebeberloga.v1.Welcome
+      x-go-type: bebeberlogav1.Welcome
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [group_id, channel_id, kind, blob]
       properties:
         group_id: { $ref: '#/components/schemas/Id' }
         channel_id: { $ref: '#/components/schemas/Id' }
-        call_group: { type: boolean }
+        kind: { $ref: '#/components/schemas/GroupKind' }
         blob: { $ref: '#/components/schemas/Bytes' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
     HistoryKeyBundle:
       type: object
-      required: [epoch, blob]
+      x-proto-message: bebeberloga.v1.HistoryKeyBundle
+      x-go-type: bebeberlogav1.HistoryKeyBundle
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [group_id, epoch, blob]
       properties:
-        epoch: { type: integer, format: int64 }
+        group_id: { $ref: '#/components/schemas/Id' }
+        epoch: { $ref: '#/components/schemas/Int64' }
         blob:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
           description: Связка, зашифрованная для эпохи (формат — CRYPTO.md).
@@ -3403,7 +3677,7 @@ components:
     # --- голос и звуки -------------------------------------------------------
     VoiceJoin:
       type: object
-      required: [sfu_url, token, call_group_id, call_group_exists, voice_state]
+      required: [sfu_url, token, call_group_id, call_group_exists, voice_presence]
       properties:
         sfu_url: { type: string, format: uri }
         token:
@@ -3413,9 +3687,12 @@ components:
         call_group_exists:
           type: boolean
           description: false — вызывающий первый и должен создать MLS-группу звонка с этим id.
-        voice_state: { $ref: '#/components/schemas/VoiceState' }
+        voice_presence: { $ref: '#/components/schemas/VoicePresence' }
     Sound:
       type: object
+      x-proto-message: bebeberloga.v1.Sound
+      x-go-type: bebeberlogav1.Sound
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       required: [id, name, volume, duration_ms, audio_url, created_at]
       properties:
         id: { $ref: '#/components/schemas/Id' }
