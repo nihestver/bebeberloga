@@ -15,11 +15,10 @@
 | Node | 22.23.4 (mise) | — |
 | Electron | 33.4.11 | MIT |
 | Xcode / iOS SDK | 26.6 / 26.5 | — |
-| Android cmdline-tools / NDK (dev-контейнер) | 11076708 / r27c (27.2.12479018) | Android SDK License Agreement — принимается при сборке образа (`sdkmanager --licenses`); инструмент сборки, в поставку не входит |
-| Kotlin compiler (dev-контейнер) | 2.1.20 | Apache-2.0 |
-| JNA (dev-контейнер; runtime-зависимость Kotlin-привязок uniffi) | 5.14.0 | Apache-2.0 OR LGPL-2.1-or-later — используем по Apache-2.0 |
-| kotlinx-coroutines-core-jvm (dev-контейнер) | 1.9.0 | Apache-2.0 |
-| OpenJDK (dev-контейнер) | 17 (Debian) | GPL-2.0 WITH Classpath-exception — только инструмент в контейнере |
+| Android NDK | r30 (30.0.16248370, dmg с dl.google.com, SHA-256 сверен) | Android SDK License Agreement; инструмент сборки, в поставку не входит |
+| Kotlin compiler | 2.4.21 (zip с релизов Kotlin, SHA-256 сверен) | Apache-2.0 |
+| JDK | Oracle 25.0.3 LTS (уже стояла на хосте) | — |
+| JNA (runtime-зависимость Kotlin-привязок uniffi) | 5.14.0 | Apache-2.0 OR LGPL-2.1-or-later — используем по Apache-2.0 |
 | Хост | MacBook Pro, Apple M4 Pro, 24 ГБ, macOS 26.4.1 | — |
 
 Транзитивный граф Rust (282 крейта) — MIT, Apache-2.0, BSD-2/3, ISC, MPL-2.0 (`hpke-rs`), Unlicense, CC0 и Unicode-3.0 (`unicode-ident`, добавлена в `LICENSING.md`); проверка `cargo deny` — см. ниже.
@@ -33,7 +32,7 @@
 | 2. Electron 33 | ✅ тот же `.node` в main-процессе Electron 33.4.11 (Node 20.18.3 внутри — другой ABI, Node-API не зависит от него); печатает те же сообщения | `just electron` |
 | 3. uniffi → Swift | ✅ привязка сгенерирована, скомпилирована `swiftc` на macOS-хосте, вызов проходит (два устройства, одно сообщение) | `just swift` |
 | 3. uniffi → iOS aarch64 | ✅ `cargo build --target aarch64-apple-ios` с SDK Xcode: `.a` и `.dylib` собираются. Симулятор и iOS-приложение не проверялись (клиент iOS не разрабатывается, ADR-0010) | `just cross` с `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` |
-| 3. uniffi → Kotlin / Android aarch64 | ✅ `staticlib` для `aarch64-linux-android` собирается на хосте без NDK (в графе зависимостей нет C-кода). `.so` и запуск Kotlin на JVM — в dev-контейнере x86_64, ⏳ см. ниже | `just kotlin` в контейнере |
+| 3. uniffi → Kotlin / Android aarch64 | ✅ привязка Kotlin скомпилирована `kotlinc` и выполнена на JVM macOS (два устройства, одно сообщение); `.so` для `aarch64-linux-android` собран с NDK r30; запуск на устройстве или эмуляторе не проверялся — см. раздел «Kotlin и Android» | `just kotlin`, `just cross-android` |
 | 4. Бенчмарк criterion 10 / 100 / 1 000 | ✅ таблица ниже | `just bench`, `just sizes` |
 
 ## Замеры
@@ -109,9 +108,27 @@ exporter-секрет совпадает: true
 
 Один и тот же `s1.node`, собранный против Node-API, работает в Node 22.23 и в Electron 33 с Node 20.18 внутри — ABI Node не важен. Нюанс окружения: если в процессе задана `ELECTRON_RUN_AS_NODE=1` (так запускает дочерние процессы сам Electron, в том числе Claude Code в VS Code), `electron` стартует как обычный node и `require("electron")` не даёт `app`; рецепт снимает переменную. Electron 33 к концу 2026 вне поддержки — продукту нужна поддерживаемая ветка (ADR-0007 допускает «33+»).
 
-## Kotlin и Android в dev-контейнере
+## Kotlin и Android на macOS
 
-⏳ Заполняется после сборки образа `.devcontainer/` (x86_64, NDK r27c, Kotlin 2.1.20, JNA 5.14).
+Всё нативно на Apple Silicon, без Homebrew и без контейнера: компилятор Kotlin — zip-архив в `~/.local/share/kotlinc-2.4.21`, NDK — каталог из dmg в `~/.local/share/android-ndk-r30` (бинарники NDK — universal, arm64 выполняется без Rosetta). Скрипты находят их там сами; другое место задаётся через `KOTLINC` и `ANDROID_NDK_HOME`.
+
+`just kotlin` — та же библиотека `libs1_uniffi_ffi.dylib`, привязка uniffi, `Main.kt`, JNA 5.14.0 (jar проверяется по SHA-1 с Maven Central):
+
+```
+openmls 0.9.2 через uniffi/Kotlin: a-android -> привет из Kotlin
+участники: a-android, b-phone, эпоха 1
+```
+
+JDK 25 предупреждает о `System::load` из JNA — скрипт запускает `java --enable-native-access=ALL-UNNAMED`; в Android-приложении это не нужно, библиотеку грузит рантайм.
+
+`just cross-android` — `cargo build --release --target aarch64-linux-android` с линкером `aarch64-linux-android24-clang` из NDK:
+
+| Артефакт | Размер |
+|---|---|
+| `libs1_uniffi_ffi.so` (release, `debug = 1`) | 36,1 МБ |
+| тот же после `llvm-strip` | 3,1 МБ |
+
+`.so` зависит только от `libc.so` и `libdl.so` (C-кода в графе нет), экспортирует 28 функций `uniffi_s1_*`. Запуск на устройстве или эмуляторе и упаковка в AAR не проверялись — это B14 (Android-клиент после 1.0, ADR-0010).
 
 ## Проверки зависимостей
 
@@ -132,12 +149,11 @@ exporter-секрет совпадает: true
 2. **Размер Welcome/commit в больших каналах**: 180 КБ на вход в канал на 1 000 устройств — приемлемо для desktop, заметно для мобильной сети. Варианты для B02: отдавать дерево с сервера отдельно, регулярные self-update, лимит листьев.
 3. **Время жизни KeyPackage** (`Lifetime`): по умолчанию 84 дня; `KeyPackageIn::validate` проверяет только, что текущее время внутри интервала, верхнюю границу не ограничивает — KeyPackage «на 100 лет» будет принят. Клиент и DS должны отвергать KeyPackage со сроком больше заданного (RFC 9420 §7.2); политика ротации KeyPackages — вопрос B02.
 4. **Past epochs**: по умолчанию `max_past_epochs = 0` — сообщения, пришедшие после смены эпохи, не расшифруются. Для доставки с задержкой B02 должен задать окно (с осознанной платой по forward secrecy).
-5. **Android без Rosetta**: эмуляция x86_64 в Docker Desktop медленная; альтернатива — включить Rosetta в Docker Desktop или собирать на Linux-хосте в CI.
-6. **wasm-bindgen** (web-fallback, ARCHITECTURE §6.1) спайком не проверялся.
+5. **wasm-bindgen** (web-fallback, ARCHITECTURE §6.1) спайком не проверялся.
 
 ## Рекомендация
 
-Принять ADR-0016: строить crypto-core на `openmls` 0.9.x с `openmls_rust_crypto`, сервер — external sender с `PublicMessage`-предложениями, группа с `MIXED_CIPHERTEXT` и ratchet tree в Welcome; Electron — napi-rs, мобильные — uniffi proc-macro. Открытые решения для B02: доставка дерева для больших каналов, окно past epochs, ротация KeyPackages.
+Принять ADR-0016: строить crypto-core на `openmls` 0.9.x с `openmls_rust_crypto`, сервер — external sender с `PublicMessage`-предложениями, группа с `PURE_CIPHERTEXT` и ratchet tree в Welcome; Electron — napi-rs, мобильные — uniffi proc-macro. Открытые решения для B02: доставка дерева для больших каналов, окно past epochs, ротация KeyPackages.
 
 ## Как воспроизвести
 
@@ -151,7 +167,9 @@ just bench           # criterion; отчёт в target/criterion/report/index.ht
 just node            # Node 22: .node + demo.mjs
 just electron        # Electron 33 (ставит electron в node-ffi/node/node_modules)
 just bindings swift  # uniffi → Swift на macOS
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer just cross   # iOS; Android требует NDK
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer just cross   # iOS + Android
+just kotlin          # uniffi → Kotlin на JVM хоста
+just cross-android   # .so под aarch64-linux-android
 ```
 
-Kotlin/Android — внутри dev-контейнера: `docker build --platform linux/amd64 -t bebeberloga-dev -f .devcontainer/Dockerfile .`, затем `docker run --rm --platform linux/amd64 -v "$PWD:/w" -w /w/spikes/01-openmls-ffi bebeberloga-dev just kotlin cross`.
+Для Kotlin и Android нужны JDK 17+, компилятор Kotlin и NDK: распаковать `kotlin-compiler-<версия>.zip` с релизов Kotlin в `~/.local/share/kotlinc-<версия>`, скопировать каталог `NDK` из `.app` в dmg NDK в `~/.local/share/android-ndk-<версия>` (или задать `KOTLINC` / `ANDROID_NDK_HOME`); `rustup target add aarch64-linux-android`. Dev-контейнер x86_64 из первой версии PR убран: на Apple Silicon он работал под эмуляцией и только замедлял то, что мак делает нативно.
