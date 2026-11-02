@@ -21,7 +21,7 @@ jobs:
       web: ${{ steps.filter.outputs.web }}
       proto: ${{ steps.filter.outputs.proto }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: filter
         uses: dorny/paths-filter@v3
         with:
@@ -46,7 +46,7 @@ jobs:
   cleanroom:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: forbidden words
         run: .claude/hooks/cleanroom-guard.sh --all
       - name: REUSE compliance
@@ -56,7 +56,7 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: internal links
         uses: lycheeverse/lychee-action@v2
         with:
@@ -80,7 +80,7 @@ jobs:
         image: nats:2
         ports: ['4222:4222']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: jdx/mise-action@v2
       - uses: extractions/setup-just@v2
       - run: just lint-go test-go
@@ -98,7 +98,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -114,17 +114,20 @@ jobs:
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: jdx/mise-action@v2
-      - run: cd clients/web && pnpm install --frozen-lockfile
-      - run: cd clients/web && pnpm lint && pnpm typecheck && pnpm test
+      - uses: extractions/setup-just@v2
+      - if: hashFiles('clients/web/package.json') != ''
+        run: cd clients/web && pnpm install --frozen-lockfile
+      # рецепты пропускают проверку, пока clients/web ещё нет
+      - run: just lint-web test-web
 
   proto:
     needs: changes
     if: needs.changes.outputs.proto == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # buf breaking падает, если в базовой ветке ещё нет .proto; проверяем это заранее.
       - id: base
         if: github.event_name == 'pull_request'
@@ -141,6 +144,7 @@ jobs:
           format: true
           breaking: ${{ github.event_name == 'pull_request' && steps.base.outputs.has_proto == 'true' }}
           push: false
+          pr_comment: false
 
   # Единственная обязательная проверка для защиты main: пропущенные по фильтру путей jobs считаются успехом,
   # упавшие или отменённые — провалом. Так защита ветки не зависит от того, какие jobs запускались.
