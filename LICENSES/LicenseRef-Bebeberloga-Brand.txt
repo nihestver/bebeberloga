@@ -1,0 +1,6 @@
+Bebeberloga brand assets (name, logo, symbol, icon, wordmark)
+
+All rights reserved. The Bebeberloga name and logo identify this project
+and may be used only to refer to it, for example in a description of the
+software or a link to it. Modified versions and forks must use their own
+name and logo.

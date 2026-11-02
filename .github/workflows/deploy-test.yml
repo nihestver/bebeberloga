@@ -1,0 +1,75 @@
+name: deploy-test
+
+# После зелёного ci на main: собрать образ сервера, выложить в GHCR,
+# выкатить на тест-сервер по SSH и прогнать smoke-тесты.
+# Включается, когда появятся server/Dockerfile и секреты TEST_SSH_KEY, TEST_KNOWN_HOSTS, TEST_SSH_HOST, TEST_BASE_URL.
+
+on:
+  workflow_run:
+    workflows: [ci]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-test
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: test
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: check prerequisites
+        id: pre
+        run: |
+          if [ -f server/Dockerfile ] && [ -n "${{ secrets.TEST_SSH_HOST }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "server/Dockerfile или секреты тест-сервера ещё не настроены — деплой пропущен"
+          fi
+
+      - if: steps.pre.outputs.ready == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - if: steps.pre.outputs.ready == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: server/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/server:main
+            ghcr.io/${{ github.repository }}/server:${{ github.sha }}
+
+      - if: steps.pre.outputs.ready == 'true'
+        name: deploy over ssh
+        env:
+          KEY: ${{ secrets.TEST_SSH_KEY }}
+          KNOWN: ${{ secrets.TEST_KNOWN_HOSTS }}
+          HOST: ${{ secrets.TEST_SSH_HOST }}
+        run: |
+          install -m 600 /dev/null key && printf '%s\n' "$KEY" > key
+          printf '%s\n' "$KNOWN" > known_hosts
+          ssh -i key -o UserKnownHostsFile=known_hosts deploy@"$HOST" \
+            'cd ~/bebeberloga && docker compose pull && docker compose up -d --remove-orphans && docker compose ps'
+
+      - if: steps.pre.outputs.ready == 'true'
+        name: smoke tests
+        env:
+          BASE_URL: ${{ secrets.TEST_BASE_URL }}
+        run: |
+          curl -sSL https://github.com/Orange-OpenSource/hurl/releases/latest/download/hurl-x86_64-unknown-linux-gnu.tar.gz \
+            | tar xz --strip-components=2 -C /usr/local/bin --wildcards '*/bin/hurl'
+          hurl --test --retry 10 --retry-interval 3000 --variable base_url="$BASE_URL" tools/api/smoke/*.hurl

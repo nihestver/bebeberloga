@@ -1,0 +1,26 @@
+# Быстрые проверки перед коммитом; полные — в CI (.github/workflows/ci.yml).
+pre-commit:
+  parallel: true
+  commands:
+    cleanroom:
+      run: .claude/hooks/cleanroom-guard.sh --files {staged_files}
+    go-fmt:
+      glob: "*.go"
+      run: |
+        files="$(gofmt -l {staged_files})"; if [ -n "$files" ]; then echo "$files"; echo "gofmt: отформатируй файлы выше"; exit 1; fi
+    rust-fmt:
+      glob: "*.rs"
+      run: rustfmt --edition 2021 --check {staged_files}
+    prettier:
+      glob: "*.{ts,tsx,css,json,yml,yaml}"
+      run: |
+        if [ -x clients/web/node_modules/.bin/prettier ]; then clients/web/node_modules/.bin/prettier --check {staged_files}; else echo "skip: prettier появится вместе с clients/web"; fi
+
+commit-msg:
+  commands:
+    conventional:
+      run: |
+        head -1 {1} | grep -Eq '^(feat|fix|docs|chore|refactor|test|perf|build|ci|spike)(\([a-z0-9/_-]+\))?!?: ' || { echo "Формат: type(scope): описание (Conventional Commits)"; exit 1; }
+    dco:
+      run: |
+        grep -q '^Signed-off-by: ' {1} || { echo "Нужна подпись DCO: git commit -s"; exit 1; }

@@ -1,0 +1,33 @@
+version = 1
+SPDX-PackageName = "Bebeberloga"
+SPDX-PackageDownloadLocation = "https://github.com/nihestver/bebeberloga"
+
+[[annotations]]
+path = ["clients/**"]
+SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
+SPDX-License-Identifier = "GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception"
+
+[[annotations]]
+path = ["server/**", "deploy/**"]
+SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+path = ["crypto-core/**", "media-engine/**", "proto/**", "sdk/**", "tools/**"]
+SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = ["brand/**"]
+SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
+SPDX-License-Identifier = "LicenseRef-Bebeberloga-Brand"
+
+[[annotations]]
+path = [".github/**", ".claude/**", ".gitignore", ".editorconfig", "mise.toml", "justfile", "lefthook.yml", "REUSE.toml", "LICENSE"]
+SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = ["docs/**", "*.md", "BRAND.md"]
+SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
+SPDX-License-Identifier = "CC-BY-SA-4.0"

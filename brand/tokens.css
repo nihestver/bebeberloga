@@ -1,0 +1,25 @@
+/* Bebeberloga: цвета, шрифты и форма интерфейса */
+:root {
+  --color-bg: #1E2B2A;        /* Хвоя */
+  --color-panel: #2B3B39;     /* Панель */
+  --color-accent: #9CC5AE;    /* Шалфей */
+  --color-accent-2: #86BEDD;  /* Иней */
+  --color-text: #EEF2EE;      /* Туман */
+  --color-muted: #A9B8B2;     /* Лишайник */
+  --color-danger: #E8A0A0;    /* Брусника */
+  --color-on-accent: #1E2B2A; /* текст на светлых заливках */
+
+  --font-heading: "Unbounded", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, sans-serif;
+
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 20px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+}

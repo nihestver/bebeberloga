@@ -1,0 +1,24 @@
+# секреты и локальные настройки
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.claude/settings.local.json
+
+# сборки и зависимости
+node_modules/
+dist/
+build/
+out/
+target/
+bin/
+coverage/
+*.log
+
+# IDE и ОС
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
