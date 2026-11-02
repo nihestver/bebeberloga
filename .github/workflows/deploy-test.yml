@@ -68,7 +68,7 @@ jobs:
       - if: steps.pre.outputs.ready == 'true'
         name: smoke tests
         env:
-          BASE_URL: ${{ secrets.TEST_BASE_URL }}
+          BASE_URL: ${{ vars.TEST_BASE_URL || 'https://test.bebeberloga.org' }}
         run: |
           curl -sSL https://github.com/Orange-OpenSource/hurl/releases/latest/download/hurl-x86_64-unknown-linux-gnu.tar.gz \
             | tar xz --strip-components=2 -C /usr/local/bin --wildcards '*/bin/hurl'

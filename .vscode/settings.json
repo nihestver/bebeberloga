@@ -1,0 +1,64 @@
+{
+  // Общие настройки проекта для VSCodium. Личные — в настройках пользователя.
+  "files.encoding": "utf8",
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "editor.formatOnSave": true,
+  "editor.rulers": [100],
+
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/target": true,
+    "**/dist": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/target": true,
+    "**/dist": true,
+    "**/gen": true,
+    // План — документ контура A: Claude Code не должен получать его текст даже через выделение в редакторе
+    "docs/PLAN.md": true
+  },
+
+  // Go (server/)
+  "[go]": { "editor.defaultFormatter": "golang.go" },
+  "go.lintTool": "golangci-lint",
+  "go.lintOnSave": "package",
+  "go.testFlags": ["-race"],
+  "gopls": { "ui.semanticTokens": true },
+
+  // Rust (crypto-core/, media-engine/)
+  "[rust]": { "editor.defaultFormatter": "rust-lang.rust-analyzer" },
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.cargo.features": "all",
+
+  // TypeScript (clients/)
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "typescript.tsdk": "clients/web/node_modules/typescript/lib",
+  "eslint.workingDirectories": [{ "pattern": "clients/*" }],
+
+  // Protobuf (proto/)
+  "[proto3]": { "editor.defaultFormatter": "bufbuild.vscode-buf" },
+
+  // Markdown (docs/): переносы и длинные таблицы не трогаем
+  "[markdown]": {
+    "editor.formatOnSave": false,
+    "editor.wordWrap": "on",
+    "files.trimTrailingWhitespace": false
+  },
+  "markdownlint.config": {
+    "MD013": false,
+    "MD033": false,
+    "MD041": false,
+    "MD024": { "siblings_only": true }
+  },
+
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
+  }
+}

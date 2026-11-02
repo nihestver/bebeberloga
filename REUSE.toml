@@ -8,12 +8,12 @@ SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
 SPDX-License-Identifier = "GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception"
 
 [[annotations]]
-path = ["server/**", "deploy/**"]
+path = ["server/**", "deploy/**", "tests/**"]
 SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
 
 [[annotations]]
-path = ["crypto-core/**", "media-engine/**", "proto/**", "sdk/**", "tools/**"]
+path = ["crypto-core/**", "media-engine/**", "proto/**", "sdk/**", "tools/**", "design/**", "spikes/**"]
 SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
 SPDX-License-Identifier = "Apache-2.0"
 
@@ -23,7 +23,11 @@ SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
 SPDX-License-Identifier = "LicenseRef-Bebeberloga-Brand"
 
 [[annotations]]
-path = [".github/**", ".claude/**", ".gitignore", ".editorconfig", "mise.toml", "justfile", "lefthook.yml", "REUSE.toml", "LICENSE"]
+path = [".github/**", ".claude/**", ".vscode/**", ".gitignore", ".editorconfig", "mise.toml", "justfile", "lefthook.yml", "REUSE.toml", "LICENSE",
+        ".env.example", ".golangci.yml", ".markdownlint*", ".prettierrc*", "eslint.config.*", "tsconfig*.json",
+        "Cargo.toml", "Cargo.lock", "deny.toml", "rust-toolchain.toml", "rustfmt.toml", "clippy.toml",
+        "go.work", "go.work.sum", "buf.yaml", "buf.gen.yaml", "buf.work.yaml",
+        "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "lychee.toml", "STATUS.md"]
 SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
 SPDX-License-Identifier = "CC0-1.0"
 

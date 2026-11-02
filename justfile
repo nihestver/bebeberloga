@@ -9,13 +9,14 @@ default: check
 
 check: lint test
 
-lint: cleanroom lint-go lint-rust lint-web lint-proto
+lint: cleanroom openapi lint-go lint-rust lint-web lint-proto
 
 test: test-go test-rust test-web
 
-# clean-room фильтр по всем файлам в каталогах кода
+# clean-room фильтр (запретный список) и лицензионные заголовки REUSE по всему репозиторию
 cleanroom:
     .claude/hooks/cleanroom-guard.sh --all
+    @if command -v reuse >/dev/null; then reuse lint -q && echo "reuse: ok"; else echo "skip: reuse не установлен (brew install reuse); в CI проверяется"; fi
 
 lint-go:
     @if [ -f server/go.mod ]; then cd server && golangci-lint run ./...; else echo "skip: server/go.mod ещё нет"; fi
@@ -71,10 +72,12 @@ dev-desktop:
 gen:
     @if [ -d proto ]; then buf generate; fi
     @if [ -f server/go.mod ]; then cd server && sqlc generate; fi
-    just openapi
+    @if [ -f server/go.mod ] && [ -f docs/protocol/openapi.yaml ]; then cd server && go generate ./...; fi
+    @if [ -f clients/web/package.json ]; then cd clients/web && pnpm run --if-present gen; fi
 
+# контракт REST — docs/protocol/openapi.yaml (пишется руками, код генерируется из него)
 openapi:
-    @if [ -d server/cmd/openapi ]; then cd server && go run ./cmd/openapi > ../docs/protocol/openapi.yaml; else echo "skip: server/cmd/openapi ещё нет"; fi
+    @if [ -f docs/protocol/openapi.yaml ]; then npx --yes @redocly/cli@1 lint docs/protocol/openapi.yaml; else echo "skip: docs/protocol/openapi.yaml ещё нет (B1)"; fi
 
 # --- тест-сервер (ssh-алиас bb-test из ~/.ssh/config) ----------------------
 

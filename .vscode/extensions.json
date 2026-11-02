@@ -1,0 +1,20 @@
+{
+  // Все расширения есть в Open VSX — каталоге, который использует VSCodium.
+  "recommendations": [
+    "anthropic.claude-code",
+    "golang.go",
+    "rust-lang.rust-analyzer",
+    "vadimcn.vscode-lldb",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "vitest.explorer",
+    "ms-playwright.playwright",
+    "bufbuild.vscode-buf",
+    "redhat.vscode-yaml",
+    "tamasfe.even-better-toml",
+    "davidanson.vscode-markdownlint",
+    "editorconfig.editorconfig",
+    "nefrob.vscode-just-syntax",
+    "hverlin.mise-vscode"
+  ]
+}

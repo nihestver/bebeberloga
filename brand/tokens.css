@@ -7,10 +7,12 @@
   --color-text: #EEF2EE;      /* Туман */
   --color-muted: #A9B8B2;     /* Лишайник */
   --color-danger: #E8A0A0;    /* Брусника */
+  --color-warning: #E8C987;   /* Морошка */
   --color-on-accent: #1E2B2A; /* текст на светлых заливках */
 
   --font-heading: "Unbounded", system-ui, sans-serif;
   --font-body: "Nunito", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --radius-s: 8px;
   --radius-m: 12px;
