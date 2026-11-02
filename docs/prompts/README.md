@@ -77,7 +77,7 @@ flowchart LR
 | A3 | Экраны и компоненты | `docs/spec/SCREENS/` | 0 | A2 | готово (черновик 1–2) |
 | A4 | Права и роли | `docs/spec/PERMISSIONS.md` | 0 | A1 | готово (черновик 1) |
 | A5 | Глоссарий | `docs/spec/GLOSSARY.md` | 0 | — | готово (черновик 1) |
-| S1 | Спайк: OpenMLS через FFI | [`S1-openmls-ffi.md`](S1-openmls-ffi.md) | 0 | — | не начат |
+| S1 | Спайк: OpenMLS через FFI | [`S1-openmls-ffi.md`](S1-openmls-ffi.md) | 0 | — | в работе |
 | S2 | Спайк: E2EE звонка в LiveKit | [`S2-livekit-e2ee.md`](S2-livekit-e2ee.md) | 0 | S1 | не начат |
 | S3 | Спайк: захват в Electron | [`S3-electron-capture.md`](S3-electron-capture.md) | 0 | — | не начат |
 | S4 | Спайк: MLS Delivery Service | [`S4-mls-ds.md`](S4-mls-ds.md) | 0 | — | не начат |
