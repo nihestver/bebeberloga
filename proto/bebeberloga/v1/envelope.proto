@@ -51,7 +51,7 @@ message Mention {
 message FileRef {
   // Id вложения на сервере (Attachment.id).
   string attachment_id = 1;
-  // Имя файла, до 255 символов.
+  // Имя файла, до 255 символов (ограничение файловых систем).
   string name = 2;
   // MIME-тип.
   string mime_type = 3;
@@ -70,7 +70,7 @@ message FileRef {
   bytes thumbnail = 10;
   // Скрыть за плашкой «спойлер».
   bool spoiler = 11;
-  // Описание (альтернативный текст), до 1024 символов.
+  // Описание (альтернативный текст), до 500 символов (STATUS.md).
   string description = 12;
 }
 
@@ -86,14 +86,14 @@ message LinkPreview {
 
 // Обычное сообщение.
 message TextBody {
-  // Markdown-подмножество (FEATURES 3.4); до 4 000 символов (code points).
+  // Markdown-подмножество (FEATURES 3.4); до 4 000 символов (code points, SCREENS/08 §8).
   string text = 1;
   // Id сообщения, на которое это ответ.
   string reply_to = 2;
   // Упоминать ли автора ответа (переключатель «@ упомянуть»).
   bool reply_mention = 3;
   repeated Mention mentions = 4;
-  // До 10 вложений.
+  // До 10 вложений (FLOWS/06).
   repeated FileRef attachments = 5;
   repeated LinkPreview link_previews = 6;
 }

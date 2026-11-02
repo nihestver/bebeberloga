@@ -12,6 +12,7 @@ import "bebeberloga/v1/community.proto";
 import "bebeberloga/v1/error.proto";
 import "bebeberloga/v1/identity.proto";
 import "bebeberloga/v1/message.proto";
+import "bebeberloga/v1/mls.proto";
 import "bebeberloga/v1/sound.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -28,7 +29,7 @@ message ClientFrame {
     Resume resume = 11;
     Heartbeat heartbeat = 12;
     TypingStart typing_start = 20;
-    VoiceStateUpdate voice_state_update = 21;
+    SetVoicePresence set_voice_presence = 21;
     PlaySound play_sound = 22;
     PresenceSubscribe presence_subscribe = 23;
   }
@@ -59,7 +60,7 @@ message ServerFrame {
 
     // --- присутствие и голос -------------------------------------------
     PresenceUpdated presence_updated = 120;
-    VoiceStateUpdated voice_state_updated = 121;
+    VoicePresenceChanged voice_presence_changed = 121;
     CallStarted call_started = 122;
     CallEnded call_ended = 123;
     SoundPlayed sound_played = 124;
@@ -67,7 +68,7 @@ message ServerFrame {
     // --- сообщества ----------------------------------------------------
     CommunityCreated community_created = 130;
     CommunityUpdated community_updated = 131;
-    CommunityDeleted community_deleted = 132;
+    CommunityRemoved community_removed = 132;
     CategoryCreated category_created = 133;
     CategoryUpdated category_updated = 134;
     CategoryDeleted category_deleted = 135;
@@ -88,6 +89,7 @@ message ServerFrame {
     SoundAdded sound_added = 150;
     SoundUpdated sound_updated = 151;
     SoundRemoved sound_removed = 152;
+    LockedChannelsUpdated locked_channels_updated = 153;
 
     // --- пользователь и устройства -------------------------------------
     UserUpdated user_updated = 160;
@@ -123,25 +125,6 @@ message Identify {
   string client_version = 4;
 }
 
-// Лимиты инстанса, нужные клиенту до первого запроса.
-message InstanceLimits {
-  // Максимальная длина текста сообщения в символах (4 000).
-  uint32 max_text_length = 1;
-  // Максимум вложений в сообщении (10).
-  uint32 max_attachments = 2;
-  // Максимальный размер файла в байтах.
-  uint64 max_file_size = 3;
-  // Лимит участников канала (ADR-0005; по умолчанию 2 000).
-  uint32 channel_member_limit = 4;
-  // Лимит личных звуков пользователя (10) и звуков сообщества.
-  uint32 user_sound_slots = 5;
-  uint32 community_sound_slots = 6;
-  // Максимальный пресет стрима, разрешённый администратором инстанса: `1080p60`, `1080p30`, `720p30`.
-  string max_stream_preset = 7;
-  // Максимальный размер кадра от клиента в байтах.
-  uint32 max_client_frame_size = 8;
-}
-
 // Снимок состояния при подключении. Списки участников сообществ и история
 // сообщений сюда не входят — они запрашиваются через REST по мере надобности.
 message Ready {
@@ -165,6 +148,9 @@ message Ready {
   // Группы, в которых у устройства есть недоставленные Welcome или handshake после его последнего ack.
   repeated MlsPending mls_pending = 13;
   google.protobuf.Timestamp server_time = 14;
+  // Сообщества, из которых пользователя удалили, пока устройство не было в сети, и показ
+  // которых оно ещё не подтвердило (`DELETE /users/me/community-removals/{id}`).
+  repeated CommunityRemoval community_removals = 15;
 }
 
 // Сообщество целиком, кроме списка участников.
@@ -178,7 +164,10 @@ message CommunitySnapshot {
   Member me = 5;
   EffectivePermissions permissions = 6;
   // Кто сейчас в голосовых каналах сообщества.
-  repeated VoiceState voice_states = 7;
+  repeated VoicePresence voice_presences = 7;
+  // Для владельца и администраторов: приватные каналы, в которые они себя не добавили
+  // («🔒 закрытый для тебя», PERMISSIONS.md §3 п. 2). У остальных пусто.
+  repeated LockedChannel locked_channels = 8;
 }
 
 // Группа с ожидающими MLS-сообщениями для этого устройства.
@@ -207,18 +196,21 @@ message Resumed {
   uint32 replayed_events = 2;
 }
 
-// Сессию нельзя возобновить (буфер 5 минут истёк, сессия отозвана); клиент отправляет Identify.
+// Сессию нельзя продолжить. Что делать клиенту — по `reason` (GATEWAY.md §7).
 message SessionInvalid {
   enum Reason {
     REASON_UNSPECIFIED = 0;
-    // Прошло больше 5 минут или seq вне буфера.
+    // Прошло больше 5 минут или seq вне буфера: клиент отправляет Identify.
     REASON_RESUME_WINDOW_EXPIRED = 1;
-    // Токен недействителен или сессия завершена (смена пароля, выход).
-    REASON_SESSION_REVOKED = 2;
-    // Устройство удалено: клиент стирает локальные ключи и базу (FLOWS/02).
+    // Сессия завершена: выход, смена пароля, «выйти на всех других устройствах» по сессиям.
+    // Устройство и его ключи остаются (OPEN-QUESTIONS №2): клиент показывает экран входа
+    // и после входа продолжает с теми же ключами.
+    REASON_SESSION_ENDED = 2;
+    // Устройство удалено (FLOWS/02 «Выход на устройстве»): клиент стирает локальные
+    // ключи и базу.
     REASON_DEVICE_REMOVED = 3;
     // Несовместимая версия протокола.
-    REASON_PROTOCOL_VERSION = 4;
+    REASON_PROTOCOL_MISMATCH = 4;
   }
   Reason reason = 1;
 }
@@ -242,17 +234,19 @@ message CommandRejected {
 // Команды клиента
 // ---------------------------------------------------------------------------
 
-// Набор текста; не шифруется. Сервер рассылает TypingStarted участникам канала на 10 с.
+// Набор текста; не шифруется. Сервер рассылает TypingStarted участникам канала;
+// клиент показывает индикатор 8 с (STATUS.md).
 message TypingStart {
   string channel_id = 1;
 }
 
-// Собственное состояние в голосе: mute/deafen/камера/стрим. Вход и выход — через REST.
-message VoiceStateUpdate {
+// Собственные флаги присутствия в голосе: микрофон, звук, камера, стрим.
+// Вход и выход из голоса — через REST (`/channels/{id}/voice/join|leave`).
+message SetVoicePresence {
   string channel_id = 1;
-  bool self_mute = 2;
-  bool self_deaf = 3;
-  bool camera = 4;
+  bool mic_off = 2;
+  bool sound_off = 3;
+  bool camera_on = 4;
   bool streaming = 5;
 }
 
@@ -300,37 +294,14 @@ message ReadStateUpdated {
   ReadState read_state = 1;
 }
 
-enum HandshakeKind {
-  HANDSHAKE_KIND_UNSPECIFIED = 0;
-  HANDSHAKE_KIND_PROPOSAL = 1;
-  HANDSHAKE_KIND_COMMIT = 2;
-  // Commit присоединяющегося по GroupInfo (RFC 9420 §12.4.3.2).
-  HANDSHAKE_KIND_EXTERNAL_COMMIT = 3;
-}
-
-// Handshake-сообщение MLS (Proposal или Commit), упорядоченное сервером по группе.
+// Handshake-сообщение MLS, упорядоченное сервером по группе.
 message MlsHandshake {
-  string group_id = 1;
-  // Эпоха, в которой сообщение создано.
-  uint64 epoch = 2;
-  // Порядковый номер в группе (сквозной по эпохам).
-  uint64 seq = 3;
-  HandshakeKind kind = 4;
-  // Устройство-отправитель; пусто, если отправитель — сервер как external sender.
-  string sender_device_id = 5;
-  bool from_external_sender = 6;
-  // MLS PublicMessage (RFC 9420 §6.2). Если больше 256 КиБ — пусто, клиент забирает
-  // `GET /mls/groups/{id}/handshakes/{seq}`.
-  bytes blob = 7;
+  Handshake handshake = 1;
 }
 
-// Welcome для этого устройства (RFC 9420 §12.4.3.1). Для больших Welcome — как у handshake.
+// Welcome для этого устройства.
 message MlsWelcome {
-  string group_id = 1;
-  // Канал, которому принадлежит группа, и её роль (чат или звонок).
-  string channel_id = 2;
-  bool call_group = 3;
-  bytes blob = 4;
+  Welcome welcome = 1;
 }
 
 // Сервер просит онлайн-устройство сделать commit (ротация по сроку, «Обновить ключи канала»,
@@ -355,11 +326,13 @@ message PresenceUpdated {
   Presence presence = 1;
 }
 
-// Состояние пользователя в голосе изменилось. `voice_state` без channel_id = вышел из голоса.
-message VoiceStateUpdated {
-  VoiceState voice_state = 1;
-  // Канал, из которого вышел (если вышел).
+// Присутствие в голосе изменилось: вход, подтверждение подключения, флаги, выход.
+message VoicePresenceChanged {
+  // Текущее состояние; отсутствует, если пользователь вышел из голоса.
+  VoicePresence presence = 1;
+  // Канал, из которого пользователь вышел (если вышел).
   string left_channel_id = 2;
+  string user_id = 3;
 }
 
 // Входящий звонок в ЛС или групповом чате.
@@ -389,17 +362,9 @@ message CommunityUpdated {
   Community community = 1;
 }
 
-// Сообщество удалено, или пользователь его покинул, выгнан или забанен.
-message CommunityDeleted {
-  string community_id = 1;
-  enum Reason {
-    REASON_UNSPECIFIED = 0;
-    REASON_DELETED = 1;
-    REASON_LEFT = 2;
-    REASON_KICKED = 3;
-    REASON_BANNED = 4;
-  }
-  Reason reason = 2;
+// Пользователь перестал быть участником: сообщество удалено, вышел, выгнан или забанен.
+message CommunityRemoved {
+  CommunityRemoval removal = 1;
 }
 
 message CategoryCreated {
@@ -429,6 +394,12 @@ message ChannelDeleted {
   string channel_id = 2;
 }
 
+// Список «закрытых для тебя» каналов владельца или администратора изменился.
+message LockedChannelsUpdated {
+  string community_id = 1;
+  repeated LockedChannel locked_channels = 2;
+}
+
 message MemberJoined {
   Member member = 1;
 }
@@ -440,13 +411,7 @@ message MemberUpdated {
 message MemberLeft {
   string community_id = 1;
   string user_id = 2;
-  enum Reason {
-    REASON_UNSPECIFIED = 0;
-    REASON_LEFT = 1;
-    REASON_KICKED = 2;
-    REASON_BANNED = 3;
-  }
-  Reason reason = 3;
+  CommunityRemovalReason reason = 3;
 }
 
 message RoleCreated {
@@ -505,11 +470,10 @@ message UserUpdated {
   User user = 1;
 }
 
-// У пользователя новое устройство (не подтверждено). Своим устройствам — для окна
-// «Новое устройство хочет войти»; собеседникам — для системного сообщения в ЛС.
+// У пользователя новое устройство (не подтверждено). Только своим устройствам — для окна
+// «Новое устройство хочет войти»; собеседникам заметку создаёт клиент (DeviceNoticeBody).
 message DeviceAdded {
   Device device = 1;
-  // Запрос подтверждения (только для устройств того же пользователя).
   DeviceVerificationRequest verification_request = 2;
 }
 

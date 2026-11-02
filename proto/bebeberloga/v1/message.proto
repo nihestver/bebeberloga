@@ -45,38 +45,44 @@ message MessageMeta {
   string author_device_id = 6;
   // Время приёма сервером.
   google.protobuf.Timestamp created_at = 7;
-  // MLS PrivateMessage (RFC 9420 §6.3) с конвертом MessageEnvelope внутри; до 64 КиБ.
+  // MLS PrivateMessage (RFC 9420 §6.3) с конвертом MessageEnvelope внутри; до 128 КиБ
+  // (обоснование — STATUS.md). Пусто у tombstone и системных сообщений.
   bytes ciphertext = 8;
+  // Размер шифртекста в байтах (ARCHITECTURE.md §4.4); сохраняется и у tombstone.
+  uint32 size = 9;
   // Ключ сообщения, обёрнутый действующим ключом истории канала (ADR-0015; формат — CRYPTO.md).
-  bytes wrapped_message_key = 9;
+  bytes wrapped_message_key = 10;
   // Поколение ключа истории, которым обёрнут ключ сообщения.
-  uint32 history_key_generation = 10;
+  uint32 history_key_generation = 11;
   // mention-hint = HMAC(id упоминаемого пользователя или роли, секрет канала из MLS exporter).
   // Сервер сравнивает с хинтами, заранее присланными участниками, не узнавая адресата.
-  repeated bytes mention_hints = 11;
-  BroadcastMention broadcast_mention = 12;
-  repeated Attachment attachments = 13;
+  repeated bytes mention_hints = 12;
+  BroadcastMention broadcast_mention = 13;
+  repeated Attachment attachments = 14;
   // Сообщение закреплено (список закрепов — на сервере, только id).
-  bool pinned = 14;
+  bool pinned = 15;
   // Шифртекст удалён, запись — tombstone.
-  bool deleted = 15;
-  google.protobuf.Timestamp deleted_at = 16;
-  // Системное сообщение сервера (вход участника, закреп, смена владельца): шифртекста нет,
-  // тип и параметры — открытые.
-  SystemMessage system = 17;
+  bool deleted = 16;
+  google.protobuf.Timestamp deleted_at = 17;
+  // Системное сообщение сервера: шифртекста нет, тип и параметры — открытые.
+  SystemMessage system = 18;
 }
 
 // Системное сообщение генерирует сервер по открытым событиям; клиент рендерит текст сам.
-// Сообщения о новых устройствах и смене ключей не сюда: их создаёт клиент как зашифрованные.
+// Сообщения о новых устройствах и смене ключей не сюда: их создаёт клиент как зашифрованные
+// (DeviceNoticeBody в envelope.proto).
 message SystemMessage {
   enum Kind {
     KIND_UNSPECIFIED = 0;
-    // `actor_id` присоединился к сообществу.
+    // `actor_id` присоединился к сообществу (FLOWS/04 ш. 5).
     KIND_MEMBER_JOINED = 1;
-    // `actor_id` закрепил сообщение `target_message_id`.
+    // `actor_id` закрепил сообщение `target_message_id` (SCREENS/08 §10).
     KIND_MESSAGE_PINNED = 2;
-    // Владение передано `target_user_id`.
+    // Владение передано `target_user_id` (SCREENS/11 §9).
     KIND_OWNERSHIP_TRANSFERRED = 3;
+    // Владелец или администратор `actor_id` добавил себя в приватный канал
+    // (PERMISSIONS.md §3 п. 2: участники канала видят это системным сообщением).
+    KIND_CHANNEL_SELF_JOINED = 4;
   }
   Kind kind = 1;
   string actor_id = 2;

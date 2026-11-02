@@ -1,0 +1,91 @@
+// SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+// SPDX-License-Identifier: Apache-2.0
+
+// Delivery Service MLS: группы, handshake-сообщения, Welcome, связки ключей истории.
+// Сервер хранит и упорядочивает непрозрачные блобы (ARCHITECTURE.md §4.3, ADR-0015);
+// их внутренний формат задаёт docs/protocol/CRYPTO.md (B2).
+syntax = "proto3";
+
+package bebeberloga.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Роль группы по отношению к каналу.
+enum GroupKind {
+  GROUP_KIND_UNSPECIFIED = 0;
+  // Постоянная группа чата: DM, групповой чат, текстовый канал, чат голосового канала.
+  GROUP_KIND_CHAT = 1;
+  // Короткоживущая группа звонка голосового канала или ЛС.
+  GROUP_KIND_CALL = 2;
+}
+
+// Состояние группы на сервере.
+message Group {
+  // Id группы (MLS group_id), сгенерирован создателем.
+  string id = 1;
+  string channel_id = 2;
+  GroupKind kind = 3;
+  // Код ciphersuite MLS; в 1.0 только 0x0001.
+  uint32 ciphersuite = 4;
+  uint64 epoch = 5;
+  uint32 device_count = 6;
+  // Последний присвоенный номер handshake.
+  uint64 last_seq = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp last_rotation_at = 9;
+  // Есть зашифрованный GroupInfo текущей эпохи (для external commit).
+  bool has_group_info = 10;
+  // Есть связка ключей истории для текущей эпохи.
+  bool has_history_key_bundle = 11;
+}
+
+enum HandshakeKind {
+  HANDSHAKE_KIND_UNSPECIFIED = 0;
+  HANDSHAKE_KIND_PROPOSAL = 1;
+  HANDSHAKE_KIND_COMMIT = 2;
+  // Commit присоединяющегося по GroupInfo (RFC 9420 §12.4.3.2).
+  HANDSHAKE_KIND_EXTERNAL_COMMIT = 3;
+}
+
+// Handshake-сообщение MLS (Proposal или Commit), упорядоченное сервером по группе.
+message Handshake {
+  string group_id = 1;
+  // Эпоха, в которой сообщение создано.
+  uint64 epoch = 2;
+  // Порядковый номер в группе (сквозной по эпохам, с 1).
+  uint64 seq = 3;
+  HandshakeKind kind = 4;
+  // Устройство-отправитель; пусто, если отправитель — сервер как external sender.
+  string sender_device_id = 5;
+  bool from_external_sender = 6;
+  // MLS PublicMessage (RFC 9420 §6.2). В событии gateway пусто, если больше 256 КиБ, —
+  // тогда клиент забирает `GET /mls/groups/{id}/handshakes/{seq}`.
+  bytes blob = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+// Welcome для устройства (RFC 9420 §12.4.3.1).
+message Welcome {
+  string group_id = 1;
+  // Канал, которому принадлежит группа, и её роль.
+  string channel_id = 2;
+  GroupKind kind = 3;
+  // В событии gateway пусто, если больше 256 КиБ, — тогда `GET /mls/welcomes`.
+  bytes blob = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+// Связка ключей истории канала, зашифрованная для эпохи группы (ADR-0015).
+message HistoryKeyBundle {
+  string group_id = 1;
+  uint64 epoch = 2;
+  bytes blob = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+// Зашифрованный GroupInfo для external commit (ARCHITECTURE.md §4.3).
+message EncryptedGroupInfo {
+  string group_id = 1;
+  uint64 epoch = 2;
+  bytes blob = 3;
+}

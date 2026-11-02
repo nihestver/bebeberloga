@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Сообщества («серверы» в интерфейсе), категории, каналы, роли, участники,
-// приглашения, баны, доступ к каналам, состояние голоса, настройки уведомлений,
-// состояние чтения. Термины — GLOSSARY.md; права — PERMISSIONS.md.
+// приглашения, баны, доступ к каналам, присутствие в голосе, настройки уведомлений,
+// состояние чтения. Термины — GLOSSARY.md; права — PERMISSIONS.md. Лимиты длины,
+// которых нет в спецификации, обоснованы в docs/protocol/STATUS.md.
 syntax = "proto3";
 
 package bebeberloga.v1;
@@ -15,11 +16,11 @@ import "google/protobuf/timestamp.proto";
 message Community {
   string id = 1;
   string owner_id = 2;
-  // 2–100 символов.
+  // 1–64 символа.
   string name = 3;
   // Id иконки из встроенного набора; своя картинка — S (`icon_url` зарезервировано).
   string icon_id = 4;
-  // До 120 символов.
+  // До 120 символов (SCREENS/06 §5.1).
   string description = 5;
   // Канал для системных сообщений (входы участников, закрепы); пусто — не показывать.
   string system_channel_id = 6;
@@ -36,6 +37,7 @@ message Community {
 message Category {
   string id = 1;
   string community_id = 2;
+  // 1–64 символа.
   string name = 3;
   // Порядок в боковой панели, от 0.
   uint32 position = 4;
@@ -50,7 +52,7 @@ enum ChannelType {
   // Голосовой канал; у него постоянная MLS-группа чата (создаётся первым сообщением)
   // и короткоживущая группа звонка (создаётся первым вошедшим).
   CHANNEL_TYPE_VOICE = 2;
-  // Личные сообщения 1:1; `community_id` пуст, участники — в `recipient_ids`.
+  // Личные сообщения 1:1; `community_id` пуст, участники — в `participant_ids`.
   CHANNEL_TYPE_DM = 3;
   // Групповой чат до 10 участников (S).
   CHANNEL_TYPE_GROUP_DM = 4;
@@ -76,10 +78,11 @@ message Channel {
   string community_id = 3;
   // Пусто, если канал вне категории.
   string category_id = 4;
-  // Для TEXT/VOICE: нормализованное имя (строчные, дефисы, без пробелов), 1–100 символов.
-  // Для GROUP_DM — имя группы (S). Для DM пусто.
+  // Для TEXT/VOICE: нормализованное имя (строчные, дефисы, без пробелов), 1–64 символа.
+  // Для GROUP_DM — имя группы (S). Для DM пусто. Для приватной THREAD (S) пусто: название
+  // приватной ветки — содержимое, оно передаётся внутри группы (ARCHITECTURE.md §4.1).
   string name = 5;
-  // Тема канала, до 1024 символов.
+  // Тема канала, до 1024 символов (SCREENS/11 §3.1).
   string topic = 6;
   uint32 position = 7;
   // Канал виден только по явным разрешениям `channel.see` (PERMISSIONS.md §3).
@@ -88,19 +91,30 @@ message Channel {
   // Id MLS-группы чата канала (DM, GROUP_DM, TEXT, чат VOICE). Пусто, пока группа не создана.
   string mls_group_id = 10;
   // Для DM и GROUP_DM: участники разговора.
-  repeated string recipient_ids = 11;
+  repeated string participant_ids = 11;
   // Для THREAD (S): канал-родитель и исходное сообщение.
   string parent_id = 12;
   string root_message_id = 13;
-  // Для VOICE: лимит участников голоса, 0 — без лимита (0–99).
+  // Для VOICE: лимит участников голоса, 0 — без лимита (0–99, SCREENS/11 §3.1).
   uint32 voice_user_limit = 14;
-  // Для VOICE: битрейт голоса, кбит/с (64–256).
+  // Для VOICE: битрейт голоса, кбит/с (64–256, SCREENS/11 §3.1).
   uint32 voice_bitrate_kbps = 15;
   // Id короткоживущей MLS-группы звонка; пусто, пока в канале никого нет.
   string call_group_id = 16;
   google.protobuf.Timestamp created_at = 17;
   // Id последнего сообщения — для бейджей непрочитанного без запроса истории.
   string last_message_id = 18;
+}
+
+// Приватный канал, который владелец или администратор не видит, но может добавить
+// в него себя (PERMISSIONS.md §3 п. 2: «🔒 закрытый для тебя»). Только имя и место в списке.
+message LockedChannel {
+  string id = 1;
+  string community_id = 2;
+  string category_id = 3;
+  ChannelType type = 4;
+  string name = 5;
+  uint32 position = 6;
 }
 
 // Пресеты ролей (PERMISSIONS.md §2). Порядок старшинства в 1.0 фиксирован:
@@ -119,13 +133,15 @@ enum RolePreset {
 message Role {
   string id = 1;
   string community_id = 2;
-  // 1–100 символов. У пресетов имя задаёт сервер и менять его нельзя.
+  // 1–64 символа. У пресетов имя задаёт сервер и менять его нельзя.
   string name = 3;
   RolePreset preset = 4;
   // Коды прав `<область>.<действие>` (PERMISSIONS.md §1), только включённые.
   repeated string permission_codes = 5;
-  // Разрешить всем упоминать эту роль (без права `chat.ping_all` упоминание идёт без уведомления).
-  bool mentionable = 6;
+  // 6 — флаг «кого угодно может упоминать» (C, OPEN-QUESTIONS №8): в 1.0 упоминание роли
+  // с уведомлением требует `chat.ping_all`.
+  reserved 6;
+  reserved "mentionable";
   // Старшинство: меньше — старше. У пресетов фиксировано, у своих — порядок создания (перестановка — C).
   uint32 position = 7;
   // Цвет роли — токен палитры (C, зарезервировано).
@@ -176,19 +192,21 @@ message ChannelAccess {
 
 // Ссылка-приглашение. Параметра истории нет: историю определяет канал (ADR-0013 п. 7).
 message Invite {
-  // Код в ссылке `https://<инстанс>/join/<code>`: 8–12 символов [A-Za-z0-9].
+  // Код в ссылке: 10 символов [a-z0-9] (STATUS.md).
   string code = 1;
   string community_id = 2;
   // Канал, в который ведёт ссылка.
   string channel_id = 3;
   string creator_id = 4;
   google.protobuf.Timestamp created_at = 5;
-  // Пусто — бессрочное. По умолчанию created_at + 7 дней.
+  // Пусто — бессрочное. По умолчанию created_at + 7 дней (ADR-0013 п. 7).
   google.protobuf.Timestamp expires_at = 6;
   // 0 — без лимита.
   uint32 max_uses = 7;
   uint32 uses = 8;
   bool revoked = 9;
+  // Полная ссылка `https://<инстанс>/join/<code>`.
+  string url = 10;
 }
 
 // Превью приглашения для неавторизованного или не вступившего пользователя (SCREENS/06 §2.2).
@@ -202,36 +220,43 @@ message InvitePreview {
   uint32 online_count = 7;
   google.protobuf.Timestamp community_created_at = 8;
   google.protobuf.Timestamp expires_at = 9;
+  // Вызывающий уже участник этого сообщества.
+  bool already_member = 10;
 }
 
 message Ban {
   string community_id = 1;
   User user = 2;
   string moderator_id = 3;
-  // Причина (видна в списке банов и журнале), до 512 символов.
+  // Причина (видна в списке банов и журнале), до 300 символов.
   string reason = 4;
   google.protobuf.Timestamp created_at = 5;
-  // За сколько секунд назад удалены сообщения при бане; 0 — не удалялись.
-  uint32 deleted_messages_window_seconds = 6;
+  // За сколько секунд назад удалены сообщения при бане; 0 — не удалялись
+  // (варианты SCREENS/09 §5: не удалять / 1 ч / 24 ч / 7 дней).
+  uint32 delete_messages_window_seconds = 6;
 }
 
-// Состояние пользователя в голосовом канале. Отсутствие записи = не в голосе.
-message VoiceState {
+// Присутствие пользователя в голосовом канале (FLOWS/07, SCREENS/05 §1).
+// Отсутствие записи = не в голосе.
+message VoicePresence {
   string channel_id = 1;
   string user_id = 2;
   string device_id = 3;
-  // Выключил микрофон сам.
-  bool self_mute = 4;
-  // Выключил звук сам (подразумевает self_mute).
-  bool self_deaf = 5;
-  // Микрофон выключен сервером (право `voice.moderate`).
-  bool server_mute = 6;
-  // Звук выключен сервером.
-  bool server_deaf = 7;
-  bool camera = 8;
-  // Ведёт стрим экрана/окна/приложения.
-  bool streaming = 9;
-  google.protobuf.Timestamp joined_at = 10;
+  // Токен выдан, но медиасервер ещё не подтвердил подключение: у других участник
+  // показывается полупрозрачным (FLOWS/07 ш. 2); то же при переподключении.
+  bool connecting = 4;
+  // Микрофон выключен самим участником.
+  bool mic_off = 5;
+  // Звук выключен самим участником (вместе с микрофоном).
+  bool sound_off = 6;
+  // Микрофон выключен сервером (право `voice.moderate`): SFU блокирует трек.
+  bool server_mic_off = 7;
+  // Звук выключен сервером (вместе с микрофоном).
+  bool server_sound_off = 8;
+  bool camera_on = 9;
+  // Ведёт стрим экрана, окна или приложения.
+  bool streaming = 10;
+  google.protobuf.Timestamp joined_at = 11;
 }
 
 // Уровень уведомлений.
@@ -276,4 +301,25 @@ message GroupSummary {
   uint64 epoch = 3;
   uint32 device_count = 4;
   google.protobuf.Timestamp last_rotation_at = 5;
+}
+
+// Почему пользователь перестал быть участником сообщества.
+enum CommunityRemovalReason {
+  COMMUNITY_REMOVAL_REASON_UNSPECIFIED = 0;
+  // Сообщество удалено владельцем.
+  COMMUNITY_REMOVAL_REASON_DELETED = 1;
+  // Вышел сам (с другого устройства).
+  COMMUNITY_REMOVAL_REASON_LEFT = 2;
+  COMMUNITY_REMOVAL_REASON_KICKED = 3;
+  COMMUNITY_REMOVAL_REASON_BANNED = 4;
+}
+
+// Запись о выходе из сообщества, которую клиент ещё не показал пользователю
+// (`Modal` «Тебя выгнали с сервера <название>», FLOWS/10 ш. 3). Хранится на сервере,
+// пока устройство не подтвердит показ, поэтому доходит и после долгого офлайна.
+message CommunityRemoval {
+  string community_id = 1;
+  string community_name = 2;
+  CommunityRemovalReason reason = 3;
+  google.protobuf.Timestamp at = 4;
 }

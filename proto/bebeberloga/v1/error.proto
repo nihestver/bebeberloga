@@ -8,6 +8,8 @@ syntax = "proto3";
 
 package bebeberloga.v1;
 
+import "google/protobuf/struct.proto";
+
 enum ErrorCode {
   ERROR_CODE_UNSPECIFIED = 0;
 
@@ -50,8 +52,10 @@ enum ErrorCode {
   // --- устройства и ключи ------------------------------------------------
   // Действие требует подтверждённого устройства. HTTP 403.
   ERROR_CODE_DEVICE_UNVERIFIED = 200;
-  // Ключ восстановления не подошёл. HTTP 403.
-  ERROR_CODE_RECOVERY_KEY_INVALID = 201;
+  // 201 — зарезервировано: ключ восстановления проверяет только клиент (FLOWS/02 ш. 5),
+  // серверной ошибки для него нет.
+  reserved 201;
+  reserved "ERROR_CODE_RECOVERY_KEY_INVALID";
   // У пользователя нет свободных KeyPackage ни на одном устройстве. HTTP 409.
   ERROR_CODE_NO_KEY_PACKAGES = 202;
   // Запрос подтверждения устройства истёк (10 минут). HTTP 410.
@@ -78,9 +82,10 @@ enum ErrorCode {
   ERROR_CODE_ROLE_HIERARCHY = 307;
   // Владелец не может покинуть сообщество, не передав владение. HTTP 409.
   ERROR_CODE_OWNER_CANNOT_LEAVE = 308;
-  // Пресеты ролей нельзя удалить или переименовать. HTTP 409.
+  // Пресеты ролей нельзя удалить или переименовать (PERMISSIONS.md §2: создаются вместе
+  // с сервером; SCREENS/11 §4.2: «пресеты удалить нельзя»). HTTP 409.
   ERROR_CODE_PRESET_ROLE_IMMUTABLE = 309;
-  // Голосовой канал полон (лимит участников канала голоса). HTTP 409.
+  // Голосовой канал полон (лимит участников голоса). HTTP 409.
   ERROR_CODE_VOICE_CHANNEL_FULL = 310;
   // Пользователь не находится в этом голосовом канале. HTTP 409.
   ERROR_CODE_NOT_IN_VOICE = 311;
@@ -96,7 +101,7 @@ enum ErrorCode {
   ERROR_CODE_EPOCH_MISMATCH = 500;
   // Устройство отправителя не состоит в MLS-группе. HTTP 403.
   ERROR_CODE_NOT_GROUP_MEMBER = 501;
-  // Сообщение с таким id уже есть (идемпотентный повтор). HTTP 409.
+  // Сообщение с таким id уже есть, но с другим телом. HTTP 409.
   ERROR_CODE_MESSAGE_EXISTS = 502;
   // Вложение не загружено или не принадлежит отправителю. HTTP 400.
   ERROR_CODE_ATTACHMENT_INVALID = 503;
@@ -104,7 +109,8 @@ enum ErrorCode {
   ERROR_CODE_TOO_MANY_ATTACHMENTS = 504;
 
   // --- саундборд ---------------------------------------------------------
-  // Звук длиннее 5 секунд или не в формате ogg/mp3. HTTP 400.
+  // Звук не в формате Opus/ogg (клиент перекодирует перед загрузкой, FLOWS/09 ш. 2)
+  // или длиннее 5 с. HTTP 400.
   ERROR_CODE_SOUND_INVALID = 600;
   // Слоты звуков сообщества или пользователя заняты. HTTP 409.
   ERROR_CODE_SOUND_SLOTS_FULL = 601;
@@ -118,7 +124,7 @@ message FieldError {
   string reason = 2;
 }
 
-// Тело ошибки. В REST — JSON этого сообщения; в gateway — поле `error` кадра.
+// Тело ошибки. В REST — JSON этого сообщения; в gateway — поле `error` кадра CommandRejected.
 message Error {
   ErrorCode code = 1;
   // Служебное описание для журналов (не для показа пользователю).
@@ -133,4 +139,7 @@ message Error {
   repeated FieldError field_errors = 6;
   // Для EPOCH_MISMATCH: текущая эпоха группы, на которой нужно повторить.
   uint64 current_epoch = 7;
+  // Дополнительные данные по коду (например, список сообществ владельца для CONFLICT
+  // при удалении аккаунта: `{"owned_community_ids": [...]}`).
+  google.protobuf.Struct details = 8;
 }
