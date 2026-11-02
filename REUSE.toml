@@ -23,7 +23,7 @@ SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
 SPDX-License-Identifier = "LicenseRef-Bebeberloga-Brand"
 
 [[annotations]]
-path = [".github/**", ".claude/**", ".vscode/**", ".gitignore", ".editorconfig", "mise.toml", "justfile", "lefthook.yml", "REUSE.toml", "LICENSE",
+path = [".github/**", ".claude/**", ".vscode/**", ".devcontainer/**", ".gitignore", ".editorconfig", "mise.toml", "justfile", "lefthook.yml", "REUSE.toml", "LICENSE",
         ".env.example", ".golangci.yml", ".markdownlint*", ".prettierrc*", "eslint.config.*", "tsconfig*.json",
         "Cargo.toml", "Cargo.lock", "deny.toml", "rust-toolchain.toml", "rustfmt.toml", "clippy.toml",
         "go.work", "go.work.sum", "buf.yaml", "buf.gen.yaml", "buf.work.yaml", "redocly.yaml",

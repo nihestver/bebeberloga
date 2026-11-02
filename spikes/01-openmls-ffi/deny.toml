@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# cargo deny для спайка: лицензии — подмножество разрешённых в LICENSING.md, встречающееся
+# в графе зависимостей; уязвимости из advisory-db.
+
+[graph]
+all-features = false
+
+[advisories]
+version = 2
+ignore = [
+  # crypto-bigint 0.5 (timing): приходит через p256 ← hpke-rs-rust-crypto ← openmls_rust_crypto.
+  # Ciphersuite 0x0001 использует X25519/Ed25519, код P-256 не выполняется. Исправление —
+  # только с обновлением hpke-rs на elliptic-curve 0.14; отслеживать в B03.
+  { id = "RUSTSEC-2026-0387", reason = "P-256 не используется ciphersuite 0x0001; ждём обновления hpke-rs" },
+  # basic-toml (unmaintained): зависимость askama внутри uniffi_bindgen — генератор привязок,
+  # в библиотеку и клиенты не попадает.
+  { id = "RUSTSEC-2026-0374", reason = "только в генераторе привязок uniffi-bindgen" },
+  # proc-macro-error2 (unmaintained): proc-macro на этапе компиляции, в runtime не попадает.
+  { id = "RUSTSEC-2026-0173", reason = "proc-macro, только на этапе компиляции" },
+]
+
+[licenses]
+version = 2
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "MPL-2.0",
+  "Unlicense",
+  "CC0-1.0",
+  # unicode-ident: «(MIT OR Apache-2.0) AND Unicode-3.0» — таблицы Unicode, есть в любом
+  # Rust-проекте через proc-macro2/syn; добавлена в LICENSING.md.
+  "Unicode-3.0",
+]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "allow"
+wildcards = "allow"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
