@@ -1,0 +1,19 @@
+{
+  // Задачи = рецепты just: те же команды запускают Claude Code и CI.
+  // Запуск: Cmd+Shift+P → «Tasks: Run Task».
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "just check", "type": "shell", "command": "just check", "group": { "kind": "build", "isDefault": true }, "problemMatcher": [] },
+    { "label": "just lint", "type": "shell", "command": "just lint", "problemMatcher": [] },
+    { "label": "just test", "type": "shell", "command": "just test", "group": { "kind": "test", "isDefault": true }, "problemMatcher": [] },
+    { "label": "just cleanroom", "type": "shell", "command": "just cleanroom", "problemMatcher": [] },
+    { "label": "just gen", "type": "shell", "command": "just gen", "problemMatcher": [] },
+    { "label": "dev: инфраструктура (just dev-up)", "type": "shell", "command": "just dev-up", "problemMatcher": [] },
+    { "label": "dev: остановить (just dev-down)", "type": "shell", "command": "just dev-down", "problemMatcher": [] },
+    { "label": "dev: сервер (just dev-server)", "type": "shell", "command": "just dev-server", "isBackground": true, "problemMatcher": [] },
+    { "label": "dev: web (just dev-web)", "type": "shell", "command": "just dev-web", "isBackground": true, "problemMatcher": [] },
+    { "label": "dev: desktop (just dev-desktop)", "type": "shell", "command": "just dev-desktop", "isBackground": true, "problemMatcher": [] },
+    { "label": "тест-сервер: выкатить (just deploy-test)", "type": "shell", "command": "just deploy-test", "problemMatcher": [] },
+    { "label": "тест-сервер: smoke (just smoke-test)", "type": "shell", "command": "just smoke-test", "problemMatcher": [] }
+  ]
+}

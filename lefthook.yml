@@ -20,7 +20,7 @@ commit-msg:
   commands:
     conventional:
       run: |
-        head -1 {1} | grep -Eq '^(feat|fix|docs|chore|refactor|test|perf|build|ci|spike)(\([a-z0-9/_-]+\))?!?: ' || { echo "Формат: type(scope): описание (Conventional Commits)"; exit 1; }
+        head -1 {1} | grep -Eq '^(feat|fix|docs|chore|refactor|test|perf|build|ci|spike)(\([A-Za-z0-9/._-]+\))?!?: ' || { echo "Формат: type(scope): описание (Conventional Commits)"; exit 1; }
     dco:
       run: |
         grep -q '^Signed-off-by: ' {1} || { echo "Нужна подпись DCO: git commit -s"; exit 1; }
