@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: CC0-1.0
+#
+# Кодогенерация `just gen` → `buf generate`. Плагины удалённые (buf.build), локальные установки не нужны.
+# Пути вывода обоснованы в docs/adr/0016-api-contracts.md:
+#   server/gen/          — Go-пакеты рядом с кодом сервера (B4), коммитятся, CI проверяет свежесть;
+#   clients/web/src/gen/ — TS-модули клиента (B9), та же папка принимает типы из openapi.yaml.
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/nihestver/bebeberloga/server/gen
+plugins:
+  - remote: buf.build/protocolbuffers/go:v1.36.6
+    out: server/gen
+    opt: paths=source_relative
+  - remote: buf.build/bufbuild/es:v2.2.5
+    out: clients/web/src/gen
+    opt:
+      - target=ts
+      - import_extension=js
+inputs:
+  - directory: proto

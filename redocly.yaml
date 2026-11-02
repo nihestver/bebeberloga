@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: CC0-1.0
+#
+# Правила проверки docs/protocol/openapi.yaml (`just openapi`).
+extends:
+  - recommended
+rules:
+  # Все ошибки описаны одним ответом `default` со схемой Error (REST.md «Ошибки»), поэтому
+  # отдельных 4XX-ответов у операций нет.
+  operation-4xx-response: off

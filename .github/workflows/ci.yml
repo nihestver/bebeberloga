@@ -125,10 +125,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # buf breaking падает, если в базовой ветке ещё нет .proto; проверяем это заранее.
+      - id: base
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --depth=1 origin "${{ github.base_ref }}"
+          if git ls-tree -r --name-only "origin/${{ github.base_ref }}" -- proto | grep -q '\.proto$'; then
+            echo "has_proto=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_proto=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: bufbuild/buf-action@v1
         with:
           lint: true
-          breaking: ${{ github.event_name == 'pull_request' }}
+          format: true
+          breaking: ${{ github.event_name == 'pull_request' && steps.base.outputs.has_proto == 'true' }}
           push: false
 
   # Единственная обязательная проверка для защиты main: пропущенные по фильтру путей jobs считаются успехом,
