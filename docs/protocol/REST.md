@@ -89,7 +89,7 @@
 
 ## 4. Карта ресурсов
 
-Форма ресурсов выведена из FLOWS и PERMISSIONS: каждая сущность GLOSSARY — ресурс, действие над участником сообщества — подресурс сообщества, действие над каналом — подресурс канала. Это обычные REST-соглашения «ресурс / подресурс», обоснование — STATUS.md.
+Форма ресурсов выведена из FLOWS и PERMISSIONS: каждая сущность GLOSSARY — ресурс, действие над участником сообщества — подресурс сообщества, действие над каналом — подресурс канала. Это обычные REST-соглашения «ресурс / подресурс», обоснование — STATUS.md «Форма REST и состав Ready».
 
 | Группа | Методы | Назначение |
 |---|---|---|
@@ -103,7 +103,7 @@
 | Push (S) | `PUT/DELETE /devices/me/push-endpoint` | Схема есть, реализация после 1.0 (OPEN-QUESTIONS №3) |
 | Друзья | `GET/POST /users/me/relationships`, `PUT/DELETE /users/me/relationships/{id}`, `PUT/DELETE /users/me/blocks/{id}` | FLOWS/05 |
 | ЛС | `GET/POST /users/me/dm-channels`, `DELETE /users/me/dm-channels/{id}` | ЛС — канал типа DM с `participant_ids` |
-| Сообщества | `POST /communities`, `GET/PATCH/DELETE /communities/{id}`, `POST …/leave`, `POST …/transfer-ownership`, `GET …/groups`, `GET /users/me/community-removals`, `DELETE /users/me/community-removals/{id}` | FLOWS/03, SCREENS/06 §5, SCREENS/11 §9–10; записи «тебя выгнали» для офлайн-устройств |
+| Сообщества | `POST /communities`, `GET/PATCH/DELETE /communities/{id}`, `POST …/leave`, `POST …/transfer-ownership`, `GET …/groups`, `GET /users/me/community-removals`, `DELETE /users/me/community-removals/{community_id}` | FLOWS/03, SCREENS/06 §5, SCREENS/11 §9–10; записи «тебя выгнали» для офлайн-устройств |
 | Категории | `POST /communities/{id}/categories`, `PATCH/DELETE /categories/{id}` | |
 | Каналы | `POST /communities/{id}/channels`, `GET/PATCH/DELETE /channels/{id}`, `GET/PUT /channels/{id}/access`, `POST /channels/{id}/access/self`, `POST /channels/{id}/mls/rotate` | «Кто видит канал», самодобавление владельца/администратора в приватный канал, «Обновить ключи канала» |
 | Роли | `GET/POST /communities/{id}/roles`, `PATCH/DELETE /roles/{id}`, `PUT /communities/{id}/members/{uid}/roles` | |
@@ -144,11 +144,11 @@
 
 - `POST /mls/groups` регистрирует группу и привязывает к каналу; вместе с ней — зашифрованный GroupInfo и начальная связка ключей истории.
 - `POST /mls/groups/{id}/handshakes` принимает Proposal/Commit только для текущей эпохи; commit несёт Welcome новых устройств, новый GroupInfo и связку для новой эпохи **одним запросом** — состояние группы на сервере меняется атомарно. External commit (`HANDSHAKE_KIND_EXTERNAL_COMMIT`) связку не несёт: её обновляет первый участник по `MlsUpdateRequested{REASON_HISTORY_BUNDLE}`.
-- Сервер не разбирает блобы MLS дальше заголовка, нужного для `epoch` и `kind`; содержимого сообщений и ключей у него нет.
+- Handshake участников всегда зашифрованы (`PrivateMessage`, ADR-0016 п. 2); открытыми (`PublicMessage`) идут только Add/Remove-предложения самого сервера как external sender. Сервер читает лишь открытый заголовок (`group_id`, `epoch`, `content_type`) и сверяет его с `kind`; проверить commit он не может — процедуру восстановления рассинхрона и хранение невыполненных Remove описывает B02 (ADR-0016 п. 4). Содержимого сообщений и ключей у сервера нет.
 
 ## 6. Генерация кода
 
-- **Go (B4)**: `oapi-codegen` (Apache-2.0), режим `strict-server` поверх `chi`; конфигурация `server/oapi-codegen.yaml`, вывод `server/gen/api/`. Схемы с `x-go-type`/`x-go-type-import` генератор не создаёт заново, а подставляет тип из `server/gen/bebeberloga/v1` (вывод `buf generate`). Сериализация этих типов — `protojson` с `UseProtoNames: true`, `EmitUnpopulated: false`; тела запросов без Protobuf-двойника — обычный `encoding/json`.
+- **Go (B4)**: `oapi-codegen` (Apache-2.0), режим `strict-server` поверх `chi`; конфигурация `server/oapi-codegen.yaml`, вывод `server/gen/api/`. Схемы с `x-go-type`/`x-go-type-import` генератор не создаёт заново, а подставляет тип из `server/gen/bebeberloga/v1` (вывод `buf generate`). Сериализация этих типов — `protojson` с `UseProtoNames: true`, `EmitUnpopulated: true`: нулевые значения тоже выводятся, поэтому поля из `required` в ответе есть всегда; тела запросов без Protobuf-двойника — обычный `encoding/json`.
 - **TypeScript (B9)**: `openapi-typescript` + `openapi-fetch` (MIT), вывод `clients/web/src/gen/api.ts`. Хук `transform` заменяет схемы с `x-proto-message`/`x-proto-enum` на импорт соответствующего типа из `clients/web/src/gen/bebeberloga/v1/*_pb.ts` (вывод `protoc-gen-es`); JSON разбирается через `fromJson`/`toJson` библиотеки `@bufbuild/protobuf`.
 - Тест в B4 сверяет для каждой схемы с `x-proto-message` список полей и их типы с дескриптором Protobuf, чтобы OpenAPI-описание не разъехалось с источником.
 - CI проверяет, что сгенерированный код не отстал от контракта (`just gen` + `git diff --exit-code`).

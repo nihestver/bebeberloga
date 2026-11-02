@@ -284,7 +284,7 @@ paths:
     post:
       tags: [auth]
       summary: Выйти на этом устройстве
-      description: Завершает сессию и удаляет устройство (как DELETE /devices/{device_id} для текущего).
+      description: Завершает сессию и удаляет устройство (как DELETE /devices/{device_id} для текущего); его ключи стираются. Смена пароля, наоборот, завершает только сессии (код gateway 4108).
       operationId: logout
       responses:
         '204': { description: Сессия завершена }
@@ -650,7 +650,7 @@ paths:
     delete:
       tags: [devices]
       summary: Выйти на всех других устройствах
-      description: Удаляет все устройства, кроме текущего; для каждого — Remove-proposals во всех группах.
+      description: Удаляет все устройства, кроме текущего; для каждого — Remove-proposals во всех группах, на них — код gateway 4109 и стирание ключей.
       operationId: removeOtherDevices
       responses:
         '204': { description: Устройства удалены }
@@ -2303,7 +2303,7 @@ paths:
                 kind: { $ref: '#/components/schemas/HandshakeKind' }
                 blob:
                   allOf: [{ $ref: '#/components/schemas/Bytes' }]
-                  description: MLS PublicMessage; до 4 МиБ.
+                  description: MLS PrivateMessage участника (handshake всегда зашифрованы, ADR-0016 п. 2); до 4 МиБ.
                 welcomes:
                   type: array
                   items:
@@ -2639,7 +2639,7 @@ paths:
               type: object
               properties:
                 name: { type: string, minLength: 1, maxLength: 32 }
-                emoji: { type: string, maxLength: 16 }
+                emoji: { type: string, maxLength: 32 }
                 volume: { type: integer, minimum: 0, maximum: 100 }
       responses:
         '200':
@@ -2810,7 +2810,7 @@ components:
             required: [name, file]
             properties:
               name: { type: string, minLength: 1, maxLength: 32 }
-              emoji: { type: string, maxLength: 16 }
+              emoji: { type: string, maxLength: 32 }
               volume: { type: integer, minimum: 0, maximum: 100, default: 100 }
               file:
                 type: string
@@ -3455,33 +3455,33 @@ components:
       x-proto-enum: bebeberloga.v1.NotificationLevel
       x-go-type: bebeberlogav1.NotificationLevel
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [NOTIFICATION_LEVEL_INHERIT, NOTIFICATION_LEVEL_ALL_MESSAGES, NOTIFICATION_LEVEL_MENTIONS_ONLY, NOTIFICATION_LEVEL_NOTHING]
+      enum: [NOTIFICATION_LEVEL_INHERIT, NOTIFICATION_LEVEL_EVERY_MESSAGE, NOTIFICATION_LEVEL_MENTIONS, NOTIFICATION_LEVEL_SILENT]
     NotificationSettings:
       type: object
       x-proto-message: bebeberloga.v1.NotificationSettings
       x-go-type: bebeberlogav1.NotificationSettings
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      required: [muted, level, suppress_mention_all, suppress_role_mentions]
+      required: [silenced, level, skip_mention_all, skip_role_mentions]
       properties:
         community_id: { $ref: '#/components/schemas/Id' }
         channel_id: { $ref: '#/components/schemas/Id' }
-        muted: { type: boolean }
-        muted_until: { $ref: '#/components/schemas/Timestamp' }
+        silenced: { type: boolean }
+        silenced_until: { $ref: '#/components/schemas/Timestamp' }
         level: { $ref: '#/components/schemas/NotificationLevel' }
-        suppress_mention_all: { type: boolean }
-        suppress_role_mentions: { type: boolean }
+        skip_mention_all: { type: boolean }
+        skip_role_mentions: { type: boolean }
     NotificationSettingsInput:
       type: object
       properties:
-        muted: { type: boolean }
-        muted_until:
+        silenced: { type: boolean }
+        silenced_until:
           type: string
           format: date-time
           nullable: true
           description: Mute на время (S); null — пока не включат обратно.
         level: { $ref: '#/components/schemas/NotificationLevel' }
-        suppress_mention_all: { type: boolean }
-        suppress_role_mentions: { type: boolean }
+        skip_mention_all: { type: boolean }
+        skip_role_mentions: { type: boolean }
     ReadState:
       type: object
       x-proto-message: bebeberloga.v1.ReadState

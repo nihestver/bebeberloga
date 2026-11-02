@@ -58,7 +58,10 @@ message Handshake {
   // Устройство-отправитель; пусто, если отправитель — сервер как external sender.
   string sender_device_id = 5;
   bool from_external_sender = 6;
-  // MLS PublicMessage (RFC 9420 §6.2). В событии gateway пусто, если больше 256 КиБ, —
+  // Handshake участника — MLS PrivateMessage (RFC 9420 §6.3; handshake всегда зашифрованы,
+  // ADR-0016 п. 2), предложение сервера как external sender — PublicMessage (§6.2). Сервер
+  // читает только открытый заголовок (group_id, epoch, content_type). В событии gateway пусто,
+  // если больше 256 КиБ, —
   // тогда клиент забирает `GET /mls/groups/{id}/handshakes/{seq}`.
   bytes blob = 7;
   google.protobuf.Timestamp created_at = 8;

@@ -264,9 +264,9 @@ enum NotificationLevel {
   NOTIFICATION_LEVEL_UNSPECIFIED = 0;
   // Как на сервере (для канала) или как по умолчанию у пользователя (для сервера).
   NOTIFICATION_LEVEL_INHERIT = 1;
-  NOTIFICATION_LEVEL_ALL_MESSAGES = 2;
-  NOTIFICATION_LEVEL_MENTIONS_ONLY = 3;
-  NOTIFICATION_LEVEL_NOTHING = 4;
+  NOTIFICATION_LEVEL_EVERY_MESSAGE = 2;
+  NOTIFICATION_LEVEL_MENTIONS = 3;
+  NOTIFICATION_LEVEL_SILENT = 4;
 }
 
 // Настройки уведомлений пользователя для сообщества или канала. Хранятся на сервере
@@ -276,14 +276,15 @@ message NotificationSettings {
     string community_id = 1;
     string channel_id = 2;
   }
-  bool muted = 3;
+  // Сервер или канал заглушён («Заглушить», SCREENS/10 §4).
+  bool silenced = 3;
   // Mute на время (S): пусто — пока не включат обратно.
-  google.protobuf.Timestamp muted_until = 4;
+  google.protobuf.Timestamp silenced_until = 4;
   NotificationLevel level = 5;
-  // Не уведомлять об упоминаниях всех и тех, кто в сети.
-  bool suppress_mention_all = 6;
-  // Не уведомлять об упоминаниях ролей.
-  bool suppress_role_mentions = 7;
+  // «Не уведомлять об @все и @здесь» (SCREENS/10 §4.2).
+  bool skip_mention_all = 6;
+  // «Не уведомлять об упоминаниях ролей» (SCREENS/10 §4.2).
+  bool skip_role_mentions = 7;
 }
 
 // Состояние чтения канала. На сервере — только id последнего прочитанного.

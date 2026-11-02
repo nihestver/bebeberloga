@@ -13,7 +13,7 @@ SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
 
 [[annotations]]
-path = ["crypto-core/**", "media-engine/**", "proto/**", "sdk/**", "tools/**", "design/**", "spikes/**", "docs/protocol/openapi.yaml"]
+path = ["crypto-core/**", "media-engine/**", "proto/**", "sdk/**", "tools/**", "design/**", "spikes/**"]
 SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
 SPDX-License-Identifier = "Apache-2.0"
 
@@ -35,3 +35,9 @@ SPDX-License-Identifier = "CC0-1.0"
 path = ["docs/**", "*.md", "BRAND.md"]
 SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
 SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+# Исключение из docs/**: контракт REST генерирует код (ADR-0017 п. 9). Последняя подходящая таблица побеждает.
+[[annotations]]
+path = ["docs/protocol/openapi.yaml"]
+SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
+SPDX-License-Identifier = "Apache-2.0"

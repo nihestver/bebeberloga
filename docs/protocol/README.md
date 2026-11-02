@@ -49,21 +49,21 @@
 
 | Шаг | Вызов или событие |
 |---|---|
-| 1 Вход, сессия с неподтверждённым устройством | `POST /auth/login` → `Session.device.verification = UNVERIFIED` |
+| 1 Вход, сессия с неподтверждённым устройством | `POST /auth/login` → `Session.device.verification = DEVICE_VERIFICATION_UNVERIFIED` |
 | 2 Ключи нового устройства, экран «Подтверди» | `PUT /devices/me/keys`, `POST /devices/me/key-packages` |
 | 3 Уведомление других устройств | событие `DeviceAdded{device, verification_request}` своим устройствам |
 | 4.1 Окно «Новое устройство хочет войти» | данные из `DeviceAdded` |
 | 4.2 Обмен коммитментами, сравнение картинок | `POST /devices/{id}/verification/messages` ↔ событие `DeviceVerificationMessage` |
 | 4.3 Подпись ключа нового устройства | клиент |
-| 4.4 Пометка `verified`, Add-предложения во все группы | `POST /devices/{id}/verify` → `DeviceVerified`, `MlsHandshake{from_external_sender, PROPOSAL}`; commit — `POST /mls/groups/{id}/handshakes` первого онлайн-устройства |
+| 4.4 Пометка `verified`, Add-предложения во все группы | `POST /devices/{id}/verify` → `DeviceVerified`, `MlsHandshake{from_external_sender, HANDSHAKE_KIND_PROPOSAL}`; commit — `POST /mls/groups/{id}/handshakes` первого онлайн-устройства |
 | 4.5 История на новом устройстве | `MlsWelcome` → `GET /mls/groups/{id}/history-key-bundle` → `GET /channels/{id}/messages?before=` |
 | 5 Ключом восстановления | `GET /users/me/recovery-key/identity` → клиент расшифровывает → `POST /devices/{id}/verify` (своё устройство) → далее 4.4 |
-| 6 «Начать заново» | `PUT /users/me/identity-key {reset: true}` → `DeviceRemoved` и `SessionInvalid{REASON_DEVICE_REMOVED}` (код 4109) прочим устройствам, Remove-предложения; `UserUpdated` (новый `identity_pubkey`); системное «Ключи изменились» — конверт `DeviceNoticeBody{IDENTITY_KEY_CHANGED}` от клиента |
+| 6 «Начать заново» | `PUT /users/me/identity-key {reset: true}` → `DeviceRemoved` и `SessionInvalid{REASON_DEVICE_REMOVED}` (код 4109) прочим устройствам, Remove-предложения; `UserUpdated` (новый `identity_pubkey`); системное «Ключи изменились» — конверт `DeviceNoticeBody{KIND_IDENTITY_KEY_CHANGED}` от клиента |
 | 7 «Это не я» | `POST /devices/{id}/reject` → `DeviceRemoved`; смена пароля `POST /auth/password/change` |
 | Таймаут 10 минут, «отправить снова» | `VERIFICATION_EXPIRED`; `POST /devices/me/verification/request` → повторный `DeviceAdded` |
-| Выход на устройстве 1–2 | `DELETE /devices/{id}` → `DeviceRemoved`, `MlsHandshake` (Remove-предложения); удалённое устройство получает `SessionInvalid{REASON_DEVICE_REMOVED}` / код 4109 и стирает ключи. Смена пароля (`POST /auth/password/change`) завершает только сессии: код 4108, ключи остаются |
+| Выход на устройстве 1–2 | `DELETE /devices/{id}` → `DeviceRemoved`, `MlsHandshake` (Remove-предложения); удалённое устройство получает `SessionInvalid{REASON_DEVICE_REMOVED}` / код 4109 и стирает ключи; так же для `POST /auth/logout` и «выйти на всех других устройствах». Смена пароля (`POST /auth/password/change`) завершает только сессии: код 4108, ключи остаются |
 | Выход 3 | клиент стирает ключи и базу |
-| Выход 4 Системное сообщение собеседникам | конверт `DeviceNoticeBody{DEVICE_REMOVED}` от оставшегося устройства |
+| Выход 4 Системное сообщение собеседникам | конверт `DeviceNoticeBody{KIND_DEVICE_REMOVED}` от оставшегося устройства |
 
 ### 03 — Создание сервера и каналов
 
@@ -90,20 +90,20 @@
 | Вступить 2 Принять | `POST /invites/{code}/accept` → `MemberJoined` участникам, `CommunityCreated` своим устройствам |
 | Вступить 3 Add-предложения, Skeleton до commit | `MlsHandshake{from_external_sender}` членам групп; commit онлайн-участником |
 | Вступить 4 Связка ключей истории; история | `MlsWelcome` → `GET /mls/groups/{id}/history-key-bundle` → `GET /channels/{id}/messages` (при выключенной истории сервер не отдаёт сообщения до вступления) |
-| Вступить 5 Системное сообщение о входе | `MessageCreated{system: MEMBER_JOINED}` в канале системных сообщений |
+| Вступить 5 Системное сообщение о входе | `MessageCreated{system: KIND_MEMBER_JOINED}` в канале системных сообщений |
 
 ### 05 — Друзья и личные сообщения
 
 | Шаг | Вызов или событие |
 |---|---|
 | Запрос 1 | `POST /users/me/relationships {username}` |
-| Запрос 2 Проверки, ответ | `NOT_FOUND`, `BLOCKED`, `RELATIONSHIP_EXISTS`; успех — `Relationship{REQUEST_OUTGOING}` |
-| Запрос 3 Уведомление, принять/отклонить | событие `RelationshipUpdated{REQUEST_INCOMING}`; `PUT /users/me/relationships/{id}` → `RelationshipUpdated{FRIEND}` обоим; `DELETE …/relationships/{id}` → `RelationshipRemoved` без уведомления инициатора |
+| Запрос 2 Проверки, ответ | `NOT_FOUND`, `BLOCKED`, `RELATIONSHIP_EXISTS`; успех — `Relationship{RELATIONSHIP_KIND_REQUEST_OUTGOING}` |
+| Запрос 3 Уведомление, принять/отклонить | событие `RelationshipUpdated{RELATIONSHIP_KIND_REQUEST_INCOMING}`; `PUT /users/me/relationships/{id}` → `RelationshipUpdated{RELATIONSHIP_KIND_FRIEND}` обоим; `DELETE …/relationships/{id}` → `RelationshipRemoved` без уведомления инициатора |
 | ЛС 1 «Написать» | `POST /users/me/dm-channels {participant_ids}` → `Channel{DM}` |
 | ЛС 2 KeyPackage, группа, Welcome | `POST /users/{id}/key-packages/claim` (собеседник и свои устройства) → `POST /mls/groups {channel_id, kind: GROUP_KIND_CHAT}` → `POST /mls/groups/{id}/handshakes` (commit + welcomes) → `MlsWelcome` |
 | ЛС 3 Офлайн-собеседник | пакеты уже на сервере — то же |
-| ЛС 4 Нет KeyPackage | `NO_KEY_PACKAGES` → `Banner`, очередь на клиенте; повтор при `PresenceUpdated{ONLINE}` |
-| Блокировка 1–2 | `PUT /users/me/blocks/{id}` → `RelationshipUpdated{BLOCKED}`; у заблокированного `POST /channels/{id}/messages` → `BLOCKED`; снять — `DELETE /users/me/blocks/{id}` |
+| ЛС 4 Нет KeyPackage | `NO_KEY_PACKAGES` → `Banner`, очередь на клиенте; повтор при `PresenceUpdated{PRESENCE_STATUS_ONLINE}` |
+| Блокировка 1–2 | `PUT /users/me/blocks/{id}` → `RelationshipUpdated{RELATIONSHIP_KIND_BLOCKED}`; у заблокированного `POST /channels/{id}/messages` → `BLOCKED`; снять — `DELETE /users/me/blocks/{id}` |
 
 ### 06 — Сообщения
 
@@ -174,12 +174,12 @@
 |---|---|
 | Приватный канал 1 | `POST /communities/{id}/channels {private, allowed_*}` или `PUT /channels/{id}/access {private, entries}` |
 | Приватный канал 2 Переопределения `channel.see`, состав группы | сервер; `PermissionsUpdated` затронутым; владельцу и администраторам, не выбранным в канал, — `LockedChannelsUpdated` («🔒 закрытый для тебя», PERMISSIONS §3 п. 2); самодобавление — `POST /channels/{id}/access/self` → системное `KIND_CHANNEL_SELF_JOINED` |
-| Приватный канал 3 Remove, commit | `MlsHandshake{from_external_sender, PROPOSAL}` → commit участником |
+| Приватный канал 3 Remove, commit | `MlsHandshake{from_external_sender, HANDSHAKE_KIND_PROPOSAL}` → commit участником |
 | Приватный канал 4 Канал исчезает | `ChannelDeleted` потерявшим доступ |
 | Роли 1 Сохранить роль | `POST /communities/{id}/roles`, `PATCH /roles/{id}`, `PUT /communities/{id}/members/{uid}/roles` |
 | Роли 2 Пересчёт прав, `PermissionsUpdated` | `RoleUpdated`, `MemberUpdated`, `PermissionsUpdated`; при смене `channel.see` — шаг 3 выше |
 | Выгнать 1 Подтверждение | клиент |
-| Выгнать/забанить 2 | `DELETE /communities/{id}/members/{uid}` → `MemberLeft{KICKED}`; `PUT /communities/{id}/bans/{uid} {reason, delete_messages_window_seconds}` → `BanAdded`, `MemberLeft{BANNED}`, `MessageDeleted` пачками; Remove-предложения во всех группах |
-| Выгнать 3 Modal у выгнанного | `CommunityRemoved{reason: KICKED|BANNED}`; если устройство было офлайн дольше буфера Resume — `Ready.community_removals` / `GET /users/me/community-removals`, подтверждение показа `DELETE …/community-removals/{id}` |
+| Выгнать/забанить 2 | `DELETE /communities/{id}/members/{uid}` → `MemberLeft{COMMUNITY_REMOVAL_REASON_KICKED}`; `PUT /communities/{id}/bans/{uid} {reason, delete_messages_window_seconds}` → `BanAdded`, `MemberLeft{COMMUNITY_REMOVAL_REASON_BANNED}`, `MessageDeleted` пачками; Remove-предложения во всех группах |
+| Выгнать 3 Modal у выгнанного | `CommunityRemoved{reason: COMMUNITY_REMOVAL_REASON_KICKED|BANNED}`; если устройство было офлайн дольше буфера Resume — `Ready.community_removals` / `GET /users/me/community-removals`, подтверждение показа `DELETE …/community-removals/{community_id}` |
 | Выгнать 4 Журнал (S) | без события участникам |
 | Снять бан | `DELETE /communities/{id}/bans/{uid}` → `BanRemoved` |

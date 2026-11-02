@@ -149,7 +149,7 @@ message Ready {
   repeated MlsPending mls_pending = 13;
   google.protobuf.Timestamp server_time = 14;
   // Сообщества, из которых пользователя удалили, пока устройство не было в сети, и показ
-  // которых оно ещё не подтвердило (`DELETE /users/me/community-removals/{id}`).
+  // которых оно ещё не подтвердило (`DELETE /users/me/community-removals/{community_id}`).
   repeated CommunityRemoval community_removals = 15;
 }
 
@@ -202,12 +202,13 @@ message SessionInvalid {
     REASON_UNSPECIFIED = 0;
     // Прошло больше 5 минут или seq вне буфера: клиент отправляет Identify.
     REASON_RESUME_WINDOW_EXPIRED = 1;
-    // Сессия завершена: выход, смена пароля, «выйти на всех других устройствах» по сессиям.
-    // Устройство и его ключи остаются (OPEN-QUESTIONS №2): клиент показывает экран входа
-    // и после входа продолжает с теми же ключами.
+    // Сессия завершена без удаления устройства: смена или сброс пароля (OPEN-QUESTIONS №2).
+    // Устройство и его ключи остаются: клиент показывает экран входа и после входа продолжает
+    // с теми же ключами. Выход и «выйти на всех других устройствах» удаляют устройство —
+    // для них REASON_DEVICE_REMOVED.
     REASON_SESSION_ENDED = 2;
-    // Устройство удалено (FLOWS/02 «Выход на устройстве»): клиент стирает локальные
-    // ключи и базу.
+    // Устройство удалено (FLOWS/02 «Выход на устройстве»; `POST /auth/logout`,
+    // `DELETE /devices/{id}`, `DELETE /users/me/devices`): клиент стирает локальные ключи и базу.
     REASON_DEVICE_REMOVED = 3;
     // Несовместимая версия протокола.
     REASON_PROTOCOL_MISMATCH = 4;
