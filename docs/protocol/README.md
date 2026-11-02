@@ -7,10 +7,10 @@
 | Файл | Что содержит | Промпт |
 |---|---|---|
 | `GATEWAY.md` | WebSocket-шлюз: `Identify` → `Ready`, события с монотонным `seq`, heartbeat, `Resume(seq)` с буфером 5 минут, сжатие zstd, шардинг по пользователю | B1 |
-| `REST.md` + OpenAPI 3.1 | CRUD сообществ и каналов, история сообщений (пагинация по UUIDv7), загрузка KeyPackages, инвайты, настройки | B1 |
-| `MESSAGES.md` | Protobuf-конверт application-сообщения MLS: тип (text, edit, delete, reaction, pin, poll-vote, file-key, call-key, history-share, soundboard-play), id, ответ, содержимое, упоминания; mention-hint | B1/B2 |
-| `CRYPTO.md` | MLS-профиль, ключи идентичности и устройств, Delivery Service, external sender, ротация эпох, вывод SFrame-ключей для камеры и стрима, бэкап истории, формальные инварианты | B2 |
-| `MEDIA.md` | Комнаты LiveKit, токены с правами (стримить, soundboard), webhooks, смена эпохи звонка, лимиты качества стрима, data-сообщения звонка | B1/B7 |
+| `REST.md` + `openapi.yaml` | Контракт REST пишется первым, код генерируется из него (`just gen`): CRUD сообществ и каналов, история сообщений (пагинация по UUIDv7), загрузка KeyPackages, инвайты, настройки | B1 |
+| `MESSAGES.md` | Protobuf-конверт application-сообщения MLS: тип (text, edit, delete, reaction, pin, poll-vote, file-key, call-key, history-keys), id, ответ, содержимое, упоминания; mention-hint | B1/B2 |
+| `CRYPTO.md` | MLS-профиль, ключи идентичности и устройств, Delivery Service, external sender, ротация эпох, вывод SFrame-ключей для камеры и стрима, ключи истории и их связки, формальные инварианты | B2 |
+| `MEDIA.md` | Комнаты LiveKit, токены с правами (говорить, стримить), webhooks, смена эпохи звонка, лимиты качества стрима; команда `PlaySound` и событие `SoundPlayed` в gateway | B1/B7 |
 | `../../proto/` | Protobuf-схемы — единственный источник моделей для Go/TS/Kotlin/Swift | B1 |
 
 ## Уже зафиксировано
@@ -18,11 +18,11 @@
 - MLS RFC 9420 через OpenMLS; ciphersuite `MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519` (0x0001); credential Basic. Одна группа на DM, групповой DM, текстовый канал, приватную ветку, активный звонок ([ADR-0004](../adr/0004-e2ee-mls-sframe.md)).
 - Сервер = Delivery Service + Authentication Service: принимает commit только для текущей эпохи; external-sender-предложения Add/Remove по правам; external commit по зашифрованному GroupInfo для быстрого входа; ротация эпохи при смене состава и не реже раза в сутки.
 - Лимит участников канала по умолчанию 2 000 ([ADR-0005](../adr/0005-channel-member-limit.md)).
-- `history-share` только по явной опции; глубина ≤ 30 дней, по умолчанию 7 ([ADR-0006](../adr/0006-history-for-new-members.md)).
+- История видна всем, кто видит канал, через ключи истории канала ([ADR-0015](../adr/0015-history-visible-to-members.md)).
 - Файлы: XChaCha20-Poly1305 чанками по 1 МиБ, presigned URL в S3, ключ и хэш — в MLS-сообщении; превью генерирует отправитель.
 - Push: только id группы и сообщения (UnifiedPush, FCM, APNs).
 - Упоминания: `mention-hint` = HMAC(id упоминаемого, секрет канала из MLS exporter) в открытых метаданных сообщения; сервер сравнивает с хинтами участников, не узнавая адресата.
 - Удаление и редактирование — новые MLS-сообщения по id; сервер ставит tombstone на шифртекст по команде автора или модератора.
 - Стрим: отдельный участник «стрим» в комнате звонка; SFU пересылает только подписавшимся; simulcast из двух слоёв; H.264 всегда, HEVC/AV1 — если все зрители декодируют ([ADR-0008](../adr/0008-stream-media-engine.md)).
-- Soundboard: звуки — публичные ассеты сообщества; команда «сыграть» — зашифрованное data-сообщение звонка; каждый клиент играет локальную копию.
-- Модель данных ядра — `docs/PLAN.md` раздел 5.3.
+- Soundboard: звуки — публичные ассеты; команда `PlaySound` идёт через gateway, сервер проверяет право 14, присутствие в канале и кулдаун и рассылает `SoundPlayed`; каждый клиент играет локальную копию.
+- Модель данных ядра — [`docs/spec/ARCHITECTURE.md`](../spec/ARCHITECTURE.md) раздел 5.3.
