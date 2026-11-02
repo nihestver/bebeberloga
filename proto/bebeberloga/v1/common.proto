@@ -1,0 +1,120 @@
+// SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+// SPDX-License-Identifier: Apache-2.0
+
+// Общие типы протокола Bebeberloga.
+//
+// Идентификаторы. Все id — UUIDv7 (RFC 9562) в канонической строковой форме
+// (36 символов, строчные hex, с дефисами). Выбор `string`, а не `bytes`:
+// один и тот же вид id в URL REST, в JSON-режиме gateway и в Protobuf;
+// клиенты на TS работают без base64-преобразований; лишние 20 байт на id
+// несущественны рядом с шифртекстом. Id сообщений генерирует клиент,
+// остальные — сервер (GLOSSARY.md «Идентификаторы»).
+//
+// Права передаются списком строковых кодов вида `<область>.<действие>`
+// (PERMISSIONS.md §1), а не битовой маской. Полный список кодов — в
+// docs/protocol/REST.md «Коды прав».
+//
+// Числовые лимиты, которых нет в спецификации, выбраны проектом и обоснованы
+// в docs/protocol/STATUS.md «Собственные значения».
+syntax = "proto3";
+
+package bebeberloga.v1;
+
+// Окно пагинации по UUIDv7. Используется для истории сообщений, списков
+// участников и других длинных списков. Курсор — id элемента; порядок —
+// по возрастанию id (то есть по времени создания).
+message PageRequest {
+  // Вернуть элементы строго старше этого id (для подгрузки истории вверх).
+  string before = 1;
+  // Вернуть элементы строго новее этого id (для догона после разрыва).
+  string after = 2;
+  // Размер страницы; по умолчанию 50 (SCREENS/08 §1), максимум 150.
+  uint32 limit = 3;
+}
+
+// Служебные поля ответа со списком.
+message PageInfo {
+  // Есть ли элементы старше первого на странице.
+  bool has_before = 1;
+  // Есть ли элементы новее последнего на странице.
+  bool has_after = 2;
+}
+
+// Состояние присутствия. В 1.0 вычисляется автоматически (ADR-0013 п. 9);
+// остальные значения зарезервированы под статусы (C).
+enum PresenceStatus {
+  PRESENCE_STATUS_UNSPECIFIED = 0;
+  PRESENCE_STATUS_OFFLINE = 1;
+  PRESENCE_STATUS_ONLINE = 2;
+}
+
+// Присутствие пользователя: есть ли у него подключённое устройство.
+message Presence {
+  string user_id = 1;
+  PresenceStatus status = 2;
+}
+
+// Платформа устройства (клиента).
+enum DevicePlatform {
+  DEVICE_PLATFORM_UNSPECIFIED = 0;
+  DEVICE_PLATFORM_DESKTOP_WINDOWS = 1;
+  DEVICE_PLATFORM_DESKTOP_MACOS = 2;
+  DEVICE_PLATFORM_DESKTOP_LINUX = 3;
+  DEVICE_PLATFORM_WEB = 4;
+  // После 1.0 (ADR-0010).
+  DEVICE_PLATFORM_ANDROID = 5;
+  DEVICE_PLATFORM_IOS = 6;
+}
+
+// Политика регистрации инстанса (FEATURES 3.8).
+enum RegistrationPolicy {
+  REGISTRATION_POLICY_UNSPECIFIED = 0;
+  REGISTRATION_POLICY_OPEN = 1;
+  // Нужен код приглашения инстанса.
+  REGISTRATION_POLICY_INVITE_ONLY = 2;
+  REGISTRATION_POLICY_CLOSED = 3;
+}
+
+// Лимиты инстанса, нужные клиенту до первого запроса.
+message InstanceLimits {
+  // Максимальная длина текста сообщения в символах (4 000, SCREENS/08 §8).
+  uint32 max_text_length = 1;
+  // Максимум вложений в сообщении (10, FLOWS/06).
+  uint32 max_attachments = 2;
+  // Максимальный размер файла в байтах (настройка инстанса, FEATURES 3.8).
+  uint64 max_file_size = 3;
+  // Лимит участников канала (ADR-0005; по умолчанию 2 000).
+  uint32 channel_member_limit = 4;
+  // Лимит личных звуков пользователя (10, ADR-0013 п. 14) и звуков сообщества (инстанс).
+  uint32 user_sound_slots = 5;
+  uint32 community_sound_slots = 6;
+  // Максимальный пресет стрима, разрешённый администратором инстанса (ADR-0013 п. 6).
+  StreamPreset max_stream_preset = 7;
+  // Максимальный размер кадра от клиента в байтах (GATEWAY.md §7).
+  uint32 max_client_frame_size = 8;
+  // Лимит сообществ на пользователя (FLOWS/03 ш. 5).
+  uint32 communities_per_user = 9;
+}
+
+// Пресеты качества стрима (GLOSSARY `stream_preset`).
+enum StreamPreset {
+  STREAM_PRESET_UNSPECIFIED = 0;
+  // Экономия 720p30.
+  STREAM_PRESET_SAVER = 1;
+  // Баланс 1080p30.
+  STREAM_PRESET_BALANCED = 2;
+  // Плавность 1080p60.
+  STREAM_PRESET_SMOOTH = 3;
+}
+
+// Сведения об инстансе (`GET /instance`), доступны без входа.
+message InstanceInfo {
+  string name = 1;
+  RegistrationPolicy registration_policy = 2;
+  string rules_url = 3;
+  string privacy_url = 4;
+  string server_version = 5;
+  // Версия протокола gateway и REST (1).
+  uint32 protocol_version = 6;
+  InstanceLimits limits = 7;
+}

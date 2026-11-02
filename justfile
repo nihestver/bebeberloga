@@ -27,8 +27,9 @@ lint-rust:
 lint-web:
     @if [ -d clients/web ]; then cd clients/web && pnpm lint && pnpm typecheck; else echo "skip: clients/web ещё нет"; fi
 
+# buf breaking сравнивает с main только когда там уже есть .proto (иначе buf падает на пустом модуле)
 lint-proto:
-    @if [ -d proto ]; then buf lint && buf breaking --against '.git#branch=main'; else echo "skip: proto/ ещё нет"; fi
+    @if [ -d proto ]; then buf lint && buf format -d --exit-code && if git ls-tree -r --name-only main -- proto | grep -q '\.proto$'; then buf breaking --against '.git#branch=main'; else echo "skip: в main ещё нет proto/, buf breaking пропущен"; fi; else echo "skip: proto/ ещё нет"; fi
 
 lint-licenses:
     reuse lint

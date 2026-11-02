@@ -1,0 +1,508 @@
+// SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+// SPDX-License-Identifier: Apache-2.0
+
+// WebSocket-шлюз: кадры клиента и сервера, `Identify` → `Ready`, события с
+// монотонным `seq`, heartbeat, `Resume`. Поведение — docs/protocol/GATEWAY.md.
+syntax = "proto3";
+
+package bebeberloga.v1;
+
+import "bebeberloga/v1/common.proto";
+import "bebeberloga/v1/community.proto";
+import "bebeberloga/v1/error.proto";
+import "bebeberloga/v1/identity.proto";
+import "bebeberloga/v1/message.proto";
+import "bebeberloga/v1/mls.proto";
+import "bebeberloga/v1/sound.proto";
+import "google/protobuf/timestamp.proto";
+
+// ---------------------------------------------------------------------------
+// Кадры
+// ---------------------------------------------------------------------------
+
+// Кадр от клиента. Один WebSocket-кадр = одно сообщение ClientFrame.
+message ClientFrame {
+  // Необязательный номер для сопоставления ошибки `CommandRejected` с командой.
+  uint32 nonce = 1;
+  oneof payload {
+    Identify identify = 10;
+    Resume resume = 11;
+    Heartbeat heartbeat = 12;
+    TypingStart typing_start = 20;
+    SetVoicePresence set_voice_presence = 21;
+    PlaySound play_sound = 22;
+    PresenceSubscribe presence_subscribe = 23;
+  }
+}
+
+// Кадр от сервера. `seq` монотонно растёт у событий (блок «События»); у служебных
+// кадров (Ready, Resumed, HeartbeatAck, SessionInvalid, CommandRejected) `seq` = 0.
+message ServerFrame {
+  uint64 seq = 1;
+  oneof payload {
+    Ready ready = 10;
+    Resumed resumed = 11;
+    HeartbeatAck heartbeat_ack = 12;
+    SessionInvalid session_invalid = 13;
+    CommandRejected command_rejected = 14;
+
+    // --- сообщения -----------------------------------------------------
+    MessageCreated message_created = 100;
+    MessageUpdated message_updated = 101;
+    MessageDeleted message_deleted = 102;
+    TypingStarted typing_started = 103;
+    ReadStateUpdated read_state_updated = 104;
+
+    // --- MLS -----------------------------------------------------------
+    MlsHandshake mls_handshake = 110;
+    MlsWelcome mls_welcome = 111;
+    MlsUpdateRequested mls_update_requested = 112;
+
+    // --- присутствие и голос -------------------------------------------
+    PresenceUpdated presence_updated = 120;
+    VoicePresenceChanged voice_presence_changed = 121;
+    CallStarted call_started = 122;
+    CallEnded call_ended = 123;
+    SoundPlayed sound_played = 124;
+
+    // --- сообщества ----------------------------------------------------
+    CommunityCreated community_created = 130;
+    CommunityUpdated community_updated = 131;
+    CommunityRemoved community_removed = 132;
+    CategoryCreated category_created = 133;
+    CategoryUpdated category_updated = 134;
+    CategoryDeleted category_deleted = 135;
+    ChannelCreated channel_created = 136;
+    ChannelUpdated channel_updated = 137;
+    ChannelDeleted channel_deleted = 138;
+    MemberJoined member_joined = 139;
+    MemberUpdated member_updated = 140;
+    MemberLeft member_left = 141;
+    RoleCreated role_created = 142;
+    RoleUpdated role_updated = 143;
+    RoleDeleted role_deleted = 144;
+    PermissionsUpdated permissions_updated = 145;
+    InviteCreated invite_created = 146;
+    InviteRevoked invite_revoked = 147;
+    BanAdded ban_added = 148;
+    BanRemoved ban_removed = 149;
+    SoundAdded sound_added = 150;
+    SoundUpdated sound_updated = 151;
+    SoundRemoved sound_removed = 152;
+    LockedChannelsUpdated locked_channels_updated = 153;
+
+    // --- пользователь и устройства -------------------------------------
+    UserUpdated user_updated = 160;
+    DeviceAdded device_added = 161;
+    DeviceVerified device_verified = 162;
+    DeviceRemoved device_removed = 163;
+    DeviceVerificationMessage device_verification_message = 164;
+    RelationshipUpdated relationship_updated = 165;
+    RelationshipRemoved relationship_removed = 166;
+    NotificationSettingsUpdated notification_settings_updated = 167;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Служебные кадры
+// ---------------------------------------------------------------------------
+
+enum Compression {
+  COMPRESSION_UNSPECIFIED = 0;
+  COMPRESSION_NONE = 1;
+  // zstd на уровне кадра: каждый кадр сервера сжат отдельно (без общего словаря).
+  COMPRESSION_ZSTD = 2;
+}
+
+// Первый кадр новой сессии gateway.
+message Identify {
+  // Токен доступа из `POST /auth/login`.
+  string access_token = 1;
+  // Устройство, с которого подключаемся; должно принадлежать сессии токена.
+  string device_id = 2;
+  Compression compression = 3;
+  // Версия клиента для журналов и совместимости.
+  string client_version = 4;
+}
+
+// Снимок состояния при подключении. Списки участников сообществ и история
+// сообщений сюда не входят — они запрашиваются через REST по мере надобности.
+message Ready {
+  // Id сессии gateway; нужен для Resume.
+  string session_id = 1;
+  // Интервал heartbeat, который должен соблюдать клиент.
+  uint32 heartbeat_interval_ms = 2;
+  // Последний `seq`, выданный до этого снимка (обычно 0 для новой сессии).
+  uint64 seq = 3;
+  Account account = 4;
+  repeated Device devices = 5;
+  repeated CommunitySnapshot communities = 6;
+  // ЛС и групповые чаты пользователя.
+  repeated Channel dm_channels = 7;
+  repeated ReadState read_states = 8;
+  repeated Relationship relationships = 9;
+  // Присутствие друзей.
+  repeated Presence presences = 10;
+  repeated NotificationSettings notification_settings = 11;
+  InstanceLimits limits = 12;
+  // Группы, в которых у устройства есть недоставленные Welcome или handshake после его последнего ack.
+  repeated MlsPending mls_pending = 13;
+  google.protobuf.Timestamp server_time = 14;
+  // Сообщества, из которых пользователя удалили, пока устройство не было в сети, и показ
+  // которых оно ещё не подтвердило (`DELETE /users/me/community-removals/{community_id}`).
+  repeated CommunityRemoval community_removals = 15;
+}
+
+// Сообщество целиком, кроме списка участников.
+message CommunitySnapshot {
+  Community community = 1;
+  repeated Category categories = 2;
+  // Только каналы, которые пользователь видит.
+  repeated Channel channels = 3;
+  repeated Role roles = 4;
+  // Запись самого пользователя.
+  Member me = 5;
+  EffectivePermissions permissions = 6;
+  // Кто сейчас в голосовых каналах сообщества.
+  repeated VoicePresence voice_presences = 7;
+  // Для владельца и администраторов: приватные каналы, в которые они себя не добавили
+  // («🔒 закрытый для тебя», PERMISSIONS.md §3 п. 2). У остальных пусто.
+  repeated LockedChannel locked_channels = 8;
+}
+
+// Группа с ожидающими MLS-сообщениями для этого устройства.
+message MlsPending {
+  string group_id = 1;
+  uint64 epoch = 2;
+  // Есть недоставленный Welcome.
+  bool welcome_pending = 3;
+  // Число handshake-сообщений после последнего подтверждённого `seq` устройства.
+  uint32 handshake_count = 4;
+}
+
+// Возобновление сессии после разрыва.
+message Resume {
+  string access_token = 1;
+  string session_id = 2;
+  // Последний обработанный клиентом `seq`.
+  uint64 seq = 3;
+  Compression compression = 4;
+}
+
+// Сессия возобновлена; дальше идут пропущенные события с `seq` > Resume.seq.
+message Resumed {
+  uint32 heartbeat_interval_ms = 1;
+  // Сколько событий будет дослано.
+  uint32 replayed_events = 2;
+}
+
+// Сессию нельзя продолжить. Что делать клиенту — по `reason` (GATEWAY.md §7).
+message SessionInvalid {
+  enum Reason {
+    REASON_UNSPECIFIED = 0;
+    // Прошло больше 5 минут или seq вне буфера: клиент отправляет Identify.
+    REASON_RESUME_WINDOW_EXPIRED = 1;
+    // Сессия завершена без удаления устройства: смена или сброс пароля (OPEN-QUESTIONS №2).
+    // Устройство и его ключи остаются: клиент показывает экран входа и после входа продолжает
+    // с теми же ключами. Выход и «выйти на всех других устройствах» удаляют устройство —
+    // для них REASON_DEVICE_REMOVED.
+    REASON_SESSION_ENDED = 2;
+    // Устройство удалено (FLOWS/02 «Выход на устройстве»; `POST /auth/logout`,
+    // `DELETE /devices/{id}`, `DELETE /users/me/devices`): клиент стирает локальные ключи и базу.
+    REASON_DEVICE_REMOVED = 3;
+    // Несовместимая версия протокола.
+    REASON_PROTOCOL_MISMATCH = 4;
+  }
+  Reason reason = 1;
+}
+
+// Heartbeat: клиент шлёт каждые heartbeat_interval_ms с последним seq, сервер отвечает HeartbeatAck.
+message Heartbeat {
+  uint64 seq = 1;
+}
+
+message HeartbeatAck {
+  google.protobuf.Timestamp server_time = 1;
+}
+
+// Команда отклонена (нет права, кулдаун, нет в голосе). Успех команды отдельно не подтверждается.
+message CommandRejected {
+  uint32 nonce = 1;
+  Error error = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Команды клиента
+// ---------------------------------------------------------------------------
+
+// Набор текста; не шифруется. Сервер рассылает TypingStarted участникам канала;
+// клиент показывает индикатор 8 с (STATUS.md).
+message TypingStart {
+  string channel_id = 1;
+}
+
+// Собственные флаги присутствия в голосе: микрофон, звук, камера, стрим.
+// Вход и выход из голоса — через REST (`/channels/{id}/voice/join|leave`).
+message SetVoicePresence {
+  string channel_id = 1;
+  bool mic_off = 2;
+  bool sound_off = 3;
+  bool camera_on = 4;
+  bool streaming = 5;
+}
+
+// Проиграть звук саундборда (FLOWS/09, ADR-0013 п. 17). Сервер проверяет право `voice.sounds`,
+// присутствие в голосовом канале и кулдаун 2 с; при успехе рассылает SoundPlayed.
+message PlaySound {
+  string channel_id = 1;
+  string sound_id = 2;
+}
+
+// Подписка на присутствие пользователей вне списка друзей (участники открытого сообщества).
+// Сервер шлёт PresenceUpdated только по подписанным и друзьям; подписка живёт до разрыва.
+message PresenceSubscribe {
+  // Сообщество, чьих участников показывать; пусто — отписаться от всего, кроме друзей.
+  string community_id = 1;
+}
+
+// ---------------------------------------------------------------------------
+// События (seq > 0)
+// ---------------------------------------------------------------------------
+
+message MessageCreated {
+  MessageMeta message = 1;
+}
+
+// Серверные метаданные сообщения изменились: закреп, загрузка вложения. Содержимое
+// (правка текста, реакции) приходит новыми MessageCreated с конвертами edit/reaction.
+message MessageUpdated {
+  MessageMeta message = 1;
+}
+
+// Одно или несколько сообщений удалены (пачкой — при бане с удалением сообщений).
+message MessageDeleted {
+  string channel_id = 1;
+  repeated string message_ids = 2;
+}
+
+message TypingStarted {
+  string channel_id = 1;
+  string user_id = 2;
+}
+
+// Read-state изменился с другого устройства пользователя или сервером.
+message ReadStateUpdated {
+  ReadState read_state = 1;
+}
+
+// Handshake-сообщение MLS, упорядоченное сервером по группе.
+message MlsHandshake {
+  Handshake handshake = 1;
+}
+
+// Welcome для этого устройства.
+message MlsWelcome {
+  Welcome welcome = 1;
+}
+
+// Сервер просит онлайн-устройство сделать commit (ротация по сроку, «Обновить ключи канала»,
+// незакоммиченные proposals external sender). Обрабатывает первое устройство, которое успеет.
+message MlsUpdateRequested {
+  string group_id = 1;
+  enum Reason {
+    REASON_UNSPECIFIED = 0;
+    // Есть proposals от external sender без commit.
+    REASON_PENDING_PROPOSALS = 1;
+    // Плановая ротация (не реже раза в сутки).
+    REASON_SCHEDULED_ROTATION = 2;
+    // Запрос участника с правом `channel.edit`.
+    REASON_MANUAL = 3;
+    // После external commit нужно обновить связку ключей истории (ADR-0015).
+    REASON_HISTORY_BUNDLE = 4;
+  }
+  Reason reason = 2;
+}
+
+message PresenceUpdated {
+  Presence presence = 1;
+}
+
+// Присутствие в голосе изменилось: вход, подтверждение подключения, флаги, выход.
+message VoicePresenceChanged {
+  // Текущее состояние; отсутствует, если пользователь вышел из голоса.
+  VoicePresence presence = 1;
+  // Канал, из которого пользователь вышел (если вышел).
+  string left_channel_id = 2;
+  string user_id = 3;
+}
+
+// Входящий звонок в ЛС или групповом чате.
+message CallStarted {
+  string channel_id = 1;
+  string caller_id = 2;
+}
+
+message CallEnded {
+  string channel_id = 1;
+}
+
+// Звук саундборда проигран; каждый клиент в канале играет локальную копию.
+message SoundPlayed {
+  string channel_id = 1;
+  string user_id = 2;
+  string sound_id = 3;
+  // Громкость, выбранная владельцем звука, 0–100.
+  uint32 volume = 4;
+}
+
+message CommunityCreated {
+  CommunitySnapshot community = 1;
+}
+
+message CommunityUpdated {
+  Community community = 1;
+}
+
+// Пользователь перестал быть участником: сообщество удалено, вышел, выгнан или забанен.
+message CommunityRemoved {
+  CommunityRemoval removal = 1;
+}
+
+message CategoryCreated {
+  Category category = 1;
+}
+
+message CategoryUpdated {
+  Category category = 1;
+}
+
+message CategoryDeleted {
+  string community_id = 1;
+  string category_id = 2;
+}
+
+message ChannelCreated {
+  Channel channel = 1;
+}
+
+message ChannelUpdated {
+  Channel channel = 1;
+}
+
+// Канал удалён или перестал быть виден пользователю (стал приватным).
+message ChannelDeleted {
+  string community_id = 1;
+  string channel_id = 2;
+}
+
+// Список «закрытых для тебя» каналов владельца или администратора изменился.
+message LockedChannelsUpdated {
+  string community_id = 1;
+  repeated LockedChannel locked_channels = 2;
+}
+
+message MemberJoined {
+  Member member = 1;
+}
+
+message MemberUpdated {
+  Member member = 1;
+}
+
+message MemberLeft {
+  string community_id = 1;
+  string user_id = 2;
+  CommunityRemovalReason reason = 3;
+}
+
+message RoleCreated {
+  Role role = 1;
+}
+
+message RoleUpdated {
+  Role role = 1;
+}
+
+message RoleDeleted {
+  string community_id = 1;
+  string role_id = 2;
+}
+
+// Действующие права получателя в сообществе пересчитаны; интерфейс перерисовывается без перезагрузки.
+message PermissionsUpdated {
+  EffectivePermissions permissions = 1;
+}
+
+message InviteCreated {
+  Invite invite = 1;
+}
+
+message InviteRevoked {
+  string community_id = 1;
+  string code = 2;
+}
+
+message BanAdded {
+  Ban ban = 1;
+}
+
+message BanRemoved {
+  string community_id = 1;
+  string user_id = 2;
+}
+
+message SoundAdded {
+  Sound sound = 1;
+}
+
+message SoundUpdated {
+  Sound sound = 1;
+}
+
+message SoundRemoved {
+  string sound_id = 1;
+  // Владелец, из набора которого удалён звук.
+  string community_id = 2;
+  string user_id = 3;
+}
+
+// Профиль пользователя изменился (своего или видимого).
+message UserUpdated {
+  User user = 1;
+}
+
+// У пользователя новое устройство (не подтверждено). Только своим устройствам — для окна
+// «Новое устройство хочет войти»; собеседникам заметку создаёт клиент (DeviceNoticeBody).
+message DeviceAdded {
+  Device device = 1;
+  DeviceVerificationRequest verification_request = 2;
+}
+
+message DeviceVerified {
+  Device device = 1;
+}
+
+message DeviceRemoved {
+  string user_id = 1;
+  string device_id = 2;
+}
+
+// Обмен коммитментами между старым и новым устройством при подтверждении (FLOWS/02 ш. 4.2).
+// Сервер пересылает `payload`, не интерпретируя; формат — CRYPTO.md (B2).
+message DeviceVerificationMessage {
+  string request_id = 1;
+  string from_device_id = 2;
+  bytes payload = 3;
+}
+
+message RelationshipUpdated {
+  Relationship relationship = 1;
+}
+
+message RelationshipRemoved {
+  string user_id = 1;
+}
+
+message NotificationSettingsUpdated {
+  NotificationSettings settings = 1;
+}

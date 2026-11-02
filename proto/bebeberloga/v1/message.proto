@@ -1,0 +1,99 @@
+// SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+// SPDX-License-Identifier: Apache-2.0
+
+// Открытые (серверные) метаданные сообщения и вложений. Сервер хранит и отдаёт
+// только их и шифртекст (ARCHITECTURE.md §4.4, §5.3). Расшифрованное содержимое —
+// envelope.proto, его сервер не видит.
+syntax = "proto3";
+
+package bebeberloga.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Упоминание, которое сервер должен доставить всем или присутствующим.
+// Передаётся открыто, потому что без этого нельзя проверить право `chat.ping_all`
+// и рассчитать бейджи; кто именно упомянут поимённо — скрыто в mention-hint.
+enum BroadcastMention {
+  BROADCAST_MENTION_UNSPECIFIED = 0;
+  BROADCAST_MENTION_NONE = 1;
+  // «@здесь»: участники канала, которые сейчас в сети.
+  BROADCAST_MENTION_ONLINE = 2;
+  // «@все»: все участники канала.
+  BROADCAST_MENTION_ALL = 3;
+}
+
+// Метаданные вложения на сервере. Ключ, имя и тип файла — только в зашифрованном конверте.
+message Attachment {
+  string id = 1;
+  // Размер шифртекста в байтах.
+  uint64 size = 2;
+  // Хэш шифртекста (BLAKE3, 32 байта); клиент сверяет после скачивания.
+  bytes ciphertext_hash = 3;
+  // Blob загружен и доступен для скачивания.
+  bool uploaded = 4;
+}
+
+// Сообщение в том виде, в котором его хранит и рассылает сервер.
+message MessageMeta {
+  // UUIDv7, сгенерирован клиентом; задаёт порядок в ленте.
+  string id = 1;
+  string channel_id = 2;
+  // MLS-группа и эпоха, в которой зашифрован конверт.
+  string group_id = 3;
+  uint64 epoch = 4;
+  string author_user_id = 5;
+  string author_device_id = 6;
+  // Время приёма сервером.
+  google.protobuf.Timestamp created_at = 7;
+  // MLS PrivateMessage (RFC 9420 §6.3) с конвертом MessageEnvelope внутри; до 128 КиБ
+  // (обоснование — STATUS.md). Пусто у tombstone и системных сообщений.
+  bytes ciphertext = 8;
+  // Размер шифртекста в байтах (ARCHITECTURE.md §4.4); сохраняется и у tombstone.
+  uint32 size = 9;
+  // Ключ сообщения, обёрнутый действующим ключом истории канала (ADR-0015; формат — CRYPTO.md).
+  bytes wrapped_message_key = 10;
+  // Поколение ключа истории, которым обёрнут ключ сообщения.
+  uint32 history_key_generation = 11;
+  // mention-hint = HMAC(id упоминаемого пользователя или роли, секрет канала из MLS exporter).
+  // Сервер сравнивает с хинтами, заранее присланными участниками, не узнавая адресата.
+  repeated bytes mention_hints = 12;
+  BroadcastMention broadcast_mention = 13;
+  repeated Attachment attachments = 14;
+  // Сообщение закреплено (список закрепов — на сервере, только id).
+  bool pinned = 15;
+  // Шифртекст удалён, запись — tombstone.
+  bool deleted = 16;
+  google.protobuf.Timestamp deleted_at = 17;
+  // Системное сообщение сервера: шифртекста нет, тип и параметры — открытые.
+  SystemMessage system = 18;
+}
+
+// Системное сообщение генерирует сервер по открытым событиям; клиент рендерит текст сам.
+// Сообщения о новых устройствах и смене ключей не сюда: их создаёт клиент как зашифрованные
+// (DeviceNoticeBody в envelope.proto).
+message SystemMessage {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    // `actor_id` присоединился к сообществу (FLOWS/04 ш. 5).
+    KIND_MEMBER_JOINED = 1;
+    // `actor_id` закрепил сообщение `target_message_id` (SCREENS/08 §10).
+    KIND_MESSAGE_PINNED = 2;
+    // Владение передано `target_user_id` (SCREENS/11 §9).
+    KIND_OWNERSHIP_TRANSFERRED = 3;
+    // Владелец или администратор `actor_id` добавил себя в приватный канал
+    // (PERMISSIONS.md §3 п. 2: участники канала видят это системным сообщением).
+    KIND_CHANNEL_SELF_JOINED = 4;
+  }
+  Kind kind = 1;
+  string actor_id = 2;
+  string target_user_id = 3;
+  string target_message_id = 4;
+}
+
+// Закреплённое сообщение.
+message Pin {
+  string channel_id = 1;
+  string message_id = 2;
+  string pinned_by = 3;
+  google.protobuf.Timestamp pinned_at = 4;
+}

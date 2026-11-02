@@ -1,0 +1,33 @@
+// SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+// SPDX-License-Identifier: Apache-2.0
+
+// Саундборд: звуки — публичные ассеты сообщества или пользователя (не шифруются,
+// FEATURES 3.3, ADR-0013 п. 14, 17). Команда `PlaySound` и событие `SoundPlayed` — gateway.proto.
+syntax = "proto3";
+
+package bebeberloga.v1;
+
+import "google/protobuf/timestamp.proto";
+
+message Sound {
+  string id = 1;
+  // Владелец: сообщество, пользователь или стандартный набор инстанса.
+  oneof owner {
+    string community_id = 2;
+    string user_id = 3;
+    // Стандартный звук, поставляется инстансом.
+    bool builtin = 4;
+  }
+  // 1–32 символа.
+  string name = 5;
+  // Один эмодзи для плитки; может быть пустым.
+  string emoji = 6;
+  // Громкость воспроизведения по умолчанию, 0–100.
+  uint32 volume = 7;
+  // Длительность, не больше 5 000 мс.
+  uint32 duration_ms = 8;
+  // Относительный URL аудио (Opus в контейнере ogg) для скачивания и кэширования.
+  string audio_url = 9;
+  string uploaded_by = 10;
+  google.protobuf.Timestamp created_at = 11;
+}

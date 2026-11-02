@@ -1,0 +1,145 @@
+// SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+// SPDX-License-Identifier: Apache-2.0
+
+// Единая модель ошибок REST и gateway. Соответствие кодов HTTP-статусам —
+// docs/protocol/REST.md «Ошибки». Текст `message` — служебный, на английском,
+// для журналов; интерфейс показывает собственные локализованные тексты по `code`.
+syntax = "proto3";
+
+package bebeberloga.v1;
+
+import "google/protobuf/struct.proto";
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+
+  // --- общие -------------------------------------------------------------
+  // Тело запроса не прошло валидацию; подробности в `field_errors`. HTTP 400.
+  ERROR_CODE_VALIDATION_FAILED = 1;
+  // Нет или недействителен токен сессии. HTTP 401.
+  ERROR_CODE_UNAUTHENTICATED = 2;
+  // Не хватает права; какого — в `missing_permission`. HTTP 403.
+  ERROR_CODE_PERMISSION_DENIED = 3;
+  // Объект не найден или скрыт от запрашивающего. HTTP 404.
+  ERROR_CODE_NOT_FOUND = 4;
+  // Конфликт состояния (например, повторное создание). HTTP 409.
+  ERROR_CODE_CONFLICT = 5;
+  // Превышена частота запросов; пауза — в `retry_after_ms`. HTTP 429.
+  ERROR_CODE_RATE_LIMITED = 6;
+  // Размер тела, файла или кадра больше допустимого; лимит — в `limit`. HTTP 413.
+  ERROR_CODE_PAYLOAD_TOO_LARGE = 7;
+  // Внутренняя ошибка сервера. HTTP 500.
+  ERROR_CODE_INTERNAL = 8;
+  // Сервис временно недоступен (например, медиасервер). HTTP 503.
+  ERROR_CODE_UNAVAILABLE = 9;
+
+  // --- учётная запись ----------------------------------------------------
+  // Имя пользователя занято. HTTP 409.
+  ERROR_CODE_USERNAME_TAKEN = 100;
+  // На этот email уже есть аккаунт. HTTP 409.
+  ERROR_CODE_EMAIL_IN_USE = 101;
+  // Регистрация на инстансе закрыта или требует код приглашения инстанса. HTTP 403.
+  ERROR_CODE_REGISTRATION_CLOSED = 102;
+  // Неверные логин или пароль. HTTP 401.
+  ERROR_CODE_INVALID_CREDENTIALS = 103;
+  // Аккаунт ещё не подтвердил email. HTTP 403.
+  ERROR_CODE_EMAIL_NOT_VERIFIED = 104;
+  // Ссылка или код подтверждения недействительны или истекли. HTTP 400.
+  ERROR_CODE_TOKEN_INVALID = 105;
+  // Неверный текущий пароль при смене пароля, email или удалении аккаунта. HTTP 403.
+  ERROR_CODE_PASSWORD_MISMATCH = 106;
+
+  // --- устройства и ключи ------------------------------------------------
+  // Действие требует подтверждённого устройства. HTTP 403.
+  ERROR_CODE_DEVICE_UNVERIFIED = 200;
+  // 201 — зарезервировано: ключ восстановления проверяет только клиент (FLOWS/02 ш. 5),
+  // серверной ошибки для него нет.
+  reserved 201;
+  reserved "ERROR_CODE_RECOVERY_KEY_INVALID";
+  // У пользователя нет свободных KeyPackage ни на одном устройстве. HTTP 409.
+  ERROR_CODE_NO_KEY_PACKAGES = 202;
+  // Запрос подтверждения устройства истёк (10 минут). HTTP 410.
+  ERROR_CODE_VERIFICATION_EXPIRED = 203;
+  // Подпись ключа устройства не проходит проверку ключом идентичности. HTTP 400.
+  ERROR_CODE_SIGNATURE_INVALID = 204;
+
+  // --- сообщества и каналы -----------------------------------------------
+  // Достигнут лимит участников канала (ADR-0005). HTTP 409.
+  ERROR_CODE_CHANNEL_MEMBER_LIMIT = 300;
+  // Достигнут лимит сообществ на пользователя (настройка инстанса). HTTP 409.
+  ERROR_CODE_COMMUNITY_LIMIT = 301;
+  // Пользователь забанен в этом сообществе. HTTP 403.
+  ERROR_CODE_BANNED = 302;
+  // Приглашение истекло. HTTP 410.
+  ERROR_CODE_INVITE_EXPIRED = 303;
+  // Приглашение отозвано. HTTP 410.
+  ERROR_CODE_INVITE_REVOKED = 304;
+  // У приглашения исчерпан лимит использований. HTTP 410.
+  ERROR_CODE_INVITE_USES_EXHAUSTED = 305;
+  // Приглашения сообщества приостановлены. HTTP 403.
+  ERROR_CODE_INVITES_PAUSED = 306;
+  // Нельзя действовать против участника с равной или старшей ролью. HTTP 403.
+  ERROR_CODE_ROLE_HIERARCHY = 307;
+  // Владелец не может покинуть сообщество, не передав владение. HTTP 409.
+  ERROR_CODE_OWNER_CANNOT_LEAVE = 308;
+  // Пресеты ролей нельзя удалить или переименовать (PERMISSIONS.md §2: создаются вместе
+  // с сервером; SCREENS/11 §4.2: «пресеты удалить нельзя»). HTTP 409.
+  ERROR_CODE_PRESET_ROLE_IMMUTABLE = 309;
+  // Голосовой канал полон (лимит участников голоса). HTTP 409.
+  ERROR_CODE_VOICE_CHANNEL_FULL = 310;
+  // Пользователь не находится в этом голосовом канале. HTTP 409.
+  ERROR_CODE_NOT_IN_VOICE = 311;
+
+  // --- друзья и ЛС -------------------------------------------------------
+  // Собеседник заблокировал отправителя или заблокирован им. HTTP 403.
+  ERROR_CODE_BLOCKED = 400;
+  // Запрос в друзья уже существует или пользователи уже друзья. HTTP 409.
+  ERROR_CODE_RELATIONSHIP_EXISTS = 401;
+
+  // --- сообщения и MLS ---------------------------------------------------
+  // Шифртекст или handshake отправлены для устаревшей эпохи MLS-группы. HTTP 409.
+  ERROR_CODE_EPOCH_MISMATCH = 500;
+  // Устройство отправителя не состоит в MLS-группе. HTTP 403.
+  ERROR_CODE_NOT_GROUP_MEMBER = 501;
+  // Сообщение с таким id уже есть, но с другим телом. HTTP 409.
+  ERROR_CODE_MESSAGE_EXISTS = 502;
+  // Вложение не загружено или не принадлежит отправителю. HTTP 400.
+  ERROR_CODE_ATTACHMENT_INVALID = 503;
+  // Слишком много вложений в одном сообщении (лимит 10). HTTP 400.
+  ERROR_CODE_TOO_MANY_ATTACHMENTS = 504;
+
+  // --- саундборд ---------------------------------------------------------
+  // Звук не в формате Opus/ogg (клиент перекодирует перед загрузкой, FLOWS/09 ш. 2)
+  // или длиннее 5 с. HTTP 400.
+  ERROR_CODE_SOUND_INVALID = 600;
+  // Слоты звуков сообщества или пользователя заняты. HTTP 409.
+  ERROR_CODE_SOUND_SLOTS_FULL = 601;
+}
+
+// Ошибка поля формы.
+message FieldError {
+  // Имя поля в теле запроса (snake_case).
+  string field = 1;
+  // Служебный код причины: `required`, `too_short`, `too_long`, `format`, `taken`.
+  string reason = 2;
+}
+
+// Тело ошибки. В REST — JSON этого сообщения; в gateway — поле `error` кадра CommandRejected.
+message Error {
+  ErrorCode code = 1;
+  // Служебное описание для журналов (не для показа пользователю).
+  string message = 2;
+  // Для PERMISSION_DENIED: код недостающего права, например `voice.join`.
+  string missing_permission = 3;
+  // Для RATE_LIMITED: через сколько миллисекунд можно повторить.
+  uint32 retry_after_ms = 4;
+  // Для PAYLOAD_TOO_LARGE, CHANNEL_MEMBER_LIMIT, SOUND_SLOTS_FULL и т. п.: значение лимита.
+  uint64 limit = 5;
+  // Для VALIDATION_FAILED: ошибки полей.
+  repeated FieldError field_errors = 6;
+  // Для EPOCH_MISMATCH: текущая эпоха группы, на которой нужно повторить.
+  uint64 current_epoch = 7;
+  // Дополнительные данные по коду (например, список сообществ владельца для CONFLICT
+  // при удалении аккаунта: `{"owned_community_ids": [...]}`).
+  google.protobuf.Struct details = 8;
+}

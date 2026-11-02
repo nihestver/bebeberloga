@@ -1,0 +1,167 @@
+// SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+// SPDX-License-Identifier: Apache-2.0
+
+// Пользователи, устройства, ключи, друзья, сессии. Модель данных — ARCHITECTURE.md §5.3
+// (таблицы users, devices, key_packages, relationships).
+syntax = "proto3";
+
+package bebeberloga.v1;
+
+import "bebeberloga/v1/common.proto";
+import "google/protobuf/timestamp.proto";
+
+// Публичный профиль пользователя. Аватар — id иконки из встроенного набора
+// (FEATURES 3.1); своя картинка — S, поле `avatar_url` зарезервировано.
+message User {
+  string id = 1;
+  // Логин: латиница, цифры, `.` и `_`, 2–32 символа (SCREENS/07 §2); уникален на инстансе.
+  string username = 2;
+  // Отображаемое имя, 1–48 символов (STATUS.md); если пусто — показывается `username`.
+  string display_name = 3;
+  // Id встроенного аватара (набор поставляется клиентом).
+  string avatar_id = 4;
+  // «О себе», до 190 символов (SCREENS/09 §3).
+  string about = 5;
+  // Цвет баннера профиля — токен палитры (`design/tokens/`), например `color.sage`.
+  string banner_color = 6;
+  // Публичный ключ идентичности Ed25519 (32 байта). Меняется только при «начать заново».
+  bytes identity_pubkey = 7;
+  google.protobuf.Timestamp created_at = 8;
+  // Аккаунт удалён: показывается как «Удалённый пользователь».
+  bool deleted = 9;
+}
+
+// Приватные поля собственного аккаунта, дополняющие User.
+message Account {
+  User user = 1;
+  string email = 2;
+  // Новый email ждёт подтверждения письмом; до подтверждения действует `email`.
+  string pending_email = 3;
+  bool email_verified = 4;
+  // Дата создания действующего ключа восстановления.
+  google.protobuf.Timestamp recovery_key_created_at = 5;
+}
+
+// Профиль другого пользователя с контекстом для вызывающего (SCREENS/09 §4).
+message UserProfile {
+  User user = 1;
+  // Связь с вызывающим; UNSPECIFIED — никакой.
+  RelationshipKind relationship = 2;
+  google.protobuf.Timestamp friends_since = 3;
+  repeated string mutual_community_ids = 4;
+  repeated string mutual_friend_ids = 5;
+}
+
+enum DeviceVerification {
+  DEVICE_VERIFICATION_UNSPECIFIED = 0;
+  // Ключ устройства ещё не подписан ключом идентичности пользователя.
+  DEVICE_VERIFICATION_UNVERIFIED = 1;
+  DEVICE_VERIFICATION_VERIFIED = 2;
+}
+
+// Устройство — отдельный MLS-клиент (один leaf в каждой группе пользователя).
+// Полная запись видна только владельцу; другим пользователям — PublicDevice.
+message Device {
+  string id = 1;
+  string user_id = 2;
+  // Имя для списка устройств: «ОС · клиент и версия».
+  string name = 3;
+  DevicePlatform platform = 4;
+  string client_version = 5;
+  // Публичный ключ подписи MLS-клиента устройства (Ed25519, 32 байта).
+  bytes signature_pubkey = 6;
+  // Подпись `signature_pubkey` ключом идентичности пользователя (64 байта); пусто, пока не подтверждено.
+  bytes identity_signature = 7;
+  DeviceVerification verification = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp last_seen_at = 10;
+  // Город по IP последнего подключения, если инстанс это показывает.
+  string last_seen_location = 11;
+  // Это устройство — то, с которого сделан запрос.
+  bool current = 12;
+}
+
+// Устройство чужого пользователя для вкладки «Безопасность» (SCREENS/09 §4.2):
+// тип, дата добавления, статус проверки и открытые ключи. Без города, времени
+// последнего входа и версии клиента — их видит только владелец (SCREENS/07 §6).
+message PublicDevice {
+  string id = 1;
+  string user_id = 2;
+  DevicePlatform platform = 3;
+  bytes signature_pubkey = 4;
+  bytes identity_signature = 5;
+  DeviceVerification verification = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+// Данные устройства при входе (`POST /auth/login`).
+message DeviceRegistration {
+  // «ОС · клиент», до 64 символов.
+  string name = 1;
+  DevicePlatform platform = 2;
+  string client_version = 3;
+  // Id уже существующего устройства при повторном входе на нём.
+  string device_id = 4;
+}
+
+// Сессия после входа или обновления токена.
+message Session {
+  string access_token = 1;
+  string refresh_token = 2;
+  // Срок токена доступа в секундах.
+  uint32 expires_in = 3;
+  Account account = 4;
+  Device device = 5;
+}
+
+// Одноразовый KeyPackage устройства (RFC 9420 §10). Содержимое — непрозрачный
+// TLS-сериализованный блоб; его формат и число пакетов в пачке задаёт CRYPTO.md (B2).
+message KeyPackage {
+  string device_id = 1;
+  // Код ciphersuite MLS; в 1.0 только 0x0001 (ADR-0004).
+  uint32 ciphersuite = 2;
+  bytes blob = 3;
+}
+
+// Запрос подтверждения нового устройства, показываемый на старом (FLOWS/02 ш. 4.1).
+message DeviceVerificationRequest {
+  string id = 1;
+  Device device = 2;
+  // Запрос живёт 10 минут.
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+enum RelationshipKind {
+  RELATIONSHIP_KIND_UNSPECIFIED = 0;
+  RELATIONSHIP_KIND_FRIEND = 1;
+  // Запрос в друзья, который прислали мне.
+  RELATIONSHIP_KIND_REQUEST_INCOMING = 2;
+  // Запрос в друзья, который отправил я.
+  RELATIONSHIP_KIND_REQUEST_OUTGOING = 3;
+  // Я заблокировал этого пользователя.
+  RELATIONSHIP_KIND_BLOCKED = 4;
+}
+
+// Связь текущего пользователя с другим: дружба, запрос, блокировка.
+message Relationship {
+  User user = 1;
+  RelationshipKind kind = 2;
+  google.protobuf.Timestamp since = 3;
+}
+
+// Способ доставки push (S, после 1.0; ARCHITECTURE.md §4.8).
+enum PushTransport {
+  PUSH_TRANSPORT_UNSPECIFIED = 0;
+  PUSH_TRANSPORT_UNIFIED_PUSH = 1;
+  PUSH_TRANSPORT_FCM = 2;
+  PUSH_TRANSPORT_APNS = 3;
+}
+
+// Push-endpoint устройства (S). Push никогда не содержит текста — только id группы и сообщения.
+message PushEndpoint {
+  string device_id = 1;
+  PushTransport transport = 2;
+  // URL (UnifiedPush) или токен (FCM/APNs).
+  string endpoint = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
