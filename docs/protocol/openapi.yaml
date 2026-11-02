@@ -1,0 +1,3441 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: CC-BY-SA-4.0
+#
+# Контракт REST Bebeberloga. Источник правды: Go-обработчики (oapi-codegen) и TS-клиент
+# (openapi-typescript) генерируются из этого файла (`just gen`, ADR-0016). Пояснения,
+# коды ошибок и покрытие потоков — docs/protocol/REST.md. Модели повторяют Protobuf-схемы
+# из proto/bebeberloga/v1 в JSON-форме: имена полей snake_case, время — RFC 3339,
+# бинарные поля — base64.
+openapi: 3.0.3
+info:
+  title: Bebeberloga REST API
+  version: 1.0.0-draft
+  description: |
+    REST-часть протокола Bebeberloga: всё, что не нужно мгновенно. События реального времени —
+    через gateway (docs/protocol/GATEWAY.md). Сервер хранит и передаёт только шифртекст и
+    метаданные; ключей и открытого текста в этом API нет.
+  license:
+    name: CC BY-SA 4.0
+    url: https://creativecommons.org/licenses/by-sa/4.0/
+servers:
+  - url: https://{instance}/api/v1
+    description: Инстанс Bebeberloga
+    variables:
+      instance:
+        default: test.bebeberloga.org
+tags:
+  - name: instance
+    description: Сведения об инстансе и адрес gateway
+  - name: auth
+    description: Регистрация, подтверждение email, вход, пароль, email, сессии
+  - name: users
+    description: Профиль, проверка имени, публичные профили, удаление аккаунта
+  - name: devices
+    description: Устройства, подтверждение, ключ восстановления, KeyPackage, push
+  - name: relationships
+    description: Друзья, запросы, блокировки
+  - name: dm
+    description: Личные сообщения и групповые чаты как каналы
+  - name: communities
+    description: Сообщества, передача владения, сводка MLS-групп
+  - name: categories
+    description: Категории каналов
+  - name: channels
+    description: Каналы, доступ «Видеть канал», ротация ключей
+  - name: roles
+    description: Роли и выдача ролей участникам
+  - name: members
+    description: Участники, выгнать
+  - name: bans
+    description: Баны
+  - name: invites
+    description: Приглашения
+  - name: messages
+    description: Шифртекст сообщений, история, удаление, закрепы, mention-hint
+  - name: read-state
+    description: Состояние чтения
+  - name: notifications
+    description: Настройки уведомлений по сообществу и каналу
+  - name: files
+    description: Зашифрованные вложения через presigned URL
+  - name: mls
+    description: Delivery Service MLS — группы, handshake, Welcome, GroupInfo, связки ключей истории
+  - name: voice
+    description: Вход в голос, токен SFU, серверный mute/deafen
+  - name: sounds
+    description: Саундборд — звуки сообщества, личные и стандартные
+  - name: internal
+    description: Внутренние эндпоинты инстанса (webhooks медиасервера)
+
+security:
+  - sessionToken: []
+
+paths:
+  # ---------------------------------------------------------------------------
+  # instance
+  # ---------------------------------------------------------------------------
+  /instance:
+    get:
+      tags: [instance]
+      summary: Сведения об инстансе
+      description: Политика регистрации, лимиты и ссылки. Доступно без входа.
+      operationId: getInstance
+      security: []
+      responses:
+        '200':
+          description: Сведения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceInfo'
+        default:
+          $ref: '#/components/responses/Error'
+  /gateway:
+    get:
+      tags: [instance]
+      summary: Адрес WebSocket-шлюза
+      operationId: getGateway
+      responses:
+        '200':
+          description: Адрес
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url]
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                    example: wss://test.bebeberloga.org/gateway/v1
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # auth
+  # ---------------------------------------------------------------------------
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Регистрация
+      description: |
+        Создаёт аккаунт в состоянии «ждёт подтверждения email» и отправляет письмо (FLOWS/01 ш. 3).
+        Ошибки: USERNAME_TAKEN, EMAIL_IN_USE, REGISTRATION_CLOSED, RATE_LIMITED, VALIDATION_FAILED.
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, username, password, accept_rules]
+              properties:
+                email: { type: string, format: email }
+                username: { $ref: '#/components/schemas/Username' }
+                display_name: { type: string, maxLength: 32 }
+                password: { type: string, minLength: 10, maxLength: 256 }
+                accept_rules:
+                  type: boolean
+                  description: Согласие с правилами инстанса; должно быть true.
+                instance_invite_code:
+                  type: string
+                  description: Код приглашения инстанса при политике «по приглашению».
+      responses:
+        '202':
+          description: Аккаунт создан, письмо отправлено
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user_id, registration_token]
+                properties:
+                  user_id: { $ref: '#/components/schemas/Id' }
+                  registration_token:
+                    type: string
+                    description: Непрозрачный токен на 1 час для опроса статуса подтверждения и повторной отправки письма.
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/register/status:
+    get:
+      tags: [auth]
+      summary: Подтверждён ли email после регистрации
+      description: Клиент опрашивает каждые 5 с, пока показывает «Проверь почту» (FLOWS/01 ш. 4).
+      operationId: getRegistrationStatus
+      security: []
+      parameters:
+        - name: registration_token
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Статус
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [email_verified]
+                properties:
+                  email_verified: { type: boolean }
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/email/verify:
+    post:
+      tags: [auth]
+      summary: Подтвердить email по ссылке из письма
+      operationId: verifyEmail
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        '204': { description: Email подтверждён }
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/email/resend:
+    post:
+      tags: [auth]
+      summary: Отправить письмо подтверждения ещё раз
+      description: Не чаще раза в 60 с на адрес (RATE_LIMITED с retry_after_ms).
+      operationId: resendEmailVerification
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '202': { description: Письмо отправлено }
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Вход
+      description: |
+        Создаёт сессию и, если устройство новое, запись устройства в состоянии «не подтверждено»
+        (FLOWS/02 ш. 1). Ошибки: INVALID_CREDENTIALS, EMAIL_NOT_VERIFIED, RATE_LIMITED.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [login, password, device]
+              properties:
+                login:
+                  type: string
+                  description: Email или имя пользователя.
+                password: { type: string }
+                device:
+                  $ref: '#/components/schemas/DeviceRegistration'
+      responses:
+        '200':
+          description: Сессия
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Обновить токен доступа
+      operationId: refreshSession
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200':
+          description: Новая пара токенов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Выйти на этом устройстве
+      description: Завершает сессию и удаляет устройство (как DELETE /devices/{device_id} для текущего).
+      operationId: logout
+      responses:
+        '204': { description: Сессия завершена }
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/password/forgot:
+    post:
+      tags: [auth]
+      summary: Запросить письмо для смены забытого пароля
+      operationId: forgotPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '202': { description: 'Если адрес известен, письмо отправлено' }
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/password/reset:
+    post:
+      tags: [auth]
+      summary: Задать новый пароль по ссылке из письма
+      description: Завершает все сессии пользователя. Ключи устройств не меняются.
+      operationId: resetPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, new_password]
+              properties:
+                token: { type: string }
+                new_password: { type: string, minLength: 10, maxLength: 256 }
+      responses:
+        '204': { description: Пароль изменён }
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/password/change:
+    post:
+      tags: [auth]
+      summary: Сменить пароль
+      description: |
+        Требует текущий пароль (PASSWORD_MISMATCH). После смены завершаются все остальные сессии;
+        устройства и их ключи остаются (OPEN-QUESTIONS №2).
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password: { type: string }
+                new_password: { type: string, minLength: 10, maxLength: 256 }
+      responses:
+        '204': { description: 'Пароль изменён, другие сессии завершены' }
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/email/change:
+    post:
+      tags: [auth]
+      summary: Сменить email
+      description: Отправляет письмо подтверждения на новый адрес; до подтверждения действует старый (OPEN-QUESTIONS №2).
+      operationId: changeEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [new_email, password]
+              properties:
+                new_email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '202': { description: Письмо отправлено на новый адрес }
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/email/change/confirm:
+    post:
+      tags: [auth]
+      summary: Подтвердить новый email
+      operationId: confirmEmailChange
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        '204': { description: Email заменён }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # users
+  # ---------------------------------------------------------------------------
+  /users/availability:
+    get:
+      tags: [users]
+      summary: Свободно ли имя пользователя
+      operationId: checkUsernameAvailability
+      security: []
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Username'
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [available]
+                properties:
+                  available: { type: boolean }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me:
+    get:
+      tags: [users]
+      summary: Свой аккаунт
+      operationId: getMe
+      responses:
+        '200':
+          description: Аккаунт
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags: [users]
+      summary: Изменить профиль
+      operationId: updateMe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name: { type: string, maxLength: 32 }
+                avatar_id: { type: string, description: Id иконки из встроенного набора }
+                about: { type: string, maxLength: 190 }
+                banner_color: { type: string, description: Токен палитры }
+      responses:
+        '200':
+          description: Обновлённый аккаунт
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [users]
+      summary: Удалить аккаунт
+      description: |
+        Требует пароль и имя пользователя (SCREENS/07 §9). Отклоняется с CONFLICT, пока пользователь
+        владеет сообществами: их нужно передать или удалить (список — в поле `details`).
+      operationId: deleteMe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, username]
+              properties:
+                password: { type: string }
+                username: { $ref: '#/components/schemas/Username' }
+      responses:
+        '204': { description: Аккаунт удалён }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/identity-key:
+    put:
+      tags: [users]
+      summary: Опубликовать ключ идентичности
+      description: |
+        Первое устройство публикует открытый ключ идентичности и его копию, зашифрованную ключом
+        восстановления (FLOWS/01 ш. 5–6). Повторный вызов разрешён только при «начать заново»
+        с `reset: true` — тогда все прочие устройства удаляются (FLOWS/02 ш. 6).
+      operationId: putIdentityKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identity_pubkey, encrypted_identity_key]
+              properties:
+                identity_pubkey: { $ref: '#/components/schemas/Bytes' }
+                encrypted_identity_key:
+                  allOf: [{ $ref: '#/components/schemas/Bytes' }]
+                  description: Приватный ключ идентичности, зашифрованный ключом восстановления (формат — CRYPTO.md).
+                reset:
+                  type: boolean
+                  description: Заменить существующий ключ («начать заново»).
+      responses:
+        '204': { description: Ключ опубликован }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/recovery-key:
+    get:
+      tags: [devices]
+      summary: Сведения о ключе восстановления
+      operationId: getRecoveryKeyInfo
+      responses:
+        '200':
+          description: Дата создания
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created_at: { $ref: '#/components/schemas/Timestamp' }
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags: [devices]
+      summary: Создать новый ключ восстановления
+      description: Клиент перешифровывает приватный ключ идентичности новым ключом восстановления; старый ключ перестаёт работать.
+      operationId: rotateRecoveryKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [encrypted_identity_key]
+              properties:
+                encrypted_identity_key: { $ref: '#/components/schemas/Bytes' }
+      responses:
+        '204': { description: Ключ заменён }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/recovery-key/identity:
+    get:
+      tags: [devices]
+      summary: Получить зашифрованный ключ идентичности для восстановления
+      description: Доступно неподтверждённому устройству (FLOWS/02 ш. 5). Частота ограничена.
+      operationId: getEncryptedIdentityKey
+      responses:
+        '200':
+          description: Зашифрованный блоб
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [encrypted_identity_key]
+                properties:
+                  encrypted_identity_key: { $ref: '#/components/schemas/Bytes' }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/{user_id}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      tags: [users]
+      summary: Публичный профиль
+      operationId: getUser
+      responses:
+        '200':
+          description: Профиль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        default:
+          $ref: '#/components/responses/Error'
+  /users/{user_id}/devices:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      tags: [devices]
+      summary: Устройства пользователя (для вкладки «Безопасность»)
+      operationId: listUserDevices
+      responses:
+        '200':
+          description: Устройства с открытыми ключами
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [devices]
+                properties:
+                  devices:
+                    type: array
+                    items: { $ref: '#/components/schemas/Device' }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/{user_id}/key-packages/claim:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    post:
+      tags: [devices]
+      summary: Забрать по одному KeyPackage с каждого устройства пользователя
+      description: |
+        Для создания группы или Add-proposal (FLOWS/05 ш. 2). Пакеты одноразовые. Если у какого-то
+        устройства пакетов нет — оно перечислено в `exhausted_device_ids`; если ни у одного —
+        NO_KEY_PACKAGES.
+      operationId: claimKeyPackages
+      responses:
+        '200':
+          description: Пакеты
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [key_packages, exhausted_device_ids]
+                properties:
+                  key_packages:
+                    type: array
+                    items: { $ref: '#/components/schemas/KeyPackage' }
+                  exhausted_device_ids:
+                    type: array
+                    items: { $ref: '#/components/schemas/Id' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # devices
+  # ---------------------------------------------------------------------------
+  /users/me/devices:
+    get:
+      tags: [devices]
+      summary: Мои устройства
+      operationId: listMyDevices
+      responses:
+        '200':
+          description: Устройства
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [devices]
+                properties:
+                  devices:
+                    type: array
+                    items: { $ref: '#/components/schemas/Device' }
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [devices]
+      summary: Выйти на всех других устройствах
+      description: Удаляет все устройства, кроме текущего; для каждого — Remove-proposals во всех группах.
+      operationId: removeOtherDevices
+      responses:
+        '204': { description: Устройства удалены }
+        default:
+          $ref: '#/components/responses/Error'
+  /devices/me/keys:
+    put:
+      tags: [devices]
+      summary: Опубликовать ключ подписи текущего устройства
+      description: Вызывается сразу после входа на новом устройстве (FLOWS/02 ш. 2). Подпись ключом идентичности добавляется позже при подтверждении.
+      operationId: putDeviceKeys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [signature_pubkey]
+              properties:
+                signature_pubkey: { $ref: '#/components/schemas/Bytes' }
+                identity_signature:
+                  allOf: [{ $ref: '#/components/schemas/Bytes' }]
+                  description: Подпись ключом идентичности, если устройство само его знает (первое устройство, восстановление ключом).
+      responses:
+        '200':
+          description: Устройство
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        default:
+          $ref: '#/components/responses/Error'
+  /devices/me/key-packages:
+    post:
+      tags: [devices]
+      summary: Загрузить пачку KeyPackage текущего устройства
+      operationId: uploadKeyPackages
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key_packages]
+              properties:
+                key_packages:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items: { $ref: '#/components/schemas/Bytes' }
+      responses:
+        '200':
+          description: Сколько пакетов теперь на складе
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [available]
+                properties:
+                  available: { type: integer, minimum: 0 }
+        default:
+          $ref: '#/components/responses/Error'
+    get:
+      tags: [devices]
+      summary: Сколько KeyPackage осталось у текущего устройства
+      operationId: countKeyPackages
+      responses:
+        '200':
+          description: Остаток
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [available]
+                properties:
+                  available: { type: integer, minimum: 0 }
+        default:
+          $ref: '#/components/responses/Error'
+  /devices/me/push-endpoint:
+    put:
+      tags: [devices]
+      summary: Зарегистрировать push-endpoint (S, после 1.0)
+      description: Push никогда не содержит текста — только id группы и сообщения (ARCHITECTURE.md §4.8). В 1.0 не реализуется (OPEN-QUESTIONS №3).
+      operationId: putPushEndpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [transport, endpoint]
+              properties:
+                transport: { $ref: '#/components/schemas/PushTransport' }
+                endpoint: { type: string }
+      responses:
+        '204': { description: Зарегистрирован }
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [devices]
+      summary: Удалить push-endpoint (S)
+      operationId: deletePushEndpoint
+      responses:
+        '204': { description: Удалён }
+        default:
+          $ref: '#/components/responses/Error'
+  /devices/me/verification/request:
+    post:
+      tags: [devices]
+      summary: Запросить подтверждение текущего устройства заново
+      description: Запрос живёт 10 минут; по истечении новое устройство показывает «Запрос устарел — отправить снова» (FLOWS/02). Другим устройствам снова уходит DeviceAdded.
+      operationId: requestDeviceVerification
+      responses:
+        '201':
+          description: Новый запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceVerificationRequest'
+        default:
+          $ref: '#/components/responses/Error'
+  /devices/{device_id}:
+    parameters:
+      - $ref: '#/components/parameters/DeviceId'
+    patch:
+      tags: [devices]
+      summary: Переименовать устройство
+      operationId: updateDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 64 }
+      responses:
+        '200':
+          description: Устройство
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [devices]
+      summary: Выйти на устройстве
+      description: |
+        Отзывает сессию, рассылает DeviceRemoved и Remove-proposals во все группы устройства
+        (FLOWS/02 «Выход на устройстве»). Своё текущее устройство — тоже можно (= logout).
+      operationId: removeDevice
+      responses:
+        '204': { description: Устройство удалено }
+        default:
+          $ref: '#/components/responses/Error'
+  /devices/{device_id}/verify:
+    parameters:
+      - $ref: '#/components/parameters/DeviceId'
+    post:
+      tags: [devices]
+      summary: Подтвердить устройство
+      description: |
+        Старое устройство (или новое после ввода ключа восстановления) присылает подпись ключа
+        устройства ключом идентичности. Сервер помечает устройство подтверждённым, рассылает
+        DeviceVerified и как external sender отправляет Add-proposals во все группы пользователя
+        (FLOWS/02 ш. 4.4). Ошибка SIGNATURE_INVALID.
+      operationId: verifyDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identity_signature]
+              properties:
+                identity_signature: { $ref: '#/components/schemas/Bytes' }
+      responses:
+        '200':
+          description: Устройство
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        default:
+          $ref: '#/components/responses/Error'
+  /devices/{device_id}/reject:
+    parameters:
+      - $ref: '#/components/parameters/DeviceId'
+    post:
+      tags: [devices]
+      summary: «Это не я» — отклонить неподтверждённое устройство
+      description: Отзывает его сессию и удаляет запись (FLOWS/02 ш. 7).
+      operationId: rejectDevice
+      responses:
+        '204': { description: Устройство отклонено }
+        default:
+          $ref: '#/components/responses/Error'
+  /devices/{device_id}/verification/messages:
+    parameters:
+      - $ref: '#/components/parameters/DeviceId'
+    post:
+      tags: [devices]
+      summary: Передать сообщение обмена коммитментами другому своему устройству
+      description: Сервер доставляет `payload` событием DeviceVerificationMessage, не интерпретируя (FLOWS/02 ш. 4.2).
+      operationId: sendVerificationMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [request_id, payload]
+              properties:
+                request_id: { $ref: '#/components/schemas/Id' }
+                payload: { $ref: '#/components/schemas/Bytes' }
+      responses:
+        '202': { description: Передано }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # relationships
+  # ---------------------------------------------------------------------------
+  /users/me/relationships:
+    get:
+      tags: [relationships]
+      summary: Друзья, запросы и блокировки
+      operationId: listRelationships
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [relationships]
+                properties:
+                  relationships:
+                    type: array
+                    items: { $ref: '#/components/schemas/Relationship' }
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [relationships]
+      summary: Отправить запрос в друзья по имени пользователя
+      description: Ошибки — NOT_FOUND (нет такого пользователя), BLOCKED, RELATIONSHIP_EXISTS (FLOWS/05).
+      operationId: sendFriendRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username: { $ref: '#/components/schemas/Username' }
+      responses:
+        '201':
+          description: Запрос отправлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Relationship'
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/relationships/{user_id}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    put:
+      tags: [relationships]
+      summary: Принять входящий запрос в друзья
+      operationId: acceptFriendRequest
+      responses:
+        '200':
+          description: Теперь друзья
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Relationship'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [relationships]
+      summary: Отклонить или отменить запрос, удалить из друзей
+      operationId: removeRelationship
+      responses:
+        '204': { description: Связь удалена }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/blocks/{user_id}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    put:
+      tags: [relationships]
+      summary: Заблокировать пользователя
+      description: Удаляет дружбу, запрещает новые ЛС и запросы от него (FLOWS/05 «Блокировка»).
+      operationId: blockUser
+      responses:
+        '204': { description: Заблокирован }
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [relationships]
+      summary: Разблокировать
+      operationId: unblockUser
+      responses:
+        '204': { description: Разблокирован }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # dm
+  # ---------------------------------------------------------------------------
+  /users/me/dm-channels:
+    get:
+      tags: [dm]
+      summary: Мои ЛС и групповые чаты
+      operationId: listDmChannels
+      responses:
+        '200':
+          description: Каналы
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [channels]
+                properties:
+                  channels:
+                    type: array
+                    items: { $ref: '#/components/schemas/Channel' }
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [dm]
+      summary: Открыть ЛС (или групповой чат, S)
+      description: |
+        Идемпотентно для одного получателя: существующий ЛС возвращается как есть. MLS-группу
+        создаёт клиент после этого вызова (`POST /mls/groups` с `channel_id`). Ошибка BLOCKED.
+      operationId: createDmChannel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipient_ids]
+              properties:
+                recipient_ids:
+                  type: array
+                  minItems: 1
+                  maxItems: 9
+                  items: { $ref: '#/components/schemas/Id' }
+                name:
+                  type: string
+                  maxLength: 100
+                  description: Имя группового чата (S).
+      responses:
+        '200':
+          description: Канал
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/dm-channels/{channel_id}:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    delete:
+      tags: [dm]
+      summary: Скрыть ЛС из списка
+      description: Группа и история остаются; ЛС снова появится при новом сообщении.
+      operationId: hideDmChannel
+      responses:
+        '204': { description: Скрыт }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # communities
+  # ---------------------------------------------------------------------------
+  /communities:
+    post:
+      tags: [communities]
+      summary: Создать сообщество
+      description: |
+        Создаёт сообщество, пресеты ролей и каналы по умолчанию (FLOWS/03 ш. 2), назначает
+        вызывающего владельцем. MLS-группы текстовых каналов создаёт клиент. Ошибка COMMUNITY_LIMIT.
+      operationId: createCommunity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 2, maxLength: 100 }
+                icon_id: { type: string }
+      responses:
+        '201':
+          description: Сообщество со всем составом
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunitySnapshot'
+        default:
+          $ref: '#/components/responses/Error'
+  /communities/{community_id}:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [communities]
+      summary: Сообщество целиком (кроме участников)
+      operationId: getCommunity
+      responses:
+        '200':
+          description: Снимок
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunitySnapshot'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags: [communities]
+      summary: Изменить сообщество
+      description: Право `community.admin`. Поля — профиль сервера, канал системных сообщений, история по умолчанию, приостановка приглашений.
+      operationId: updateCommunity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 2, maxLength: 100 }
+                icon_id: { type: string }
+                description: { type: string, maxLength: 120 }
+                system_channel_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  description: UUIDv7; null — не показывать системные сообщения.
+                history_visible_to_new_members: { type: boolean }
+                invites_paused: { type: boolean }
+      responses:
+        '200':
+          description: Сообщество
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Community'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [communities]
+      summary: Удалить сообщество
+      description: Только владелец; тело содержит название для подтверждения (SCREENS/11 §10).
+      operationId: deleteCommunity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name_confirmation]
+              properties:
+                name_confirmation: { type: string }
+      responses:
+        '204': { description: Удалено }
+        default:
+          $ref: '#/components/responses/Error'
+  /communities/{community_id}/leave:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    post:
+      tags: [communities]
+      summary: Покинуть сообщество
+      description: Ошибка OWNER_CANNOT_LEAVE. Сервер отправляет Remove-proposals во все группы сообщества.
+      operationId: leaveCommunity
+      responses:
+        '204': { description: Вышел }
+        default:
+          $ref: '#/components/responses/Error'
+  /communities/{community_id}/transfer-ownership:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    post:
+      tags: [communities]
+      summary: Передать владение
+      description: Только владелец; бывший владелец получает роль «Администратор» (SCREENS/11 §9).
+      operationId: transferOwnership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, name_confirmation]
+              properties:
+                user_id: { $ref: '#/components/schemas/Id' }
+                name_confirmation: { type: string }
+      responses:
+        '200':
+          description: Сообщество
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Community'
+        default:
+          $ref: '#/components/responses/Error'
+  /communities/{community_id}/groups:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [communities]
+      summary: Сводка MLS-групп каналов («Состояние групп», SCREENS/06 §5.2)
+      operationId: listCommunityGroups
+      responses:
+        '200':
+          description: Сводки
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [groups]
+                properties:
+                  groups:
+                    type: array
+                    items: { $ref: '#/components/schemas/GroupSummary' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # categories
+  # ---------------------------------------------------------------------------
+  /communities/{community_id}/categories:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    post:
+      tags: [categories]
+      summary: Создать категорию
+      description: Право `channel.edit`.
+      operationId: createCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 100 }
+                private: { type: boolean }
+                position: { type: integer, minimum: 0 }
+      responses:
+        '201':
+          description: Категория
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        default:
+          $ref: '#/components/responses/Error'
+  /categories/{category_id}:
+    parameters:
+      - $ref: '#/components/parameters/CategoryId'
+    patch:
+      tags: [categories]
+      summary: Изменить категорию
+      operationId: updateCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 1, maxLength: 100 }
+                private: { type: boolean }
+                position: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: Категория
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [categories]
+      summary: Удалить категорию
+      description: Каналы не удаляются, переезжают в «без категории».
+      operationId: deleteCategory
+      responses:
+        '204': { description: Удалена }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # channels
+  # ---------------------------------------------------------------------------
+  /communities/{community_id}/channels:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    post:
+      tags: [channels]
+      summary: Создать канал
+      description: |
+        Право `channel.edit`; для приватного — ещё `role.edit`. Сервер создаёт канал и рассылает
+        ChannelCreated; MLS-группу создаёт клиент создателя (`POST /mls/groups`) и добавляет
+        устройства всех, кто видит канал (FLOWS/03 «Создать канал»).
+      operationId: createChannel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, name]
+              properties:
+                type:
+                  type: string
+                  enum: [CHANNEL_TYPE_TEXT, CHANNEL_TYPE_VOICE]
+                name: { $ref: '#/components/schemas/ChannelName' }
+                category_id: { $ref: '#/components/schemas/Id' }
+                private: { type: boolean }
+                allowed_role_ids:
+                  type: array
+                  items: { $ref: '#/components/schemas/Id' }
+                allowed_user_ids:
+                  type: array
+                  items: { $ref: '#/components/schemas/Id' }
+      responses:
+        '201':
+          description: Канал
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    get:
+      tags: [channels]
+      summary: Канал
+      operationId: getChannel
+      responses:
+        '200':
+          description: Канал
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags: [channels]
+      summary: Изменить канал
+      description: Право `channel.edit`. Обзор канала (SCREENS/11 §3.1).
+      operationId: updateChannel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { $ref: '#/components/schemas/ChannelName' }
+                topic: { type: string, maxLength: 1024 }
+                category_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  description: UUIDv7; null — вне категории.
+                position: { type: integer, minimum: 0 }
+                history_visibility: { $ref: '#/components/schemas/HistoryVisibility' }
+                voice_user_limit: { type: integer, minimum: 0, maximum: 99 }
+                voice_bitrate_kbps: { type: integer, minimum: 64, maximum: 256 }
+      responses:
+        '200':
+          description: Канал
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [channels]
+      summary: Удалить канал
+      description: Удаляет MLS-группу, шифртекст и blob-ы вложений.
+      operationId: deleteChannel
+      responses:
+        '204': { description: Удалён }
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/access:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    get:
+      tags: [channels]
+      summary: Кто видит канал
+      operationId: getChannelAccess
+      responses:
+        '200':
+          description: Переопределения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelAccessList'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags: [channels]
+      summary: Задать, кто видит канал
+      description: |
+        Права `channel.edit` + `role.edit`. Сервер пересчитывает состав MLS-группы и отправляет
+        Add/Remove-proposals (FLOWS/10 «Приватный канал»). `private: false` снимает все переопределения.
+      operationId: putChannelAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelAccessList'
+      responses:
+        '200':
+          description: Переопределения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelAccessList'
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/mls/rotate:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    post:
+      tags: [channels]
+      summary: Обновить ключи канала
+      description: Право `channel.edit`. Сервер шлёт MlsUpdateRequested онлайн-участникам; commit делает первый откликнувшийся.
+      operationId: requestChannelKeyRotation
+      responses:
+        '202': { description: Запрошено }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # roles
+  # ---------------------------------------------------------------------------
+  /communities/{community_id}/roles:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [roles]
+      summary: Роли сообщества
+      operationId: listRoles
+      responses:
+        '200':
+          description: Роли по старшинству
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [roles]
+                properties:
+                  roles:
+                    type: array
+                    items: { $ref: '#/components/schemas/Role' }
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [roles]
+      summary: Создать роль
+      description: Право `role.edit`; выдавать можно только права, которые есть у себя (PERMISSIONS.md §1 п. 4).
+      operationId: createRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleInput'
+      responses:
+        '201':
+          description: Роль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        default:
+          $ref: '#/components/responses/Error'
+  /roles/{role_id}:
+    parameters:
+      - $ref: '#/components/parameters/RoleId'
+    patch:
+      tags: [roles]
+      summary: Изменить роль
+      description: |
+        Право `role.edit`, роль младше своей старшей (ROLE_HIERARCHY). У пресетов меняется только набор
+        прав; «@все» — только права. Сервер пересчитывает права и рассылает PermissionsUpdated;
+        если изменилось `channel.see` — состав групп (FLOWS/10 «Роли»).
+      operationId: updateRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleInput'
+      responses:
+        '200':
+          description: Роль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [roles]
+      summary: Удалить роль
+      description: Пресеты удалить нельзя (PRESET_ROLE_IMMUTABLE).
+      operationId: deleteRole
+      responses:
+        '204': { description: Удалена }
+        default:
+          $ref: '#/components/responses/Error'
+  /communities/{community_id}/members/{user_id}/roles:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+      - $ref: '#/components/parameters/UserId'
+    put:
+      tags: [roles]
+      summary: Задать роли участника
+      description: Право `role.edit`; только роли младше своей старшей.
+      operationId: setMemberRoles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role_ids]
+              properties:
+                role_ids:
+                  type: array
+                  items: { $ref: '#/components/schemas/Id' }
+      responses:
+        '200':
+          description: Участник
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # members
+  # ---------------------------------------------------------------------------
+  /communities/{community_id}/members:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [members]
+      summary: Участники сообщества
+      description: Пагинация по id пользователя; `q` — поиск по имени или логину.
+      operationId: listMembers
+      parameters:
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Limit'
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 64 }
+        - name: role_id
+          in: query
+          schema: { $ref: '#/components/schemas/Id' }
+      responses:
+        '200':
+          description: Страница
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [members, page]
+                properties:
+                  members:
+                    type: array
+                    items: { $ref: '#/components/schemas/Member' }
+                  page: { $ref: '#/components/schemas/PageInfo' }
+        default:
+          $ref: '#/components/responses/Error'
+  /communities/{community_id}/members/{user_id}:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+      - $ref: '#/components/parameters/UserId'
+    get:
+      tags: [members]
+      summary: Участник
+      operationId: getMember
+      responses:
+        '200':
+          description: Участник
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [members]
+      summary: Выгнать участника
+      description: Право `member.remove`, только младшей роли. Remove-proposals во всех группах сообщества (FLOWS/10).
+      operationId: kickMember
+      responses:
+        '204': { description: Выгнан }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # bans
+  # ---------------------------------------------------------------------------
+  /communities/{community_id}/bans:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [bans]
+      summary: Список банов
+      operationId: listBans
+      parameters:
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Limit'
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 64 }
+      responses:
+        '200':
+          description: Страница
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [bans, page]
+                properties:
+                  bans:
+                    type: array
+                    items: { $ref: '#/components/schemas/Ban' }
+                  page: { $ref: '#/components/schemas/PageInfo' }
+        default:
+          $ref: '#/components/responses/Error'
+  /communities/{community_id}/bans/{user_id}:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+      - $ref: '#/components/parameters/UserId'
+    put:
+      tags: [bans]
+      summary: Забанить
+      description: |
+        Право `member.remove`. При `delete_messages_window_seconds` > 0 сервер ставит tombstone на
+        сообщения за период и рассылает MessageDeleted пачками (FLOWS/10). Допустимые значения:
+        0, 3600, 86400, 604800.
+      operationId: banMember
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, maxLength: 512 }
+                delete_messages_window_seconds:
+                  type: integer
+                  enum: [0, 3600, 86400, 604800]
+      responses:
+        '200':
+          description: Бан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ban'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [bans]
+      summary: Снять бан
+      operationId: unbanMember
+      responses:
+        '204': { description: Снят }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # invites
+  # ---------------------------------------------------------------------------
+  /communities/{community_id}/invites:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [invites]
+      summary: Приглашения сообщества
+      description: С правом `community.admin` — все; иначе — только свои.
+      operationId: listCommunityInvites
+      responses:
+        '200':
+          description: Приглашения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteList'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [invites]
+      summary: Создать приглашение
+      description: |
+        Право `invite.make`. По умолчанию срок 7 дней, без лимита использований (ADR-0013 п. 7).
+        Допустимые `ttl_seconds`: 1800, 3600, 21600, 43200, 86400, 604800, 0 (бессрочно);
+        `max_uses`: 0 (без лимита), 1, 5, 10, 25, 50, 100.
+      operationId: createInvite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [channel_id]
+              properties:
+                channel_id: { $ref: '#/components/schemas/Id' }
+                ttl_seconds:
+                  type: integer
+                  enum: [0, 1800, 3600, 21600, 43200, 86400, 604800]
+                  default: 604800
+                max_uses:
+                  type: integer
+                  enum: [0, 1, 5, 10, 25, 50, 100]
+                  default: 0
+      responses:
+        '201':
+          description: Приглашение
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/invites:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    get:
+      tags: [invites]
+      summary: Приглашения, ведущие в канал
+      description: '`mine=true` — только действующие ссылки вызывающего (для переиспользования в диалоге «Пригласить», FLOWS/04 ш. 1).'
+      operationId: listChannelInvites
+      parameters:
+        - name: mine
+          in: query
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Приглашения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteList'
+        default:
+          $ref: '#/components/responses/Error'
+  /invites/{code}:
+    parameters:
+      - $ref: '#/components/parameters/InviteCode'
+    get:
+      tags: [invites]
+      summary: Превью приглашения
+      description: |
+        Доступно без входа. Ошибки: INVITE_EXPIRED, INVITE_REVOKED, INVITE_USES_EXHAUSTED,
+        INVITES_PAUSED, BANNED (для вошедшего), CHANNEL_MEMBER_LIMIT.
+      operationId: getInvite
+      security: []
+      responses:
+        '200':
+          description: Превью
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePreview'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [invites]
+      summary: Отозвать приглашение
+      description: Своё — без права; чужое — `community.admin`.
+      operationId: revokeInvite
+      responses:
+        '204': { description: Отозвано }
+        default:
+          $ref: '#/components/responses/Error'
+  /invites/{code}/accept:
+    parameters:
+      - $ref: '#/components/parameters/InviteCode'
+    post:
+      tags: [invites]
+      summary: Принять приглашение
+      description: |
+        Добавляет участника с ролью «@все», увеличивает счётчик, рассылает MemberJoined и
+        Add-proposals во все группы видимых каналов (FLOWS/04 «Вступить»). Те же ошибки, что у превью.
+      operationId: acceptInvite
+      responses:
+        '200':
+          description: Сообщество, в которое вступил
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunitySnapshot'
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # messages
+  # ---------------------------------------------------------------------------
+  /channels/{channel_id}/messages:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    get:
+      tags: [messages]
+      summary: История сообщений
+      description: |
+        Пагинация по UUIDv7: `before` — вверх по истории, `after` — вниз; без курсоров — последние
+        `limit`. Сообщения до момента вступления не отдаются, если в канале выключено «Новые участники
+        видят историю» (ADR-0015). Tombstones отдаются с `deleted: true` и без шифртекста.
+      operationId: listMessages
+      parameters:
+        - $ref: '#/components/parameters/Before'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Страница
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [messages, page]
+                properties:
+                  messages:
+                    type: array
+                    items: { $ref: '#/components/schemas/MessageMeta' }
+                  page: { $ref: '#/components/schemas/PageInfo' }
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [messages]
+      summary: Отправить шифртекст сообщения
+      description: |
+        Сервер проверяет `chat.post`, при вложениях — `chat.upload`, при `broadcast_mention` или
+        хинтах ролей — `chat.ping_all` (без права упоминание сохраняется, но без уведомлений),
+        членство устройства в группе и эпоху. Ошибки: PERMISSION_DENIED, EPOCH_MISMATCH (клиент
+        догоняет commit-ы и повторяет до 3 раз), MESSAGE_EXISTS, ATTACHMENT_INVALID,
+        TOO_MANY_ATTACHMENTS, PAYLOAD_TOO_LARGE, BLOCKED (ЛС). Рассылает MessageCreated и push без текста.
+      operationId: createMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageInput'
+      responses:
+        '201':
+          description: Принятое сообщение
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageMeta'
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/messages/{message_id}:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+      - $ref: '#/components/parameters/MessageId'
+    get:
+      tags: [messages]
+      summary: Одно сообщение
+      operationId: getMessage
+      responses:
+        '200':
+          description: Сообщение
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageMeta'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [messages]
+      summary: Удалить сообщение
+      description: Своё — без права; чужое — `chat.moderate`. Сервер удаляет шифртекст, хранит tombstone, рассылает MessageDeleted.
+      operationId: deleteMessage
+      responses:
+        '204': { description: Удалено }
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/pins:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    get:
+      tags: [messages]
+      summary: Закреплённые сообщения
+      operationId: listPins
+      responses:
+        '200':
+          description: Закрепы (только id и кто закрепил; содержимое клиент берёт из локальной истории)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pins]
+                properties:
+                  pins:
+                    type: array
+                    items: { $ref: '#/components/schemas/Pin' }
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/pins/{message_id}:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+      - $ref: '#/components/parameters/MessageId'
+    put:
+      tags: [messages]
+      summary: Закрепить
+      description: Право `chat.moderate`. Сервер создаёт системное сообщение и рассылает MessageUpdated.
+      operationId: pinMessage
+      responses:
+        '204': { description: Закреплено }
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [messages]
+      summary: Открепить
+      operationId: unpinMessage
+      responses:
+        '204': { description: Откреплено }
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/mention-hints:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    put:
+      tags: [messages]
+      summary: Зарегистрировать свои mention-hint в канале
+      description: |
+        Участник присылает HMAC своего id и id своих ролей с секретом канала из MLS exporter
+        (ARCHITECTURE.md §4.4). Сервер сравнивает их с хинтами входящих сообщений для бейджей и
+        адресных push, не узнавая адресата. Переотправляется после смены эпохи, если секрет
+        изменился (правило — CRYPTO.md).
+      operationId: putMentionHints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [epoch, hints]
+              properties:
+                epoch: { type: integer, format: int64, minimum: 0 }
+                hints:
+                  type: array
+                  maxItems: 64
+                  items: { $ref: '#/components/schemas/Bytes' }
+      responses:
+        '204': { description: Сохранено }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # read-state
+  # ---------------------------------------------------------------------------
+  /channels/{channel_id}/read-state:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    put:
+      tags: [read-state]
+      summary: Отметить прочитанным до сообщения
+      description: Также «отметить как непрочитанное» — указать предыдущее сообщение. Другим устройствам уходит ReadStateUpdated.
+      operationId: putReadState
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [last_read_message_id]
+              properties:
+                last_read_message_id: { $ref: '#/components/schemas/Id' }
+      responses:
+        '200':
+          description: Состояние
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadState'
+        default:
+          $ref: '#/components/responses/Error'
+  /communities/{community_id}/read-state:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    post:
+      tags: [read-state]
+      summary: Отметить всё сообщество прочитанным
+      operationId: ackCommunity
+      responses:
+        '204': { description: Отмечено }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/read-state:
+    post:
+      tags: [read-state]
+      summary: Отметить всё прочитанным («Входящие»)
+      operationId: ackAll
+      responses:
+        '204': { description: Отмечено }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # notifications
+  # ---------------------------------------------------------------------------
+  /users/me/notification-settings:
+    get:
+      tags: [notifications]
+      summary: Все настройки уведомлений пользователя
+      operationId: listNotificationSettings
+      responses:
+        '200':
+          description: Настройки
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [settings]
+                properties:
+                  settings:
+                    type: array
+                    items: { $ref: '#/components/schemas/NotificationSettings' }
+        default:
+          $ref: '#/components/responses/Error'
+  /communities/{community_id}/notification-settings:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    put:
+      tags: [notifications]
+      summary: Настройки уведомлений для сообщества
+      description: Другим устройствам уходит NotificationSettingsUpdated (OPEN-QUESTIONS №6).
+      operationId: putCommunityNotificationSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingsInput'
+      responses:
+        '200':
+          description: Настройки
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSettings'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [notifications]
+      summary: Сбросить настройки сообщества к значениям по умолчанию
+      operationId: deleteCommunityNotificationSettings
+      responses:
+        '204': { description: Сброшено }
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/notification-settings:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    put:
+      tags: [notifications]
+      summary: Настройки уведомлений для канала
+      operationId: putChannelNotificationSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingsInput'
+      responses:
+        '200':
+          description: Настройки
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSettings'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [notifications]
+      summary: Сбросить настройки канала («как на сервере»)
+      operationId: deleteChannelNotificationSettings
+      responses:
+        '204': { description: Сброшено }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # files
+  # ---------------------------------------------------------------------------
+  /files:
+    post:
+      tags: [files]
+      summary: Начать загрузку зашифрованного вложения
+      description: |
+        Право `chat.upload` в канале. Сервер проверяет размер против лимита инстанса и выдаёт
+        presigned URL для PUT в хранилище (FLOWS/06 «Вложения»). Blob, не привязанный к сообщению
+        в течение часа, удаляется.
+      operationId: createFile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [channel_id, size]
+              properties:
+                channel_id: { $ref: '#/components/schemas/Id' }
+                size:
+                  type: integer
+                  format: int64
+                  minimum: 1
+                  description: Размер шифртекста в байтах.
+                ciphertext_hash: { $ref: '#/components/schemas/Bytes' }
+      responses:
+        '201':
+          description: Куда загружать
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUpload'
+        default:
+          $ref: '#/components/responses/Error'
+  /files/{attachment_id}:
+    parameters:
+      - $ref: '#/components/parameters/AttachmentId'
+    get:
+      tags: [files]
+      summary: Presigned URL для скачивания
+      description: Доступно участникам канала, к сообщению которого привязано вложение.
+      operationId: getFileDownload
+      responses:
+        '200':
+          description: Ссылка
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [download_url, expires_at, attachment]
+                properties:
+                  download_url: { type: string, format: uri }
+                  expires_at: { $ref: '#/components/schemas/Timestamp' }
+                  attachment: { $ref: '#/components/schemas/Attachment' }
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [files]
+      summary: Отменить загрузку и удалить blob
+      description: Только для вложений, ещё не привязанных к сообщению.
+      operationId: deleteFile
+      responses:
+        '204': { description: Удалено }
+        default:
+          $ref: '#/components/responses/Error'
+  /files/{attachment_id}/complete:
+    parameters:
+      - $ref: '#/components/parameters/AttachmentId'
+    post:
+      tags: [files]
+      summary: Сообщить, что blob загружен
+      description: Сервер сверяет размер и хэш с хранилищем и помечает вложение `uploaded`.
+      operationId: completeFile
+      responses:
+        '200':
+          description: Вложение
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # mls
+  # ---------------------------------------------------------------------------
+  /mls/groups:
+    post:
+      tags: [mls]
+      summary: Зарегистрировать новую MLS-группу
+      description: |
+        Создатель группы (клиент) привязывает её к каналу: чат (DM, текстовый канал, чат голосового)
+        или звонок. Передаёт зашифрованный GroupInfo для external commit и начальную связку ключей
+        истории (ADR-0015). Ошибка CONFLICT, если у канала уже есть группа этой роли.
+      operationId: createGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [channel_id, kind, group_id, ciphersuite]
+              properties:
+                channel_id: { $ref: '#/components/schemas/Id' }
+                kind: { $ref: '#/components/schemas/GroupKind' }
+                group_id:
+                  allOf: [{ $ref: '#/components/schemas/Id' }]
+                  description: Id группы (MLS group_id), сгенерирован клиентом.
+                ciphersuite: { type: integer, enum: [1] }
+                encrypted_group_info: { $ref: '#/components/schemas/Bytes' }
+                history_key_bundle: { $ref: '#/components/schemas/Bytes' }
+      responses:
+        '201':
+          description: Группа
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        default:
+          $ref: '#/components/responses/Error'
+  /mls/groups/{group_id}:
+    parameters:
+      - $ref: '#/components/parameters/GroupId'
+    get:
+      tags: [mls]
+      summary: Состояние группы на сервере
+      operationId: getGroup
+      responses:
+        '200':
+          description: Группа
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        default:
+          $ref: '#/components/responses/Error'
+  /mls/groups/{group_id}/handshakes:
+    parameters:
+      - $ref: '#/components/parameters/GroupId'
+    get:
+      tags: [mls]
+      summary: Handshake-сообщения группы после номера
+      description: Для догона после разрыва или по `MlsPending`. Порядок — по `seq`.
+      operationId: listHandshakes
+      parameters:
+        - name: after_seq
+          in: query
+          schema: { type: integer, format: int64, minimum: 0 }
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Сообщения
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [handshakes, page]
+                properties:
+                  handshakes:
+                    type: array
+                    items: { $ref: '#/components/schemas/Handshake' }
+                  page: { $ref: '#/components/schemas/PageInfo' }
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [mls]
+      summary: Отправить Proposal или Commit
+      description: |
+        Сервер принимает commit только для текущей эпохи (EPOCH_MISMATCH с `current_epoch`), иначе
+        присваивает `seq` и рассылает MlsHandshake участникам. Вместе с commit в одном запросе идут
+        Welcome для новых устройств, новый зашифрованный GroupInfo и связка ключей истории для новой
+        эпохи — так состояние группы на сервере меняется атомарно (ADR-0015). Для external commit
+        `kind = HANDSHAKE_KIND_EXTERNAL_COMMIT`; связку тогда обновит первый участник по
+        MlsUpdateRequested. Ошибка NOT_GROUP_MEMBER, если устройство не в группе (кроме external commit).
+      operationId: createHandshake
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [epoch, kind, blob]
+              properties:
+                epoch: { type: integer, format: int64, minimum: 0 }
+                kind: { $ref: '#/components/schemas/HandshakeKind' }
+                blob:
+                  allOf: [{ $ref: '#/components/schemas/Bytes' }]
+                  description: MLS PublicMessage; до 4 МиБ.
+                welcomes:
+                  type: array
+                  items:
+                    type: object
+                    required: [device_id, blob]
+                    properties:
+                      device_id: { $ref: '#/components/schemas/Id' }
+                      blob: { $ref: '#/components/schemas/Bytes' }
+                encrypted_group_info: { $ref: '#/components/schemas/Bytes' }
+                history_key_bundle: { $ref: '#/components/schemas/Bytes' }
+      responses:
+        '201':
+          description: Принято и упорядочено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Handshake'
+        default:
+          $ref: '#/components/responses/Error'
+  /mls/groups/{group_id}/handshakes/{seq}:
+    parameters:
+      - $ref: '#/components/parameters/GroupId'
+      - name: seq
+        in: path
+        required: true
+        schema: { type: integer, format: int64, minimum: 1 }
+    get:
+      tags: [mls]
+      summary: Одно handshake-сообщение (для больших блобов, не вошедших в событие)
+      operationId: getHandshake
+      responses:
+        '200':
+          description: Сообщение
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Handshake'
+        default:
+          $ref: '#/components/responses/Error'
+  /mls/groups/{group_id}/group-info:
+    parameters:
+      - $ref: '#/components/parameters/GroupId'
+    get:
+      tags: [mls]
+      summary: Зашифрованный GroupInfo текущей эпохи
+      description: Для external commit (ARCHITECTURE.md §4.3). Ключ к нему раздаётся участникам канала (CRYPTO.md).
+      operationId: getGroupInfo
+      responses:
+        '200':
+          description: GroupInfo
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [epoch, encrypted_group_info]
+                properties:
+                  epoch: { type: integer, format: int64 }
+                  encrypted_group_info: { $ref: '#/components/schemas/Bytes' }
+        default:
+          $ref: '#/components/responses/Error'
+  /mls/groups/{group_id}/history-key-bundle:
+    parameters:
+      - $ref: '#/components/parameters/GroupId'
+    get:
+      tags: [mls]
+      summary: Связка ключей истории, зашифрованная для эпохи
+      description: Без `epoch` — для текущей. Новичок расшифровывает её после вступления и читает историю (ADR-0015).
+      operationId: getHistoryKeyBundle
+      parameters:
+        - name: epoch
+          in: query
+          schema: { type: integer, format: int64, minimum: 0 }
+      responses:
+        '200':
+          description: Связка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryKeyBundle'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags: [mls]
+      summary: Обновить связку для эпохи
+      description: Используется после external commit, когда связку обновляет первый вышедший в сеть участник (ADR-0015, MlsUpdateRequested REASON_HISTORY_BUNDLE).
+      operationId: putHistoryKeyBundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HistoryKeyBundle'
+      responses:
+        '204': { description: Сохранена }
+        default:
+          $ref: '#/components/responses/Error'
+  /mls/welcomes:
+    get:
+      tags: [mls]
+      summary: Недоставленные Welcome для текущего устройства
+      operationId: listWelcomes
+      responses:
+        '200':
+          description: Welcome
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [welcomes]
+                properties:
+                  welcomes:
+                    type: array
+                    items: { $ref: '#/components/schemas/Welcome' }
+        default:
+          $ref: '#/components/responses/Error'
+  /mls/welcomes/{group_id}:
+    parameters:
+      - $ref: '#/components/parameters/GroupId'
+    delete:
+      tags: [mls]
+      summary: Подтвердить получение Welcome
+      operationId: ackWelcome
+      responses:
+        '204': { description: Подтверждено }
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # voice
+  # ---------------------------------------------------------------------------
+  /channels/{channel_id}/voice/join:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    post:
+      tags: [voice]
+      summary: Войти в голосовой канал или звонок ЛС
+      description: |
+        Проверяет `channel.see` и `voice.join`, лимит участников голоса (VOICE_CHANNEL_FULL) и
+        лимит канала. Права `voice.talk` и `voice.share` попадают в токен SFU как разрешения
+        публикации треков (FLOWS/07 ш. 3). Если звонок уже идёт — возвращает id его MLS-группы;
+        иначе `call_group_exists: false`, и вошедший создаёт группу (`POST /mls/groups`, kind CALL).
+        В ЛС первый вход рассылает CallStarted. Ошибка UNAVAILABLE, если медиасервер недоступен.
+      operationId: joinVoice
+      responses:
+        '200':
+          description: Доступ к медиасерверу
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceJoin'
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/voice/leave:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    post:
+      tags: [voice]
+      summary: Выйти из голоса
+      description: Сервер отправляет Remove-proposal в группу звонка; когда вышел последний — удаляет группу (FLOWS/07 «Выход»).
+      operationId: leaveVoice
+      responses:
+        '204': { description: Вышел }
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/voice/members/{user_id}/mute:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+      - $ref: '#/components/parameters/UserId'
+    put:
+      tags: [voice]
+      summary: Выключить или включить микрофон участнику на сервере
+      description: Право `voice.moderate`, только младшей роли. SFU блокирует трек; всем уходит VoiceStateUpdated (OPEN-QUESTIONS №4).
+      operationId: setServerMute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [muted]
+              properties:
+                muted: { type: boolean }
+      responses:
+        '200':
+          description: Состояние
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceState'
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/voice/members/{user_id}/deafen:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+      - $ref: '#/components/parameters/UserId'
+    put:
+      tags: [voice]
+      summary: Выключить или включить звук участнику на сервере
+      description: Право `voice.moderate`. Выключение звука подразумевает выключение микрофона.
+      operationId: setServerDeafen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deafened]
+              properties:
+                deafened: { type: boolean }
+      responses:
+        '200':
+          description: Состояние
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceState'
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # sounds
+  # ---------------------------------------------------------------------------
+  /sounds/builtin:
+    get:
+      tags: [sounds]
+      summary: Стандартные звуки инстанса
+      operationId: listBuiltinSounds
+      responses:
+        '200':
+          description: Звуки
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SoundList'
+        default:
+          $ref: '#/components/responses/Error'
+  /communities/{community_id}/sounds:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [sounds]
+      summary: Звуки сообщества
+      operationId: listCommunitySounds
+      responses:
+        '200':
+          description: Звуки и лимит слотов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SoundList'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [sounds]
+      summary: Загрузить звук сообщества
+      description: |
+        Право `community.admin`. Файл — Opus в ogg, уже обрезанный до 5 с и нормализованный клиентом
+        (FLOWS/09). Ошибки: SOUND_INVALID, SOUND_SLOTS_FULL, PAYLOAD_TOO_LARGE. Рассылает SoundAdded.
+      operationId: createCommunitySound
+      requestBody:
+        $ref: '#/components/requestBodies/SoundUpload'
+      responses:
+        '201':
+          description: Звук
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sound'
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/sounds:
+    get:
+      tags: [sounds]
+      summary: Мои личные звуки
+      operationId: listMySounds
+      responses:
+        '200':
+          description: Звуки и лимит слотов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SoundList'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [sounds]
+      summary: Загрузить личный звук
+      description: Без права; лимит слотов задаёт инстанс (10). Личный звук — публичный ассет пользователя (ADR-0013 п. 14).
+      operationId: createMySound
+      requestBody:
+        $ref: '#/components/requestBodies/SoundUpload'
+      responses:
+        '201':
+          description: Звук
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sound'
+        default:
+          $ref: '#/components/responses/Error'
+  /sounds/{sound_id}:
+    parameters:
+      - $ref: '#/components/parameters/SoundId'
+    get:
+      tags: [sounds]
+      summary: Метаданные звука
+      description: Слушатель вызывает при первом SoundPlayed с неизвестным id, чтобы скачать и закэшировать аудио.
+      operationId: getSound
+      responses:
+        '200':
+          description: Звук
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags: [sounds]
+      summary: Изменить название, эмодзи или громкость
+      operationId: updateSound
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 1, maxLength: 32 }
+                emoji: { type: string, maxLength: 16 }
+                volume: { type: integer, minimum: 0, maximum: 100 }
+      responses:
+        '200':
+          description: Звук
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [sounds]
+      summary: Удалить звук
+      description: Звук сообщества — `community.admin`; личный — владелец. Рассылает SoundRemoved.
+      operationId: deleteSound
+      responses:
+        '204': { description: Удалён }
+        default:
+          $ref: '#/components/responses/Error'
+  /sounds/{sound_id}/audio:
+    parameters:
+      - $ref: '#/components/parameters/SoundId'
+    get:
+      tags: [sounds]
+      summary: Аудиофайл звука
+      operationId: getSoundAudio
+      responses:
+        '200':
+          description: Opus в ogg
+          content:
+            audio/ogg:
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: '#/components/responses/Error'
+
+  # ---------------------------------------------------------------------------
+  # internal
+  # ---------------------------------------------------------------------------
+  /internal/media/webhooks:
+    post:
+      tags: [internal]
+      summary: Webhook медиасервера (участник вошёл или вышел из комнаты)
+      description: |
+        Вызывается SFU, подпись проверяется общим секретом (заголовок `Authorization`). Сервер обновляет
+        VoiceState и как external sender добавляет или удаляет устройство в группе звонка
+        (FLOWS/07 «В звонке»). Формат тела задаёт SFU; здесь он непрозрачен.
+      operationId: mediaWebhook
+      security:
+        - mediaWebhookSecret: []
+      requestBody:
+        required: true
+        content:
+          application/webhook+json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '204': { description: Принято }
+        default:
+          $ref: '#/components/responses/Error'
+
+# =============================================================================
+components:
+  securitySchemes:
+    sessionToken:
+      type: http
+      scheme: bearer
+      description: Токен доступа из `POST /auth/login`; живёт `expires_in` секунд, обновляется через `/auth/refresh`.
+    mediaWebhookSecret:
+      type: http
+      scheme: bearer
+      description: Общий секрет инстанса и медиасервера.
+
+  parameters:
+    UserId:
+      name: user_id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Id' }
+    DeviceId:
+      name: device_id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Id' }
+    CommunityId:
+      name: community_id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Id' }
+    CategoryId:
+      name: category_id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Id' }
+    ChannelId:
+      name: channel_id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Id' }
+    RoleId:
+      name: role_id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Id' }
+    MessageId:
+      name: message_id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Id' }
+    AttachmentId:
+      name: attachment_id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Id' }
+    GroupId:
+      name: group_id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Id' }
+    SoundId:
+      name: sound_id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Id' }
+    InviteCode:
+      name: code
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9]{8,12}$'
+    Before:
+      name: before
+      in: query
+      description: Элементы строго старше этого id.
+      schema: { $ref: '#/components/schemas/Id' }
+    After:
+      name: after
+      in: query
+      description: Элементы строго новее этого id.
+      schema: { $ref: '#/components/schemas/Id' }
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+
+  responses:
+    Error:
+      description: Ошибка (коды и статусы — REST.md «Ошибки»)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  requestBodies:
+    SoundUpload:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required: [name, file]
+            properties:
+              name: { type: string, minLength: 1, maxLength: 32 }
+              emoji: { type: string, maxLength: 16 }
+              volume: { type: integer, minimum: 0, maximum: 100, default: 100 }
+              file:
+                type: string
+                format: binary
+                description: Opus в контейнере ogg, не длиннее 5 с.
+
+  schemas:
+    # --- общие ---------------------------------------------------------------
+    Id:
+      type: string
+      format: uuid
+      description: UUIDv7 в канонической строковой форме.
+      example: 019a2c3e-7b1d-7c2a-9f3e-5d6a7b8c9d0e
+    Timestamp:
+      type: string
+      format: date-time
+      description: RFC 3339, UTC.
+    Bytes:
+      type: string
+      format: byte
+      description: Бинарные данные в base64 (стандартный алфавит, с выравниванием).
+    Username:
+      type: string
+      pattern: '^[a-z0-9._]{2,32}$'
+    ChannelName:
+      type: string
+      pattern: '^[\p{Ll}\p{Nd}_-]{1,100}$'
+      description: Нормализованное имя канала (строчные буквы, цифры, дефис, подчёркивание).
+    PageInfo:
+      type: object
+      required: [has_before, has_after]
+      properties:
+        has_before: { type: boolean }
+        has_after: { type: boolean }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { $ref: '#/components/schemas/ErrorCode' }
+        message: { type: string, description: Служебное описание для журналов. }
+        missing_permission: { type: string, description: Для PERMISSION_DENIED. }
+        retry_after_ms: { type: integer, minimum: 0, description: Для RATE_LIMITED. }
+        limit: { type: integer, format: int64, description: 'Значение лимита, который превышен.' }
+        current_epoch: { type: integer, format: int64, description: Для EPOCH_MISMATCH. }
+        field_errors:
+          type: array
+          items:
+            type: object
+            required: [field, reason]
+            properties:
+              field: { type: string }
+              reason: { type: string, enum: [required, too_short, too_long, format, taken] }
+        details:
+          type: object
+          additionalProperties: true
+          description: Дополнительные данные по коду (например, список сообществ для CONFLICT при удалении аккаунта).
+    ErrorCode:
+      type: string
+      description: Имена значений `bebeberloga.v1.ErrorCode` без префикса `ERROR_CODE_`.
+      enum:
+        - VALIDATION_FAILED
+        - UNAUTHENTICATED
+        - PERMISSION_DENIED
+        - NOT_FOUND
+        - CONFLICT
+        - RATE_LIMITED
+        - PAYLOAD_TOO_LARGE
+        - INTERNAL
+        - UNAVAILABLE
+        - USERNAME_TAKEN
+        - EMAIL_IN_USE
+        - REGISTRATION_CLOSED
+        - INVALID_CREDENTIALS
+        - EMAIL_NOT_VERIFIED
+        - TOKEN_INVALID
+        - PASSWORD_MISMATCH
+        - DEVICE_UNVERIFIED
+        - RECOVERY_KEY_INVALID
+        - NO_KEY_PACKAGES
+        - VERIFICATION_EXPIRED
+        - SIGNATURE_INVALID
+        - CHANNEL_MEMBER_LIMIT
+        - COMMUNITY_LIMIT
+        - BANNED
+        - INVITE_EXPIRED
+        - INVITE_REVOKED
+        - INVITE_USES_EXHAUSTED
+        - INVITES_PAUSED
+        - ROLE_HIERARCHY
+        - OWNER_CANNOT_LEAVE
+        - PRESET_ROLE_IMMUTABLE
+        - VOICE_CHANNEL_FULL
+        - NOT_IN_VOICE
+        - BLOCKED
+        - RELATIONSHIP_EXISTS
+        - EPOCH_MISMATCH
+        - NOT_GROUP_MEMBER
+        - MESSAGE_EXISTS
+        - ATTACHMENT_INVALID
+        - TOO_MANY_ATTACHMENTS
+        - SOUND_INVALID
+        - SOUND_SLOTS_FULL
+
+    # --- инстанс -------------------------------------------------------------
+    InstanceInfo:
+      type: object
+      required: [name, registration_policy, limits, protocol_version]
+      properties:
+        name: { type: string }
+        registration_policy:
+          type: string
+          enum: [open, invite_only, closed]
+        rules_url: { type: string, format: uri }
+        privacy_url: { type: string, format: uri }
+        server_version: { type: string }
+        protocol_version: { type: integer, description: Версия протокола gateway и REST (1). }
+        limits: { $ref: '#/components/schemas/InstanceLimits' }
+    InstanceLimits:
+      type: object
+      required: [max_text_length, max_attachments, max_file_size, channel_member_limit, user_sound_slots, community_sound_slots, max_stream_preset, max_client_frame_size]
+      properties:
+        max_text_length: { type: integer, example: 4000 }
+        max_attachments: { type: integer, example: 10 }
+        max_file_size: { type: integer, format: int64 }
+        channel_member_limit: { type: integer, example: 2000 }
+        user_sound_slots: { type: integer, example: 10 }
+        community_sound_slots: { type: integer }
+        max_stream_preset: { type: string, enum: [1080p60, 1080p30, 720p30] }
+        max_client_frame_size: { type: integer, example: 65536 }
+
+    # --- пользователи и устройства ------------------------------------------
+    User:
+      type: object
+      required: [id, username, display_name, avatar_id, created_at]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        username: { $ref: '#/components/schemas/Username' }
+        display_name: { type: string }
+        avatar_id: { type: string }
+        about: { type: string }
+        banner_color: { type: string }
+        identity_pubkey: { $ref: '#/components/schemas/Bytes' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        deleted: { type: boolean }
+    UserProfile:
+      type: object
+      required: [user]
+      properties:
+        user: { $ref: '#/components/schemas/User' }
+        relationship: { $ref: '#/components/schemas/RelationshipKind' }
+        friends_since: { $ref: '#/components/schemas/Timestamp' }
+        mutual_community_ids:
+          type: array
+          items: { $ref: '#/components/schemas/Id' }
+        mutual_friend_ids:
+          type: array
+          items: { $ref: '#/components/schemas/Id' }
+    Account:
+      type: object
+      required: [user, email, email_verified]
+      properties:
+        user: { $ref: '#/components/schemas/User' }
+        email: { type: string, format: email }
+        pending_email: { type: string, format: email }
+        email_verified: { type: boolean }
+        recovery_key_created_at: { $ref: '#/components/schemas/Timestamp' }
+    DevicePlatform:
+      type: string
+      enum: [DEVICE_PLATFORM_DESKTOP_WINDOWS, DEVICE_PLATFORM_DESKTOP_MACOS, DEVICE_PLATFORM_DESKTOP_LINUX, DEVICE_PLATFORM_WEB, DEVICE_PLATFORM_ANDROID, DEVICE_PLATFORM_IOS]
+    DeviceVerification:
+      type: string
+      enum: [DEVICE_VERIFICATION_UNVERIFIED, DEVICE_VERIFICATION_VERIFIED]
+    DeviceRegistration:
+      type: object
+      required: [name, platform, client_version]
+      properties:
+        name: { type: string, maxLength: 64 }
+        platform: { $ref: '#/components/schemas/DevicePlatform' }
+        client_version: { type: string }
+        device_id:
+          allOf: [{ $ref: '#/components/schemas/Id' }]
+          description: Id уже существующего устройства при повторном входе на нём.
+    Device:
+      type: object
+      required: [id, user_id, name, platform, verification, created_at]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        user_id: { $ref: '#/components/schemas/Id' }
+        name: { type: string }
+        platform: { $ref: '#/components/schemas/DevicePlatform' }
+        client_version: { type: string }
+        signature_pubkey: { $ref: '#/components/schemas/Bytes' }
+        identity_signature: { $ref: '#/components/schemas/Bytes' }
+        verification: { $ref: '#/components/schemas/DeviceVerification' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        last_seen_at: { $ref: '#/components/schemas/Timestamp' }
+        last_seen_location: { type: string }
+        current: { type: boolean }
+    DeviceVerificationRequest:
+      type: object
+      required: [id, device, expires_at]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        device: { $ref: '#/components/schemas/Device' }
+        expires_at: { $ref: '#/components/schemas/Timestamp' }
+    Session:
+      type: object
+      required: [access_token, refresh_token, expires_in, account, device]
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        expires_in: { type: integer, description: Срок токена доступа в секундах. }
+        account: { $ref: '#/components/schemas/Account' }
+        device: { $ref: '#/components/schemas/Device' }
+    KeyPackage:
+      type: object
+      required: [device_id, ciphersuite, blob]
+      properties:
+        device_id: { $ref: '#/components/schemas/Id' }
+        ciphersuite: { type: integer }
+        blob: { $ref: '#/components/schemas/Bytes' }
+    PushTransport:
+      type: string
+      enum: [PUSH_TRANSPORT_UNIFIED_PUSH, PUSH_TRANSPORT_FCM, PUSH_TRANSPORT_APNS]
+    RelationshipKind:
+      type: string
+      enum: [RELATIONSHIP_KIND_FRIEND, RELATIONSHIP_KIND_REQUEST_INCOMING, RELATIONSHIP_KIND_REQUEST_OUTGOING, RELATIONSHIP_KIND_BLOCKED]
+    Relationship:
+      type: object
+      required: [user, kind, since]
+      properties:
+        user: { $ref: '#/components/schemas/User' }
+        kind: { $ref: '#/components/schemas/RelationshipKind' }
+        since: { $ref: '#/components/schemas/Timestamp' }
+
+    # --- сообщества ----------------------------------------------------------
+    Community:
+      type: object
+      required: [id, owner_id, name, icon_id, history_visible_to_new_members, invites_paused, created_at, member_count, online_count]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        owner_id: { $ref: '#/components/schemas/Id' }
+        name: { type: string }
+        icon_id: { type: string }
+        description: { type: string }
+        system_channel_id: { $ref: '#/components/schemas/Id' }
+        history_visible_to_new_members: { type: boolean }
+        invites_paused: { type: boolean }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        member_count: { type: integer }
+        online_count: { type: integer }
+    Category:
+      type: object
+      required: [id, community_id, name, position, private]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        community_id: { $ref: '#/components/schemas/Id' }
+        name: { type: string }
+        position: { type: integer }
+        private: { type: boolean }
+    ChannelType:
+      type: string
+      enum: [CHANNEL_TYPE_TEXT, CHANNEL_TYPE_VOICE, CHANNEL_TYPE_DM, CHANNEL_TYPE_GROUP_DM, CHANNEL_TYPE_THREAD]
+    HistoryVisibility:
+      type: string
+      enum: [HISTORY_VISIBILITY_INHERIT, HISTORY_VISIBILITY_VISIBLE, HISTORY_VISIBILITY_HIDDEN]
+    Channel:
+      type: object
+      required: [id, type, created_at]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        type: { $ref: '#/components/schemas/ChannelType' }
+        community_id: { $ref: '#/components/schemas/Id' }
+        category_id: { $ref: '#/components/schemas/Id' }
+        name: { type: string }
+        topic: { type: string }
+        position: { type: integer }
+        private: { type: boolean }
+        history_visibility: { $ref: '#/components/schemas/HistoryVisibility' }
+        mls_group_id: { $ref: '#/components/schemas/Id' }
+        recipient_ids:
+          type: array
+          items: { $ref: '#/components/schemas/Id' }
+        parent_id: { $ref: '#/components/schemas/Id' }
+        root_message_id: { $ref: '#/components/schemas/Id' }
+        voice_user_limit: { type: integer }
+        voice_bitrate_kbps: { type: integer }
+        call_group_id: { $ref: '#/components/schemas/Id' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        last_message_id: { $ref: '#/components/schemas/Id' }
+    RolePreset:
+      type: string
+      enum: [ROLE_PRESET_CUSTOM, ROLE_PRESET_OWNER, ROLE_PRESET_ADMIN, ROLE_PRESET_MODERATOR, ROLE_PRESET_ALL]
+    PermissionCode:
+      type: string
+      description: Код права `<область>.<действие>` (PERMISSIONS.md §1).
+      enum:
+        - community.admin
+        - channel.see
+        - channel.edit
+        - role.edit
+        - invite.make
+        - chat.post
+        - chat.upload
+        - chat.ping_all
+        - chat.moderate
+        - member.remove
+        - voice.join
+        - voice.talk
+        - voice.share
+        - voice.sounds
+        - voice.moderate
+    Role:
+      type: object
+      required: [id, community_id, name, preset, permission_codes, mentionable, position, member_count]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        community_id: { $ref: '#/components/schemas/Id' }
+        name: { type: string }
+        preset: { $ref: '#/components/schemas/RolePreset' }
+        permission_codes:
+          type: array
+          items: { $ref: '#/components/schemas/PermissionCode' }
+        mentionable: { type: boolean }
+        position: { type: integer }
+        color: { type: string }
+        show_separately: { type: boolean }
+        member_count: { type: integer }
+    RoleInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        permission_codes:
+          type: array
+          items: { $ref: '#/components/schemas/PermissionCode' }
+        mentionable: { type: boolean }
+    Member:
+      type: object
+      required: [community_id, user, role_ids, joined_at]
+      properties:
+        community_id: { $ref: '#/components/schemas/Id' }
+        user: { $ref: '#/components/schemas/User' }
+        role_ids:
+          type: array
+          items: { $ref: '#/components/schemas/Id' }
+        joined_at: { $ref: '#/components/schemas/Timestamp' }
+        invite_code: { type: string }
+    ChannelPermissions:
+      type: object
+      required: [channel_id, permission_codes]
+      properties:
+        channel_id: { $ref: '#/components/schemas/Id' }
+        permission_codes:
+          type: array
+          items: { $ref: '#/components/schemas/PermissionCode' }
+    EffectivePermissions:
+      type: object
+      required: [community_id, permission_codes, channels, owner]
+      properties:
+        community_id: { $ref: '#/components/schemas/Id' }
+        permission_codes:
+          type: array
+          items: { $ref: '#/components/schemas/PermissionCode' }
+        channels:
+          type: array
+          items: { $ref: '#/components/schemas/ChannelPermissions' }
+        owner: { type: boolean }
+    ChannelAccess:
+      type: object
+      required: [allow_see]
+      properties:
+        role_id: { $ref: '#/components/schemas/Id' }
+        user_id: { $ref: '#/components/schemas/Id' }
+        allow_see: { type: boolean }
+      description: Ровно одно из `role_id` и `user_id`.
+    ChannelAccessList:
+      type: object
+      required: [private, entries]
+      properties:
+        private: { type: boolean }
+        entries:
+          type: array
+          items: { $ref: '#/components/schemas/ChannelAccess' }
+    VoiceState:
+      type: object
+      required: [channel_id, user_id, device_id, self_mute, self_deaf, server_mute, server_deaf, camera, streaming, joined_at]
+      properties:
+        channel_id: { $ref: '#/components/schemas/Id' }
+        user_id: { $ref: '#/components/schemas/Id' }
+        device_id: { $ref: '#/components/schemas/Id' }
+        self_mute: { type: boolean }
+        self_deaf: { type: boolean }
+        server_mute: { type: boolean }
+        server_deaf: { type: boolean }
+        camera: { type: boolean }
+        streaming: { type: boolean }
+        joined_at: { $ref: '#/components/schemas/Timestamp' }
+    CommunitySnapshot:
+      type: object
+      required: [community, categories, channels, roles, me, permissions, voice_states]
+      properties:
+        community: { $ref: '#/components/schemas/Community' }
+        categories:
+          type: array
+          items: { $ref: '#/components/schemas/Category' }
+        channels:
+          type: array
+          items: { $ref: '#/components/schemas/Channel' }
+        roles:
+          type: array
+          items: { $ref: '#/components/schemas/Role' }
+        me: { $ref: '#/components/schemas/Member' }
+        permissions: { $ref: '#/components/schemas/EffectivePermissions' }
+        voice_states:
+          type: array
+          items: { $ref: '#/components/schemas/VoiceState' }
+    GroupSummary:
+      type: object
+      required: [channel_id, group_id, epoch, device_count]
+      properties:
+        channel_id: { $ref: '#/components/schemas/Id' }
+        group_id: { $ref: '#/components/schemas/Id' }
+        epoch: { type: integer, format: int64 }
+        device_count: { type: integer }
+        last_rotation_at: { $ref: '#/components/schemas/Timestamp' }
+    Invite:
+      type: object
+      required: [code, community_id, channel_id, creator_id, created_at, max_uses, uses, revoked]
+      properties:
+        code: { type: string }
+        community_id: { $ref: '#/components/schemas/Id' }
+        channel_id: { $ref: '#/components/schemas/Id' }
+        creator_id: { $ref: '#/components/schemas/Id' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        expires_at: { $ref: '#/components/schemas/Timestamp' }
+        max_uses: { type: integer }
+        uses: { type: integer }
+        revoked: { type: boolean }
+        url:
+          type: string
+          format: uri
+          description: Полная ссылка вида `https://<инстанс>/join/<code>`.
+    InviteList:
+      type: object
+      required: [invites]
+      properties:
+        invites:
+          type: array
+          items: { $ref: '#/components/schemas/Invite' }
+    InvitePreview:
+      type: object
+      required: [code, community_name, community_icon_id, channel_name, channel_type, member_count, online_count]
+      properties:
+        code: { type: string }
+        community_name: { type: string }
+        community_icon_id: { type: string }
+        channel_name: { type: string }
+        channel_type: { $ref: '#/components/schemas/ChannelType' }
+        member_count: { type: integer }
+        online_count: { type: integer }
+        community_created_at: { $ref: '#/components/schemas/Timestamp' }
+        expires_at: { $ref: '#/components/schemas/Timestamp' }
+        already_member:
+          type: boolean
+          description: Вызывающий уже участник этого сообщества.
+    Ban:
+      type: object
+      required: [community_id, user, moderator_id, created_at, deleted_messages_window_seconds]
+      properties:
+        community_id: { $ref: '#/components/schemas/Id' }
+        user: { $ref: '#/components/schemas/User' }
+        moderator_id: { $ref: '#/components/schemas/Id' }
+        reason: { type: string }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        deleted_messages_window_seconds: { type: integer }
+    NotificationLevel:
+      type: string
+      enum: [NOTIFICATION_LEVEL_INHERIT, NOTIFICATION_LEVEL_ALL_MESSAGES, NOTIFICATION_LEVEL_MENTIONS_ONLY, NOTIFICATION_LEVEL_NOTHING]
+    NotificationSettings:
+      type: object
+      required: [muted, level, suppress_mention_all, suppress_role_mentions]
+      properties:
+        community_id: { $ref: '#/components/schemas/Id' }
+        channel_id: { $ref: '#/components/schemas/Id' }
+        muted: { type: boolean }
+        muted_until: { $ref: '#/components/schemas/Timestamp' }
+        level: { $ref: '#/components/schemas/NotificationLevel' }
+        suppress_mention_all: { type: boolean }
+        suppress_role_mentions: { type: boolean }
+    NotificationSettingsInput:
+      type: object
+      properties:
+        muted: { type: boolean }
+        muted_until:
+          type: string
+          format: date-time
+          nullable: true
+          description: Mute на время (S); null — пока не включат обратно.
+        level: { $ref: '#/components/schemas/NotificationLevel' }
+        suppress_mention_all: { type: boolean }
+        suppress_role_mentions: { type: boolean }
+    ReadState:
+      type: object
+      required: [channel_id, last_read_message_id, mention_count]
+      properties:
+        channel_id: { $ref: '#/components/schemas/Id' }
+        last_read_message_id: { $ref: '#/components/schemas/Id' }
+        mention_count: { type: integer }
+
+    # --- сообщения и файлы ---------------------------------------------------
+    BroadcastMention:
+      type: string
+      enum: [BROADCAST_MENTION_NONE, BROADCAST_MENTION_ONLINE, BROADCAST_MENTION_ALL]
+    Attachment:
+      type: object
+      required: [id, size, uploaded]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        size: { type: integer, format: int64 }
+        ciphertext_hash: { $ref: '#/components/schemas/Bytes' }
+        uploaded: { type: boolean }
+    SystemMessage:
+      type: object
+      required: [kind]
+      properties:
+        kind:
+          type: string
+          enum: [KIND_MEMBER_JOINED, KIND_MESSAGE_PINNED, KIND_OWNERSHIP_TRANSFERRED]
+        actor_id: { $ref: '#/components/schemas/Id' }
+        target_user_id: { $ref: '#/components/schemas/Id' }
+        target_message_id: { $ref: '#/components/schemas/Id' }
+    MessageMeta:
+      type: object
+      required: [id, channel_id, author_user_id, created_at, pinned, deleted]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        channel_id: { $ref: '#/components/schemas/Id' }
+        group_id: { $ref: '#/components/schemas/Id' }
+        epoch: { type: integer, format: int64 }
+        author_user_id: { $ref: '#/components/schemas/Id' }
+        author_device_id: { $ref: '#/components/schemas/Id' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        ciphertext: { $ref: '#/components/schemas/Bytes' }
+        wrapped_message_key: { $ref: '#/components/schemas/Bytes' }
+        history_key_generation: { type: integer }
+        mention_hints:
+          type: array
+          items: { $ref: '#/components/schemas/Bytes' }
+        broadcast_mention: { $ref: '#/components/schemas/BroadcastMention' }
+        attachments:
+          type: array
+          items: { $ref: '#/components/schemas/Attachment' }
+        pinned: { type: boolean }
+        deleted: { type: boolean }
+        deleted_at: { $ref: '#/components/schemas/Timestamp' }
+        system: { $ref: '#/components/schemas/SystemMessage' }
+    MessageInput:
+      type: object
+      required: [id, group_id, epoch, ciphertext, wrapped_message_key, history_key_generation]
+      properties:
+        id:
+          allOf: [{ $ref: '#/components/schemas/Id' }]
+          description: UUIDv7, сгенерирован клиентом; повтор с тем же id идемпотентен (MESSAGE_EXISTS, если тело отличается).
+        group_id: { $ref: '#/components/schemas/Id' }
+        epoch: { type: integer, format: int64 }
+        ciphertext:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: MLS PrivateMessage с MessageEnvelope внутри; до 64 КиБ.
+        wrapped_message_key: { $ref: '#/components/schemas/Bytes' }
+        history_key_generation: { type: integer }
+        mention_hints:
+          type: array
+          maxItems: 50
+          items: { $ref: '#/components/schemas/Bytes' }
+        broadcast_mention: { $ref: '#/components/schemas/BroadcastMention' }
+        attachment_ids:
+          type: array
+          maxItems: 10
+          items: { $ref: '#/components/schemas/Id' }
+    Pin:
+      type: object
+      required: [channel_id, message_id, pinned_by, pinned_at]
+      properties:
+        channel_id: { $ref: '#/components/schemas/Id' }
+        message_id: { $ref: '#/components/schemas/Id' }
+        pinned_by: { $ref: '#/components/schemas/Id' }
+        pinned_at: { $ref: '#/components/schemas/Timestamp' }
+    FileUpload:
+      type: object
+      required: [attachment, upload_url, expires_at]
+      properties:
+        attachment: { $ref: '#/components/schemas/Attachment' }
+        upload_url:
+          type: string
+          format: uri
+          description: Presigned URL для `PUT` шифртекста целиком.
+        upload_headers:
+          type: object
+          additionalProperties: { type: string }
+          description: Заголовки, которые нужно передать в PUT.
+        expires_at: { $ref: '#/components/schemas/Timestamp' }
+
+    # --- MLS -----------------------------------------------------------------
+    GroupKind:
+      type: string
+      enum: [GROUP_KIND_CHAT, GROUP_KIND_CALL]
+    HandshakeKind:
+      type: string
+      enum: [HANDSHAKE_KIND_PROPOSAL, HANDSHAKE_KIND_COMMIT, HANDSHAKE_KIND_EXTERNAL_COMMIT]
+    Group:
+      type: object
+      required: [id, channel_id, kind, ciphersuite, epoch, device_count, last_seq, created_at]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        channel_id: { $ref: '#/components/schemas/Id' }
+        kind: { $ref: '#/components/schemas/GroupKind' }
+        ciphersuite: { type: integer }
+        epoch: { type: integer, format: int64 }
+        device_count: { type: integer }
+        last_seq: { type: integer, format: int64 }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        last_rotation_at: { $ref: '#/components/schemas/Timestamp' }
+        has_group_info: { type: boolean }
+        has_history_key_bundle: { type: boolean }
+    Handshake:
+      type: object
+      required: [group_id, epoch, seq, kind, from_external_sender, blob]
+      properties:
+        group_id: { $ref: '#/components/schemas/Id' }
+        epoch: { type: integer, format: int64 }
+        seq: { type: integer, format: int64 }
+        kind: { $ref: '#/components/schemas/HandshakeKind' }
+        sender_device_id: { $ref: '#/components/schemas/Id' }
+        from_external_sender: { type: boolean }
+        blob: { $ref: '#/components/schemas/Bytes' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+    Welcome:
+      type: object
+      required: [group_id, channel_id, call_group, blob]
+      properties:
+        group_id: { $ref: '#/components/schemas/Id' }
+        channel_id: { $ref: '#/components/schemas/Id' }
+        call_group: { type: boolean }
+        blob: { $ref: '#/components/schemas/Bytes' }
+    HistoryKeyBundle:
+      type: object
+      required: [epoch, blob]
+      properties:
+        epoch: { type: integer, format: int64 }
+        blob:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: Связка, зашифрованная для эпохи (формат — CRYPTO.md).
+        updated_at: { $ref: '#/components/schemas/Timestamp' }
+
+    # --- голос и звуки -------------------------------------------------------
+    VoiceJoin:
+      type: object
+      required: [sfu_url, token, call_group_id, call_group_exists, voice_state]
+      properties:
+        sfu_url: { type: string, format: uri }
+        token:
+          type: string
+          description: Токен медиасервера с разрешениями публикации по правам `voice.talk` и `voice.share`.
+        call_group_id: { $ref: '#/components/schemas/Id' }
+        call_group_exists:
+          type: boolean
+          description: false — вызывающий первый и должен создать MLS-группу звонка с этим id.
+        voice_state: { $ref: '#/components/schemas/VoiceState' }
+    Sound:
+      type: object
+      required: [id, name, volume, duration_ms, audio_url, created_at]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        community_id: { $ref: '#/components/schemas/Id' }
+        user_id: { $ref: '#/components/schemas/Id' }
+        builtin: { type: boolean }
+        name: { type: string }
+        emoji: { type: string }
+        volume: { type: integer }
+        duration_ms: { type: integer }
+        audio_url: { type: string }
+        uploaded_by: { $ref: '#/components/schemas/Id' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+    SoundList:
+      type: object
+      required: [sounds]
+      properties:
+        sounds:
+          type: array
+          items: { $ref: '#/components/schemas/Sound' }
+        slots_total:
+          type: integer
+          description: Лимит слотов владельца (для сообщества и пользователя).
