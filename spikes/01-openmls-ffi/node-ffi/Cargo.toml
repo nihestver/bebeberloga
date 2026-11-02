@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "s1-node-ffi"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Спайк S1: Node-API (napi-rs) обвязка над s1-mls-core для Node 22 и Electron 33"
+
+[lib]
+name = "s1_node_ffi"
+crate-type = ["cdylib"]
+
+[dependencies]
+s1-mls-core = { path = "../mls-core" }
+napi = "=3.16.1"
+napi-derive = "=3.7.0"
+
+[build-dependencies]
+napi-build = "=2.6.0"

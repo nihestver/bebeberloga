@@ -1,0 +1,9 @@
+{
+  "name": "s1-node-demo",
+  "private": true,
+  "description": "Спайк S1: запуск napi-обвязки в Node 22 и Electron 33",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "electron": "33.4.11"
+  }
+}
