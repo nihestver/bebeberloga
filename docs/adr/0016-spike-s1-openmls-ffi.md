@@ -28,7 +28,7 @@ ADR-0004 выбрал MLS через OpenMLS для всех групп, а се
 ## Последствия
 
 - B02 описывает протокол DS по п. 3–4, проверку credential на клиенте и правила ротации; B03 реализует crypto-core на закреплённых версиях.
-- CI crypto-core должен собирать `aarch64-linux-android` (NDK; в репозитории есть dev-контейнер x86_64 с NDK) и `aarch64-apple-ios` (Xcode); привязки Kotlin/Swift генерируются при сборке и в git не хранятся. На хосте без NDK собирается только `staticlib`.
+- CI crypto-core должен собирать `aarch64-linux-android` (Android NDK на хосте сборки) и `aarch64-apple-ios` (Xcode); привязки Kotlin/Swift генерируются при сборке и в git не хранятся. Без NDK собирается только `staticlib`. Разработка и проверка идут нативно на macOS; dev-контейнер не нужен.
 - `openmls` 0.9.2 вышла за 11 дней до спайка: нужно следить за patch-релизами и записями безопасности. В графе зависимостей есть `crypto-bigint` 0.5 с advisory о timing (через P-256, который ciphersuite 0x0001 не использует) — B03 отслеживает обновление `hpke-rs`.
 - Web-fallback через `wasm-bindgen` спайком не проверялся — отдельная проверка в B03.
 - Требования к crypto-core из security-ревью спайка: свой `StorageProvider` с обнулением значений (`zeroize`) и SQLCipher `secure_delete`; `Zeroizing` для секретов в API и запрет сырого exporter в renderer (только фиксированный список меток); у объектов с ключами нет `Debug`; стабильные коды ошибок без фрагментов входа, отдельный код для дубликата; недоверенный вход из FFI копируется; `cargo fuzz` для разбора сообщений, Welcome, KeyPackage и `external_senders`; клиент и DS ограничивают `Lifetime` KeyPackage сверху; паддинг application message (`padding_size`) — решение B02.
