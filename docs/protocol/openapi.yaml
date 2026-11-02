@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Контракт REST Bebeberloga. Источник правды: Go-обработчики (oapi-codegen) и TS-клиент
-# (openapi-typescript) генерируются из этого файла (`just gen`, ADR-0016). Пояснения,
+# (openapi-typescript) генерируются из этого файла (`just gen`, ADR-0017). Пояснения,
 # коды ошибок и покрытие потоков — docs/protocol/REST.md. Модели повторяют Protobuf-схемы
 # из proto/bebeberloga/v1 в JSON-форме: имена полей snake_case, время — RFC 3339,
 # бинарные поля — base64.
@@ -16,7 +16,7 @@ info:
     метаданные; ключей и открытого текста в этом API нет.
 
     Модели сущностей — Protobuf-сообщения `bebeberloga.v1` в JSON-форме protojson с именами
-    полей как в `.proto` (ADR-0016): схема с `x-proto-message` в коде заменяется на тип,
+    полей как в `.proto` (ADR-0017): схема с `x-proto-message` в коде заменяется на тип,
     сгенерированный из Protobuf (`x-go-type` для oapi-codegen, импорт `*_pb` для TS);
     64-битные целые в телах — строки.
   license:

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 #
 # Кодогенерация `just gen` → `buf generate`. Плагины удалённые (buf.build), локальные установки не нужны.
-# Пути вывода обоснованы в docs/adr/0016-api-contracts.md:
+# Пути вывода обоснованы в docs/adr/0017-api-contracts.md:
 #   server/gen/          — Go-пакеты рядом с кодом сервера (B4), коммитятся, CI проверяет свежесть;
 #   clients/web/src/gen/ — TS-модули клиента (B9), та же папка принимает типы из openapi.yaml.
 version: v2

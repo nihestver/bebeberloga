@@ -7,7 +7,7 @@
 | Файл | Что содержит | Промпт | Статус |
 |---|---|---|---|
 | [`GATEWAY.md`](GATEWAY.md) | WebSocket-шлюз: `Identify` → `Ready`, события с монотонным `seq`, heartbeat, `Resume(seq)` с буфером 5 минут, сжатие zstd, лимиты и коды закрытия 41xx, адресация событий, команды клиента (включая `PlaySound`), шардинг по пользователю | B1 | черновик 2 (после ревью), готов для B6 |
-| [`REST.md`](REST.md) + [`openapi.yaml`](openapi.yaml) | Контракт REST (OpenAPI 3.0.3, Apache-2.0), из которого генерируются обработчики и клиент (`just gen`, ADR-0016); модели — Protobuf через `x-proto-message`/`x-go-type`: учётная запись, устройства и KeyPackage, сообщества/каналы/роли/участники/приглашения/баны, история сообщений (пагинация по UUIDv7), файлы, MLS DS, голос, саундборд, уведомления; таблица ошибок и коды прав | B1 | черновик 2, `redocly lint` чистый |
+| [`REST.md`](REST.md) + [`openapi.yaml`](openapi.yaml) | Контракт REST (OpenAPI 3.0.3, Apache-2.0), из которого генерируются обработчики и клиент (`just gen`, ADR-0017); модели — Protobuf через `x-proto-message`/`x-go-type`: учётная запись, устройства и KeyPackage, сообщества/каналы/роли/участники/приглашения/баны, история сообщений (пагинация по UUIDv7), файлы, MLS DS, голос, саундборд, уведомления; таблица ошибок и коды прав | B1 | черновик 2, `redocly lint` чистый |
 | [`MESSAGES.md`](MESSAGES.md) | Конверт application-сообщения MLS по типам (text, edit, delete, reaction, pin, file-key, call-key, history-keys, device-notice; poll-vote зарезервирован), упоминания и mention-hint, лимиты (текст 4 000, шифртекст 128 КиБ) | B1 (крипто-часть — B2) | черновик 2 |
 | `CRYPTO.md` | MLS-профиль, ключи идентичности и устройств, Delivery Service, external sender, ротация эпох, вывод SFrame-ключей, ключи истории и связки, формат блобов, формальные инварианты | B2 | не начат |
 | `MEDIA.md` | Комнаты SFU, токены с правами, webhooks, смена эпохи звонка, лимиты качества стрима | B7 (контракт `voice/*` и `PlaySound`/`SoundPlayed` уже в REST и gateway) | не начат |
@@ -26,7 +26,7 @@
 - Стрим: отдельный участник «стрим» в комнате звонка; SFU пересылает только подписавшимся; simulcast из двух слоёв; H.264 всегда, HEVC/AV1 — если все зрители декодируют ([ADR-0008](../adr/0008-stream-media-engine.md)).
 - Soundboard: звуки — публичные ассеты; команда `PlaySound` идёт через gateway, сервер проверяет право 14, присутствие в канале и кулдаун и рассылает `SoundPlayed`; каждый клиент играет локальную копию.
 - Модель данных ядра — [`docs/spec/ARCHITECTURE.md`](../spec/ARCHITECTURE.md) раздел 5.3.
-- Контракты: OpenAPI 3.0.3 поверх Protobuf-моделей (`x-proto-message`/`x-go-type`), `oapi-codegen`/`openapi-typescript`, Protobuf через buf с удалёнными плагинами, id — UUIDv7 строкой, JSON — protojson, сгенерированный код коммитится ([ADR-0016](../adr/0016-api-contracts.md)).
+- Контракты: OpenAPI 3.0.3 поверх Protobuf-моделей (`x-proto-message`/`x-go-type`), `oapi-codegen`/`openapi-typescript`, Protobuf через buf с удалёнными плагинами, id — UUIDv7 строкой, JSON — protojson, сгенерированный код коммитится ([ADR-0017](../adr/0017-api-contracts.md)).
 
 ## Покрытие пользовательских потоков
 
