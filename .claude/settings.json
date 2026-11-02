@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
       "Bash(just *)",
@@ -32,7 +33,14 @@
       "WebFetch(domain:learn.microsoft.com)",
       "WebFetch(domain:developer.apple.com)",
       "WebFetch(domain:docs.pipewire.org)",
-      "WebFetch(domain:code.claude.com)"
+      "WebFetch(domain:code.claude.com)",
+      "Bash(git branch *)",
+      "Bash(git show *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(gh pr list *)",
+      "Bash(reuse *)",
+      "Bash(lychee *)"
     ],
     "ask": [
       "Bash(ssh *)",
@@ -43,13 +51,23 @@
     "deny": [
       "Bash(rm -rf *)",
       "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./deploy/**/.env*)",
+      "Read(./.env.local)",
+      "Read(./.env.*.local)",
+      "Read(./.env.production)",
+      "Read(./deploy/**/.env)",
+      "Read(./deploy/**/.env.local)",
       "Read(./**/*.pem)",
       "Read(./**/*.key)",
       "WebFetch(domain:discord.com)",
       "WebFetch(domain:support.discord.com)",
-      "WebFetch(domain:discord.dev)"
+      "WebFetch(domain:discord.dev)",
+      "Read(./docs/PLAN.md)",
+      "Bash(git show *PLAN.md*)",
+      "Bash(git log *PLAN.md*)",
+      "Bash(git diff *PLAN.md*)",
+      "Bash(git blame *PLAN.md*)",
+      "Bash(git grep *)",
+      "Bash(git cat-file *)"
     ]
   },
   "hooks": {
