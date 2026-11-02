@@ -30,7 +30,7 @@
 |---|---|---|
 | 1. Крейт на `openmls`: группа, Add по KeyPackage, commit, Welcome, application message, external sender (Add/Remove), exporter | ✅ `mls-core`: 10 тестов зелёные, включая отказ чужого external sender, отказ предложения входа от постороннего, отказ GroupContextExtensions от сервера, отказ commit-а устаревшей эпохи, PCS после Remove, replay-защиту | `just test` в каталоге спайка |
 | 2. napi-rs + Node 22 | ✅ `node-ffi`: `.node` без npm-зависимостей; скрипт печатает расшифрованные сообщения в обе стороны и совпадение exporter-секрета | `just node` |
-| 2. Electron 33 | ⏳ см. раздел «Electron» ниже | `just electron` |
+| 2. Electron 33 | ✅ тот же `.node` в main-процессе Electron 33.4.11 (Node 20.18.3 внутри — другой ABI, Node-API не зависит от него); печатает те же сообщения | `just electron` |
 | 3. uniffi → Swift | ✅ привязка сгенерирована, скомпилирована `swiftc` на macOS-хосте, вызов проходит (два устройства, одно сообщение) | `just swift` |
 | 3. uniffi → iOS aarch64 | ✅ `cargo build --target aarch64-apple-ios` с SDK Xcode: `.a` и `.dylib` собираются. Симулятор и iOS-приложение не проверялись (клиент iOS не разрабатывается, ADR-0010) | `just cross` с `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` |
 | 3. uniffi → Kotlin / Android aarch64 | ✅ `staticlib` для `aarch64-linux-android` собирается на хосте без NDK (в графе зависимостей нет C-кода). `.so` и запуск Kotlin на JVM — в dev-контейнере x86_64, ⏳ см. ниже | `just kotlin` в контейнере |
@@ -95,7 +95,19 @@
 
 ## Electron
 
-⏳ Заполняется после установки Electron 33.4.11 (`node-ffi/node/package.json`).
+`just electron` → `npm ci` по `package-lock.json` (electron 33.4.11, граф MIT/ISC/BSD/Apache) и запуск `electron-main.cjs` без окна:
+
+```
+electron 33.4.11, node 20.18.3
+версия openmls: 0.9.2
+эпоха после добавления: A=1 B=1
+участники у B: alice-laptop, bob-phone
+B получил (174 байт шифртекста) от alice-laptop: привет от ноутбука
+A получил (174 байт шифртекста) от bob-phone: привет от телефона
+exporter-секрет совпадает: true
+```
+
+Один и тот же `s1.node`, собранный против Node-API, работает в Node 22.23 и в Electron 33 с Node 20.18 внутри — ABI Node не важен. Нюанс окружения: если в процессе задана `ELECTRON_RUN_AS_NODE=1` (так запускает дочерние процессы сам Electron, в том числе Claude Code в VS Code), `electron` стартует как обычный node и `require("electron")` не даёт `app`; рецепт снимает переменную. Electron 33 к концу 2026 вне поддержки — продукту нужна поддерживаемая ветка (ADR-0007 допускает «33+»).
 
 ## Kotlin и Android в dev-контейнере
 

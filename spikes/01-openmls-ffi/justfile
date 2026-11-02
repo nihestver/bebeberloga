@@ -36,9 +36,10 @@ node:
     cp target/release/libs1_node_ffi.dylib node-ffi/node/s1.node 2>/dev/null || cp target/release/libs1_node_ffi.so node-ffi/node/s1.node
     node node-ffi/node/demo.mjs
 
-# то же из main-процесса Electron 33 (electron ставится в node-ffi/node/node_modules)
+# то же из main-процесса Electron 33 (electron ставится в node-ffi/node/node_modules по lockfile);
+# ELECTRON_RUN_AS_NODE снимается: с ней electron стартует как обычный node без модуля electron
 electron: node
-    cd node-ffi/node && npm install --no-audit --no-fund && npx electron electron-main.cjs
+    cd node-ffi/node && npm ci --no-audit --no-fund && env -u ELECTRON_RUN_AS_NODE npx electron electron-main.cjs
 
 # uniffi: сгенерировать привязки Kotlin и Swift в uniffi-ffi/generated
 bindings:
