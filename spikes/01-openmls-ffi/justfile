@@ -36,9 +36,10 @@ node:
     cp target/release/libs1_node_ffi.dylib node-ffi/node/s1.node 2>/dev/null || cp target/release/libs1_node_ffi.so node-ffi/node/s1.node
     node node-ffi/node/demo.mjs
 
-# то же из main-процесса Electron 33 (electron ставится в node-ffi/node/node_modules)
+# то же из main-процесса Electron 33 (electron ставится в node-ffi/node/node_modules по lockfile);
+# ELECTRON_RUN_AS_NODE снимается: с ней electron стартует как обычный node без модуля electron
 electron: node
-    cd node-ffi/node && npm install --no-audit --no-fund && npx electron electron-main.cjs
+    cd node-ffi/node && npm ci --no-audit --no-fund && env -u ELECTRON_RUN_AS_NODE npx electron electron-main.cjs
 
 # uniffi: сгенерировать привязки Kotlin и Swift в uniffi-ffi/generated
 bindings:
@@ -49,11 +50,26 @@ bindings:
 swift: bindings
     uniffi-ffi/swift/run.sh
 
-# Kotlin на JVM (в dev-контейнере x86_64): собрать привязку и вызвать одну функцию
+# Kotlin на JVM хоста (kotlinc из PATH, $KOTLINC или ~/.local/share/kotlinc-*): собрать привязку и вызвать одну функцию
 kotlin:
     uniffi-ffi/kotlin/run.sh
 
-# только компиляция под iOS и Android (aarch64); для Android нужен NDK (dev-контейнер)
-cross:
+# только компиляция под iOS (нужен Xcode: DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer)
+# и Android aarch64 (нужен NDK: $ANDROID_NDK_HOME, ~/.local/share/android-ndk-* или brew --cask android-ndk)
+cross: cross-ios cross-android
+
+cross-ios:
     cargo build --release -p s1-uniffi-ffi --target aarch64-apple-ios
+
+cross-android:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ndk=${ANDROID_NDK_HOME:-$(ls -d "$HOME"/.local/share/android-ndk-* 2>/dev/null | tail -1)}
+    ndk=${ndk:-$(brew --prefix 2>/dev/null)/share/android-ndk}
+    host=$(uname -s | tr 'A-Z' 'a-z')-x86_64   # каталог prebuilt так называется и на Apple Silicon
+    bin="$ndk/toolchains/llvm/prebuilt/$host/bin"
+    [ -x "$bin/aarch64-linux-android24-clang" ] || { echo "NDK не найден: $bin"; exit 1; }
+    export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="$bin/aarch64-linux-android24-clang"
+    export AR_aarch64_linux_android="$bin/llvm-ar"
     cargo build --release -p s1-uniffi-ffi --target aarch64-linux-android
+    ls -la target/aarch64-linux-android/release/libs1_uniffi_ffi.so
