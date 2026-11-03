@@ -1,6 +1,6 @@
 # ADR-0019: Без external commit в 1.0 — вход только через Add сервера, пересоздание группы при рассинхроне
 
-- Статус: Принято 2026-11-03 (владелец, решение Р3 промпта B02)
+- Статус: Принято 2026-11-03 (владелец, решение Р3 промпта B02); частично изменено ADR-0021
 - Дата: 2026-11-03
 - Частично изменяет: [ADR-0004](0004-e2ee-mls-sframe.md) п. 2, [ADR-0015](0015-history-visible-to-members.md) «Последствия», [ADR-0016](0016-spike-s1-openmls-ffi.md) п. 2–3, [ADR-0018](0018-spike-s4-mls-ds.md) п. 4, п. 7 и «Последствия»
 - Связано: `docs/spec/ARCHITECTURE.md` §4.3, §5.1; `docs/spec/FLOWS/02-new-device.md`, `04-invite-join.md`; `docs/spec/SCREENS/08-messages.md` §1, §8; [`docs/protocol/CRYPTO.md`](../protocol/CRYPTO.md) §2
