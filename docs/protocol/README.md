@@ -163,7 +163,7 @@
 | Проиграть 1 Клик или клавиша | клиент |
 | Проиграть 2 Команда и проверки | gateway `PlaySound{channel_id, sound_id}` → право 14, присутствие, существование, кулдаун 2 с → `SoundPlayed{channel_id, user_id, sound_id, volume}` |
 | Проиграть 3–4 Локальное воспроизведение, кольцо | клиент по `SoundPlayed` |
-| Проиграть 5 Ошибки | `CommandRejected{RATE_LIMITED, retry_after_ms}`, `{PERMISSION_DENIED}`, `{NOT_IN_VOICE}`; нет в кэше — `GET /sounds/{id}` + `/audio` |
+| Проиграть 5 Ошибки | `CommandRejected{ERROR_CODE_RATE_LIMITED, retry_after_ms}`, `{ERROR_CODE_PERMISSION_DENIED}`, `{ERROR_CODE_NOT_IN_VOICE}`; нет в кэше — `GET /sounds/{id}` + `/audio` |
 | Личные 1–2 | `POST /users/me/sounds` → `SoundAdded` своим устройствам; лимит `SOUND_SLOTS_FULL` |
 | Личные 3 Скачивание при первом `SoundPlayed` | `GET /sounds/{id}`, `GET /sounds/{id}/audio` |
 | Горячие клавиши 1–3 | клиент; `SoundRemoved` → пометка «Звук больше недоступен» |

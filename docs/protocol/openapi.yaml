@@ -2821,8 +2821,8 @@ components:
     # --- общие ---------------------------------------------------------------
     Id:
       type: string
-      format: uuid
-      description: UUIDv7 в канонической строковой форме.
+      pattern: '^([0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})?$'
+      description: UUIDv7 в канонической строковой форме (строчные hex). В ответах пустая строка у необязательной ссылки означает «не задано» (protojson с EmitDefaultValues выводит пустые строки), например `Channel.community_id` у ЛС или `Handshake.sender_device_id` у предложения сервера.
       example: 019a2c3e-7b1d-7c2a-9f3e-5d6a7b8c9d0e
     Timestamp:
       type: string
@@ -2885,6 +2885,7 @@ components:
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       description: Имена значений `bebeberloga.v1.ErrorCode`; в REST.md коды приводятся без префикса `ERROR_CODE_`.
       enum:
+        - ERROR_CODE_UNSPECIFIED
         - ERROR_CODE_VALIDATION_FAILED
         - ERROR_CODE_UNAUTHENTICATED
         - ERROR_CODE_PERMISSION_DENIED
@@ -2941,7 +2942,7 @@ components:
           x-proto-enum: bebeberloga.v1.RegistrationPolicy
           x-go-type: bebeberlogav1.RegistrationPolicy
           x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-          enum: [REGISTRATION_POLICY_OPEN, REGISTRATION_POLICY_INVITE_ONLY, REGISTRATION_POLICY_CLOSED]
+          enum: [REGISTRATION_POLICY_UNSPECIFIED, REGISTRATION_POLICY_OPEN, REGISTRATION_POLICY_INVITE_ONLY, REGISTRATION_POLICY_CLOSED]
         rules_url: { type: string, format: uri }
         privacy_url: { type: string, format: uri }
         server_version: { type: string }
@@ -2965,7 +2966,7 @@ components:
           x-proto-enum: bebeberloga.v1.StreamPreset
           x-go-type: bebeberlogav1.StreamPreset
           x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-          enum: [STREAM_PRESET_SAVER, STREAM_PRESET_BALANCED, STREAM_PRESET_SMOOTH]
+          enum: [STREAM_PRESET_UNSPECIFIED, STREAM_PRESET_SAVER, STREAM_PRESET_BALANCED, STREAM_PRESET_SMOOTH]
         max_client_frame_size: { type: integer, example: 65536 }
         communities_per_user: { type: integer }
 
@@ -3019,13 +3020,13 @@ components:
       x-proto-enum: bebeberloga.v1.DevicePlatform
       x-go-type: bebeberlogav1.DevicePlatform
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [DEVICE_PLATFORM_DESKTOP_WINDOWS, DEVICE_PLATFORM_DESKTOP_MACOS, DEVICE_PLATFORM_DESKTOP_LINUX, DEVICE_PLATFORM_WEB, DEVICE_PLATFORM_ANDROID, DEVICE_PLATFORM_IOS]
+      enum: [DEVICE_PLATFORM_UNSPECIFIED, DEVICE_PLATFORM_DESKTOP_WINDOWS, DEVICE_PLATFORM_DESKTOP_MACOS, DEVICE_PLATFORM_DESKTOP_LINUX, DEVICE_PLATFORM_WEB, DEVICE_PLATFORM_ANDROID, DEVICE_PLATFORM_IOS]
     DeviceVerification:
       type: string
       x-proto-enum: bebeberloga.v1.DeviceVerification
       x-go-type: bebeberlogav1.DeviceVerification
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [DEVICE_VERIFICATION_UNVERIFIED, DEVICE_VERIFICATION_VERIFIED]
+      enum: [DEVICE_VERIFICATION_UNSPECIFIED, DEVICE_VERIFICATION_UNVERIFIED, DEVICE_VERIFICATION_VERIFIED]
     DeviceRegistration:
       type: object
       x-proto-message: bebeberloga.v1.DeviceRegistration
@@ -3109,13 +3110,13 @@ components:
       x-proto-enum: bebeberloga.v1.PushTransport
       x-go-type: bebeberlogav1.PushTransport
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [PUSH_TRANSPORT_UNIFIED_PUSH, PUSH_TRANSPORT_FCM, PUSH_TRANSPORT_APNS]
+      enum: [PUSH_TRANSPORT_UNSPECIFIED, PUSH_TRANSPORT_UNIFIED_PUSH, PUSH_TRANSPORT_FCM, PUSH_TRANSPORT_APNS]
     RelationshipKind:
       type: string
       x-proto-enum: bebeberloga.v1.RelationshipKind
       x-go-type: bebeberlogav1.RelationshipKind
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [RELATIONSHIP_KIND_FRIEND, RELATIONSHIP_KIND_REQUEST_INCOMING, RELATIONSHIP_KIND_REQUEST_OUTGOING, RELATIONSHIP_KIND_BLOCKED]
+      enum: [RELATIONSHIP_KIND_UNSPECIFIED, RELATIONSHIP_KIND_FRIEND, RELATIONSHIP_KIND_REQUEST_INCOMING, RELATIONSHIP_KIND_REQUEST_OUTGOING, RELATIONSHIP_KIND_BLOCKED]
     Relationship:
       type: object
       x-proto-message: bebeberloga.v1.Relationship
@@ -3163,13 +3164,13 @@ components:
       x-proto-enum: bebeberloga.v1.ChannelType
       x-go-type: bebeberlogav1.ChannelType
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [CHANNEL_TYPE_TEXT, CHANNEL_TYPE_VOICE, CHANNEL_TYPE_DM, CHANNEL_TYPE_GROUP_DM, CHANNEL_TYPE_THREAD]
+      enum: [CHANNEL_TYPE_UNSPECIFIED, CHANNEL_TYPE_TEXT, CHANNEL_TYPE_VOICE, CHANNEL_TYPE_DM, CHANNEL_TYPE_GROUP_DM, CHANNEL_TYPE_THREAD]
     HistoryVisibility:
       type: string
       x-proto-enum: bebeberloga.v1.HistoryVisibility
       x-go-type: bebeberlogav1.HistoryVisibility
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [HISTORY_VISIBILITY_INHERIT, HISTORY_VISIBILITY_VISIBLE, HISTORY_VISIBILITY_HIDDEN]
+      enum: [HISTORY_VISIBILITY_UNSPECIFIED, HISTORY_VISIBILITY_INHERIT, HISTORY_VISIBILITY_VISIBLE, HISTORY_VISIBILITY_HIDDEN]
     Channel:
       type: object
       x-proto-message: bebeberloga.v1.Channel
@@ -3202,7 +3203,7 @@ components:
       x-proto-enum: bebeberloga.v1.RolePreset
       x-go-type: bebeberlogav1.RolePreset
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [ROLE_PRESET_CUSTOM, ROLE_PRESET_OWNER, ROLE_PRESET_ADMIN, ROLE_PRESET_MODERATOR, ROLE_PRESET_ALL]
+      enum: [ROLE_PRESET_UNSPECIFIED, ROLE_PRESET_CUSTOM, ROLE_PRESET_OWNER, ROLE_PRESET_ADMIN, ROLE_PRESET_MODERATOR, ROLE_PRESET_ALL]
     PermissionCode:
       type: string
       description: Код права `<область>.<действие>` (PERMISSIONS.md §1).
@@ -3377,7 +3378,7 @@ components:
           x-proto-enum: bebeberloga.v1.CommunityRemovalReason
           x-go-type: bebeberlogav1.CommunityRemovalReason
           x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-          enum: [COMMUNITY_REMOVAL_REASON_DELETED, COMMUNITY_REMOVAL_REASON_LEFT, COMMUNITY_REMOVAL_REASON_KICKED, COMMUNITY_REMOVAL_REASON_BANNED]
+          enum: [COMMUNITY_REMOVAL_REASON_UNSPECIFIED, COMMUNITY_REMOVAL_REASON_DELETED, COMMUNITY_REMOVAL_REASON_LEFT, COMMUNITY_REMOVAL_REASON_KICKED, COMMUNITY_REMOVAL_REASON_BANNED]
         at: { $ref: '#/components/schemas/Timestamp' }
     GroupSummary:
       type: object
@@ -3455,7 +3456,7 @@ components:
       x-proto-enum: bebeberloga.v1.NotificationLevel
       x-go-type: bebeberlogav1.NotificationLevel
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [NOTIFICATION_LEVEL_INHERIT, NOTIFICATION_LEVEL_EVERY_MESSAGE, NOTIFICATION_LEVEL_MENTIONS, NOTIFICATION_LEVEL_SILENT]
+      enum: [NOTIFICATION_LEVEL_UNSPECIFIED, NOTIFICATION_LEVEL_INHERIT, NOTIFICATION_LEVEL_EVERY_MESSAGE, NOTIFICATION_LEVEL_MENTIONS, NOTIFICATION_LEVEL_SILENT]
     NotificationSettings:
       type: object
       x-proto-message: bebeberloga.v1.NotificationSettings
@@ -3499,7 +3500,7 @@ components:
       x-proto-enum: bebeberloga.v1.BroadcastMention
       x-go-type: bebeberlogav1.BroadcastMention
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [BROADCAST_MENTION_NONE, BROADCAST_MENTION_ONLINE, BROADCAST_MENTION_ALL]
+      enum: [BROADCAST_MENTION_UNSPECIFIED, BROADCAST_MENTION_NONE, BROADCAST_MENTION_ONLINE, BROADCAST_MENTION_ALL]
     Attachment:
       type: object
       x-proto-message: bebeberloga.v1.Attachment
@@ -3608,13 +3609,13 @@ components:
       x-proto-enum: bebeberloga.v1.GroupKind
       x-go-type: bebeberlogav1.GroupKind
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [GROUP_KIND_CHAT, GROUP_KIND_CALL]
+      enum: [GROUP_KIND_UNSPECIFIED, GROUP_KIND_CHAT, GROUP_KIND_CALL]
     HandshakeKind:
       type: string
       x-proto-enum: bebeberloga.v1.HandshakeKind
       x-go-type: bebeberlogav1.HandshakeKind
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [HANDSHAKE_KIND_PROPOSAL, HANDSHAKE_KIND_COMMIT, HANDSHAKE_KIND_EXTERNAL_COMMIT]
+      enum: [HANDSHAKE_KIND_UNSPECIFIED, HANDSHAKE_KIND_PROPOSAL, HANDSHAKE_KIND_COMMIT, HANDSHAKE_KIND_EXTERNAL_COMMIT]
     Group:
       type: object
       x-proto-message: bebeberloga.v1.Group

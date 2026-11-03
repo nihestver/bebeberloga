@@ -82,7 +82,7 @@
 - `broadcast_mention` (`@все`/`@здесь`) передаётся открыто — иначе сервер не может проверить `chat.ping_all` и посчитать бейджи. Хинты ролей — `HMAC(секрет канала, role_id)`, каждый участник регистрирует хинты своих ролей `PUT /channels/{id}/mention-hints`.
 - `DeleteBody`/`PinBody` в группе дублируют REST-команды для офлайн-истории; модератор без текста удаляет только через REST; «убрать реакции у всех» — удаление сообщений-реакций по id.
 - Незавершённое создание сообщества (FLOWS/03 ш. 5): клиент вызывает `DELETE /communities/{id}`; сервер дополнительно удаляет сообщества, у каналов которых за 1 час не появилось ни одной MLS-группы.
-- ЛС — `Channel` типа `DM` с `participant_ids`, адресуется теми же `/channels/{id}/…`; `POST /users/me/dm-channels` идемпотентен для пары.
+- ЛС — `Channel` типа `CHANNEL_TYPE_DM` с `participant_ids`, адресуется теми же `/channels/{id}/…`; `POST /users/me/dm-channels` идемпотентен для пары.
 - Commit, Welcome, новый GroupInfo и связка ключей истории идут одним запросом `POST /mls/groups/{id}/handshakes` (атомарно).
 - «🔒 закрытый для тебя»: владелец и администраторы получают `CommunitySnapshot.locked_channels` и событие `LockedChannelsUpdated`; самодобавление — `POST /channels/{id}/access/self`, участники канала видят системное сообщение `KIND_CHANNEL_SELF_JOINED`.
 - «Тебя выгнали» после долгого офлайна: сервер хранит `CommunityRemoval` до подтверждения устройством (`Ready.community_removals`, `DELETE /users/me/community-removals/{community_id}`).

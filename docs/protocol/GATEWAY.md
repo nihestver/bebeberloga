@@ -90,9 +90,9 @@
 | Кадр от клиента | ≤ 64 КиБ (`InstanceLimits.max_client_frame_size`); больше — 4104 |
 | Кадр от сервера | ≤ 8 МиБ (после распаковки) |
 | Блоб MLS внутри события (`Handshake.blob`, `Welcome.blob`) | ≤ 256 КиБ; больше — поле пустое, клиент берёт `GET /mls/groups/{id}/handshakes/{seq}` или `GET /mls/welcomes` |
-| Команды клиента | ≤ 30 за 10 с на соединение (heartbeat не считается); превышение — `CommandRejected{RATE_LIMITED}`, повторное — 4106 |
+| Команды клиента | ≤ 30 за 10 с на соединение (heartbeat не считается); превышение — `CommandRejected{ERROR_CODE_RATE_LIMITED}`, повторное — 4106 |
 | `TypingStart` | ≤ 1 за 5 с на канал; лишние молча отбрасываются |
-| `PlaySound` | кулдаун 2 с на пользователя (FLOWS/09); `CommandRejected{RATE_LIMITED, retry_after_ms}` |
+| `PlaySound` | кулдаун 2 с на пользователя (FLOWS/09); `CommandRejected{ERROR_CODE_RATE_LIMITED, retry_after_ms}` |
 | Время до `Identify`/`Resume` | 10 с; иначе 4100 |
 | Буфер Resume | 5 минут |
 

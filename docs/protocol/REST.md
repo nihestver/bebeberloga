@@ -125,7 +125,7 @@
 
 1. Клиент шифрует `MessageEnvelope` в текущей эпохе группы канала (MESSAGES.md), получает ключ сообщения и оборачивает его действующим ключом истории.
 2. `POST /channels/{id}/messages {id, group_id, epoch, ciphertext, wrapped_message_key, history_key_generation, mention_hints[], broadcast_mention, attachment_ids[]}`.
-3. Сервер проверяет: устройство в группе; эпоха текущая (иначе `EPOCH_MISMATCH{current_epoch}`); `chat.post`; `chat.upload`, если есть вложения; `chat.ping_all`, если `broadcast_mention ≠ NONE` или среди хинтов есть хинт роли — без права сообщение принимается, но без уведомлений; размер шифртекста ≤ 128 КиБ; в ЛС — отсутствие блокировки.
+3. Сервер проверяет: устройство в группе; эпоха текущая (иначе `EPOCH_MISMATCH{current_epoch}`); `chat.post`; `chat.upload`, если есть вложения; `chat.ping_all`, если `broadcast_mention ≠ BROADCAST_MENTION_NONE` или среди хинтов есть хинт роли — без права сообщение принимается, но без уведомлений; размер шифртекста ≤ 128 КиБ; в ЛС — отсутствие блокировки.
 4. Сервер сохраняет метаданные (включая `size`) и шифртекст, рассылает `MessageCreated`, считает упоминания по хинтам, шлёт push без текста.
 
 ### Вложение
@@ -148,7 +148,7 @@
 
 ## 6. Генерация кода
 
-- **Go (B4)**: `oapi-codegen` (Apache-2.0), режим `strict-server` поверх `chi`; конфигурация `server/oapi-codegen.yaml`, вывод `server/gen/api/`. Схемы с `x-go-type`/`x-go-type-import` генератор не создаёт заново, а подставляет тип из `server/gen/bebeberloga/v1` (вывод `buf generate`). Сериализация этих типов — `protojson` с `UseProtoNames: true`, `EmitDefaultValues: true`: скаляры, списки и enum с нулевым значением выводятся, поэтому поля из `required` в ответе есть всегда, а незаданные сообщения (`Timestamp` и т. п.) и незаданные ветки `oneof` не выводятся вовсе — они и не входят в `required`. Значение `*_UNSPECIFIED` сервер не отправляет, поэтому его нет в списках `enum`; тела запросов без Protobuf-двойника — обычный `encoding/json`.
+- **Go (B4)**: `oapi-codegen` (Apache-2.0), режим `strict-server` поверх `chi`; конфигурация `server/oapi-codegen.yaml`, вывод `server/gen/api/`. Схемы с `x-go-type`/`x-go-type-import` генератор не создаёт заново, а подставляет тип из `server/gen/bebeberloga/v1` (вывод `buf generate`). Сериализация этих типов — `protojson` с `UseProtoNames: true`, `EmitDefaultValues: true`: скаляры, списки и enum с нулевым значением выводятся, поэтому поля из `required` в ответе есть всегда, а незаданные сообщения (`Timestamp` и т. п.) и незаданные ветки `oneof` не выводятся вовсе — они и не входят в `required`. нулевое значение enum (`*_UNSPECIFIED`) тоже выводится и означает «не задано» — например, `UserProfile.relationship` у пользователя без связи или `Channel.history_visibility` у ЛС, — поэтому оно есть в каждом списке `enum`; пустая строка у необязательного id — тоже «не задано» (схема `Id`); тела запросов без Protobuf-двойника — обычный `encoding/json`.
 - **TypeScript (B9)**: `openapi-typescript` + `openapi-fetch` (MIT), вывод `clients/web/src/gen/api.ts`. Хук `transform` заменяет схемы с `x-proto-message`/`x-proto-enum` на импорт соответствующего типа из `clients/web/src/gen/bebeberloga/v1/*_pb.ts` (вывод `protoc-gen-es`); JSON разбирается через `fromJson`/`toJson` библиотеки `@bufbuild/protobuf`.
 - Тест в B4 сверяет для каждой схемы с `x-proto-message` список полей и их типы с дескриптором Protobuf, чтобы OpenAPI-описание не разъехалось с источником.
 - CI проверяет, что сгенерированный код не отстал от контракта (`just gen` + `git diff --exit-code`).
