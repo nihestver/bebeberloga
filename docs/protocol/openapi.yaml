@@ -2383,6 +2383,26 @@ paths:
                 $ref: '#/components/schemas/Handshake'
         default:
           $ref: '#/components/responses/Error'
+  /mls/groups/{group_id}/handshakes/{seq}/ack:
+    parameters:
+      - $ref: '#/components/parameters/GroupId'
+      - name: seq
+        in: path
+        required: true
+        schema: { type: integer, format: int64, minimum: 1 }
+    post:
+      tags: [mls]
+      summary: Подтвердить, что спорный commit принят
+      description: |
+        Только во время проверки commit-а `seq` (GROUP_STATE_REVIEW с этим `review_seq`, CRYPTO.md
+        §2.9.3): устройство, применившее этот commit, сообщает об этом. DS учитывает подтверждение,
+        если устройство было в группе в базовой эпохе commit-а и не добавлено им. Вне проверки —
+        CONFLICT. Ошибка NOT_GROUP_MEMBER.
+      operationId: ackHandshake
+      responses:
+        '202': { description: Учтено }
+        default:
+          $ref: '#/components/responses/Error'
   /mls/groups/{group_id}/group-info:
     parameters:
       - $ref: '#/components/parameters/GroupId'
@@ -2510,8 +2530,12 @@ paths:
         Клиент не принял commit номер `seq` (или Welcome, созданный этим commit-ом) по причине
         `reason` (CRYPTO.md §2.9). DS принимает жалобу от устройства, которое было в группе в базовой
         эпохе commit-а или было адресатом его Welcome, не является автором и не имеет ожидающего
-        Remove; затем замораживает группу (MlsGroupFrozen) и начинает её пересоздание (§2.10) в
-        пределах лимита. Не чаще раза в час на устройство и группу (RATE_LIMITED). Ошибки
+        Remove. Дальше — по виду жалобы (§2.9.2): личная причина, жалоба адресата Welcome и
+        структурная жалоба не на последний commit группы — возврат подавшего устройства (как
+        `POST …/resync`), без заморозки; структурная жалоба на последний commit — проверка
+        (GROUP_STATE_REVIEW, событие MlsGroupStateChanged), по итогам которой DS либо возвращает
+        пожаловавшихся, либо замораживает и пересоздаёт группу (§2.10), либо откладывает пересоздание
+        сверх лимита. Не чаще раза в час на устройство и группу (RATE_LIMITED). Ошибки
         NOT_GROUP_MEMBER, REMOVAL_PENDING, NOT_FOUND.
       operationId: disputeHandshake
       requestBody:
@@ -2542,6 +2566,16 @@ paths:
         (RATE_LIMITED). Ошибки NOT_GROUP_MEMBER, GROUP_FROZEN; если свежих KeyPackage нет, пара
         публикуется после их загрузки.
       operationId: requestGroupResync
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                local_epoch:
+                  allOf: [{ $ref: '#/components/schemas/Int64' }]
+                  description: Последняя эпоха группы у клиента. Если она больше эпохи DS в окне восстановления после потери журнала, DS замораживает группу с RECREATION_REASON_JOURNAL_LOSS (CRYPTO.md §2.10.10).
       responses:
         '202': { description: Возврат запрошен }
         default:
@@ -3099,6 +3133,7 @@ components:
         - ERROR_CODE_UNAUTHORIZED_CHANGE
         - ERROR_CODE_ALREADY_MEMBER
         - ERROR_CODE_GROUP_FROZEN
+        - ERROR_CODE_GROUP_UNDER_REVIEW
         - ERROR_CODE_SOUND_INVALID
         - ERROR_CODE_SOUND_SLOTS_FULL
 
@@ -3816,7 +3851,14 @@ components:
       x-go-type: bebeberlogav1.GroupState
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       description: Состояние группы на DS (CRYPTO.md §2.10).
-      enum: [GROUP_STATE_UNSPECIFIED, GROUP_STATE_ACTIVE, GROUP_STATE_FROZEN, GROUP_STATE_SUPERSEDED]
+      enum: [GROUP_STATE_UNSPECIFIED, GROUP_STATE_ACTIVE, GROUP_STATE_FROZEN, GROUP_STATE_SUPERSEDED, GROUP_STATE_REVIEW]
+    RecreationReason:
+      type: string
+      x-proto-enum: bebeberloga.v1.RecreationReason
+      x-go-type: bebeberlogav1.RecreationReason
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      description: Почему группа заморожена и пересоздаётся (CRYPTO.md §2.10.1).
+      enum: [RECREATION_REASON_UNSPECIFIED, RECREATION_REASON_DISPUTE, RECREATION_REASON_JOURNAL_LOSS]
     Group:
       type: object
       x-proto-message: bebeberloga.v1.Group
@@ -3848,6 +3890,13 @@ components:
         roster_hash:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
           description: Хэш состава текущей эпохи по карте DS (CRYPTO.md §2.5), 32 байта.
+        review_seq:
+          allOf: [{ $ref: '#/components/schemas/Int64' }]
+          description: При GROUP_STATE_REVIEW — номер проверяемого commit-а.
+        recreation_reason: { $ref: '#/components/schemas/RecreationReason' }
+        recreation_deferred_until:
+          allOf: [{ $ref: '#/components/schemas/Timestamp' }]
+          description: Подтверждённая жалоба отложена до этого момента — лимит пересозданий исчерпан (CRYPTO.md §2.9.4).
     Handshake:
       type: object
       x-proto-message: bebeberloga.v1.Handshake
@@ -3955,6 +4004,7 @@ components:
           type: array
           description: Целевой состав новой группы (CRYPTO.md §2.10.3).
           items: { $ref: '#/components/schemas/Id' }
+        reason: { $ref: '#/components/schemas/RecreationReason' }
 
     # --- голос и звуки -------------------------------------------------------
     VoiceJoin:

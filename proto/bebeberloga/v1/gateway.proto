@@ -57,7 +57,7 @@ message ServerFrame {
     MlsHandshake mls_handshake = 110;
     MlsWelcome mls_welcome = 111;
     MlsUpdateRequested mls_update_requested = 112;
-    MlsGroupFrozen mls_group_frozen = 113;
+    MlsGroupStateChanged mls_group_state_changed = 113;
 
     // --- присутствие и голос -------------------------------------------
     PresenceUpdated presence_updated = 120;
@@ -186,6 +186,8 @@ message MlsPending {
   // Устройство возвращается в группу парой Remove + Add (CRYPTO.md §2.11): старые handshake не
   // обрабатывать, ждать Welcome.
   bool returning = 5;
+  // Идёт проверка commit-а с этим номером (CRYPTO.md §2.9.3); 0 — проверки нет.
+  uint64 review_seq = 6;
 }
 
 // Возобновление сессии после разрыва.
@@ -343,13 +345,21 @@ message MlsUpdateRequested {
   uint64 epoch = 4;
 }
 
-// Группа заморожена (жалоба на commit, потеря журнала) или заменена новой группой канала
-// (CRYPTO.md §2.10). Пока `successor_group_id` пуст, клиент показывает состояние «ошибка ключей»
-// (SCREENS/08 §8) и ждёт; после — ждёт Welcome в новую группу.
-message MlsGroupFrozen {
+// Состояние группы на DS изменилось (CRYPTO.md §2.9–§2.10):
+// - REVIEW — идёт проверка спорного commit-а `review_seq`: commit-ы не принимаются, сообщения —
+//   да; клиент, применивший этот commit, отвечает `POST …/handshakes/{seq}/ack`;
+// - ACTIVE после REVIEW — жалоба отклонена или отложена (`recreation_deferred_until`);
+// - FROZEN — группа заморожена и будет пересоздана (`recreation_reason`); клиент показывает
+//   «ошибку ключей» (SCREENS/08 §8);
+// - SUPERSEDED — группа заменена (`successor_group_id`); клиент ждёт Welcome в новую.
+message MlsGroupStateChanged {
   string group_id = 1;
   string channel_id = 2;
   string successor_group_id = 3;
+  GroupState state = 4;
+  uint64 review_seq = 5;
+  RecreationReason recreation_reason = 6;
+  google.protobuf.Timestamp recreation_deferred_until = 7;
 }
 
 message PresenceUpdated {

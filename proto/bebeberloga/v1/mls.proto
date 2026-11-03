@@ -29,6 +29,18 @@ enum GroupState {
   GROUP_STATE_FROZEN = 2;
   // Заменена новой группой канала (`successor_group_id`); ничего не принимает.
   GROUP_STATE_SUPERSEDED = 3;
+  // Идёт проверка спорного commit-а `review_seq`: commit-ы и новые предложения приостановлены,
+  // сообщения принимаются (CRYPTO.md §2.9.3).
+  GROUP_STATE_REVIEW = 4;
+}
+
+// Почему группа заморожена и пересоздаётся (CRYPTO.md §2.10.1).
+enum RecreationReason {
+  RECREATION_REASON_UNSPECIFIED = 0;
+  // Жалоба подтверждена проверкой (сразу или после окна лимита).
+  RECREATION_REASON_DISPUTE = 1;
+  // DS потерял хвост журнала (восстановление из копии); клиентам допустим откат эпох.
+  RECREATION_REASON_JOURNAL_LOSS = 2;
 }
 
 // Состояние группы на сервере.
@@ -56,6 +68,12 @@ message Group {
   string successor_group_id = 14;
   // Хэш состава текущей эпохи по карте DS (CRYPTO.md §2.5), 32 байта.
   bytes roster_hash = 15;
+  // При GROUP_STATE_REVIEW: номер проверяемого commit-а.
+  uint64 review_seq = 16;
+  // При GROUP_STATE_FROZEN и GROUP_STATE_SUPERSEDED: почему группа пересоздаётся.
+  RecreationReason recreation_reason = 17;
+  // Подтверждённая жалоба отложена до этого момента: лимит пересозданий исчерпан (CRYPTO.md §2.9.4).
+  google.protobuf.Timestamp recreation_deferred_until = 18;
 }
 
 enum HandshakeKind {
@@ -140,7 +158,8 @@ message Roster {
   bytes roster_hash = 4;
 }
 
-// Причина жалобы клиента на commit или Welcome (CRYPTO.md §2.9).
+// Причина жалобы клиента на commit или Welcome (CRYPTO.md §2.9.1). Личные причины и жалоба
+// адресата Welcome ведут к возврату одного устройства; структурные на последний commit — к проверке.
 enum DisputeReason {
   DISPUTE_REASON_UNSPECIFIED = 0;
   // RosterDelta не совпадает с действием commit-а или флагами.
@@ -154,14 +173,14 @@ enum DisputeReason {
   // Запрещённое предложение: GroupContextExtensions (кроме замены ключа инстанса), PSK, ReInit,
   // ExternalInit, предложение участника.
   DISPUTE_REASON_FORBIDDEN_PROPOSAL = 5;
-  // Commit текущей эпохи не расшифровывается или не проходит проверки MLS при полном состоянии
-  // клиента.
+  // Личная: commit текущей эпохи не расшифровывается или не проходит проверки MLS при полном
+  // состоянии клиента.
   DISPUTE_REASON_UNDECRYPTABLE = 6;
   // Состав после merge или из Welcome не совпадает с картой DS.
   DISPUTE_REASON_ROSTER_MISMATCH = 7;
   // Расширения группы (group_binding, external_senders, required_capabilities) не те.
   DISPUTE_REASON_BINDING_MISMATCH = 8;
-  // Срок KeyPackage в Add истёк, хотя commit моложе горизонта офлайна.
+  // Личная: срок KeyPackage в Add истёк по часам клиента, хотя commit моложе горизонта офлайна.
   DISPUTE_REASON_KEY_PACKAGE_EXPIRED = 9;
   // Пересозданная группа не прошла проверки законности (CRYPTO.md §2.10.6).
   DISPUTE_REASON_RECREATION_INVALID = 10;
@@ -179,4 +198,6 @@ message RecreationPlan {
   uint32 history_key_generation = 5;
   // Целевой состав новой группы (CRYPTO.md §2.10.3).
   repeated string target_device_ids = 6;
+  // Причина пересоздания: от неё зависит проверка точки согласия у клиентов (CRYPTO.md §2.10.6).
+  RecreationReason reason = 7;
 }

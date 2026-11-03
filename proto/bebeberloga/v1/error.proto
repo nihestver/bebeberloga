@@ -128,6 +128,8 @@ enum ErrorCode {
   ERROR_CODE_ALREADY_MEMBER = 512;
   // Группа заморожена или заменена новой (`successor_group_id`, CRYPTO.md §2.10). HTTP 409.
   ERROR_CODE_GROUP_FROZEN = 513;
+  // Идёт проверка спорного commit-а: commit-ы приостановлены (CRYPTO.md §2.9.3). HTTP 409.
+  ERROR_CODE_GROUP_UNDER_REVIEW = 514;
 
   // --- саундборд ---------------------------------------------------------
   // Звук не в формате Opus/ogg (клиент перекодирует перед загрузкой, FLOWS/09 ш. 2)

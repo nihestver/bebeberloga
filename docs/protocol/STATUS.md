@@ -116,7 +116,15 @@
 
 - Решение владельца Р3: external commit в 1.0 не используется, GroupInfo не публикуется. Спецификация обновлена контуром A (коммит `docs(spec): drop external commit from 1.0 (B02 Р3)`); [ADR-0019](../adr/0019-no-external-commit-1-0.md) перечисляет, что меняется в ARCHITECTURE §4.3, §5 и ADR-0004, -0015, -0016, -0018 (их статус — «частично изменено ADR-0019»).
 - `CRYPTO.md` §0–§2 (черновик 1): соглашения и константы; MLS-профиль (credential `DeviceCredential`, KeyPackage, конфигурация группы, расширение `group_binding` 0xF0B1, политика клиента, вход по Welcome, ротация эпох); DS (грамматика `ProposalAAD`/`RosterDelta`, проверки commit-а, карта состава и `roster_hash`, назначенный коммитер, Add без срока ожидания и с заменой пакета по времени, Remove и его подтверждение, жалоба, пересоздание группы с лимитом частоты и оценкой цены, горизонт офлайна и возврат устройства, ключ инстанса); инварианты I1–I21 с тестами.
-- Контракт (только добавления, `buf breaking` против `main` проходит): `deprecated` у `HANDSHAKE_KIND_EXTERNAL_COMMIT`, `Group.has_group_info`, `EncryptedGroupInfo`, `encrypted_group_info`, `getGroupInfo`, `putHistoryKeyBundle`, `REASON_HISTORY_BUNDLE`; новые `GroupState`, `Roster`, `DisputeReason`, `RecreationPlan`, `ExternalSenderKeyRotation`, `MlsGroupFrozen`, поля `designated_device_id`, `roster_hash`, `device_returning`, `returning`, `successor_group_id`; коды `INVALID_KEY_PACKAGE`, `EXTERNAL_COMMIT_UNSUPPORTED`, `PROPOSALS_MISSING`, `REMOVAL_PENDING`, `BAD_DELTA`, `BAD_WELCOME`, `BAD_MESSAGE`, `UNAUTHORIZED_CHANGE`, `ALREADY_MEMBER`, `GROUP_FROZEN`; операции `roster`, `disputes`, `resync`, `recreation`, `recreation/key-packages`. `REST.md`, `GATEWAY.md`, `MESSAGES.md` §7, `README.md` приведены в соответствие.
+- Контракт (только добавления, `buf breaking` против `main` проходит): `deprecated` у `HANDSHAKE_KIND_EXTERNAL_COMMIT`, `Group.has_group_info`, `EncryptedGroupInfo`, `encrypted_group_info`, `getGroupInfo`, `putHistoryKeyBundle`, `REASON_HISTORY_BUNDLE`; новые `GroupState`, `Roster`, `DisputeReason`, `RecreationPlan`, `ExternalSenderKeyRotation`, событие смены состояния группы, поля `designated_device_id`, `roster_hash`, `device_returning`, `returning`, `successor_group_id`; коды `INVALID_KEY_PACKAGE`, `EXTERNAL_COMMIT_UNSUPPORTED`, `PROPOSALS_MISSING`, `REMOVAL_PENDING`, `BAD_DELTA`, `BAD_WELCOME`, `BAD_MESSAGE`, `UNAUTHORIZED_CHANGE`, `ALREADY_MEMBER`, `GROUP_FROZEN`; операции `roster`, `disputes`, `resync`, `recreation`, `recreation/key-packages`. `REST.md`, `GATEWAY.md`, `MESSAGES.md` §7, `README.md` приведены в соответствие.
+
+## Сделано (2026-11-03, второй проход)
+
+- Жалоба и пересоздание переделаны по замечаниям владельца (`CRYPTO.md` §2.9–§2.10): личные и структурные причины; жалоба принимается к проверке только на последний commit, остальное — возврат одного устройства; проверка приостанавливает только handshake и решает по мнениям других пользователей (≥ 2 жалующихся не меньше принявших — пересоздание; принял кто-то другой — возврат жалобщика; молчание — пересоздание сразу в группе до 50 листьев, через час в большой); сверх лимита группа не замораживается; потеря журнала — своя причина с допустимым откатом эпох и обязательной проверкой удалений на клиенте. Контракт: `GROUP_STATE_REVIEW`, `RecreationReason`, `MlsGroupFrozen` → `MlsGroupStateChanged` (ещё не в `main`), `POST …/handshakes/{seq}/ack`, `local_epoch` в `resync`, код `GROUP_UNDER_REVIEW`.
+- §1.8 и §1.9: обоснование отключённой проверки срока листьев переписано; ограничение «нет PCS для украденного, но не удалённого устройства в большой группе» и оценка периодических Update — в §8.2 п. 2 (вариант на после 1.0).
+- ADR-0019: строка про ADR-0018 п. 7, п. 5 решения про проверку жалобы, пересчитанный риск доступности.
+- `CRYPTO.md` §3 (ключ идентичности, доверие при первой встрече, подтверждение по QR и картинкам с подтверждением на обоих устройствах, ключ восстановления, «Начать заново»), §4 (код безопасности, QR собеседника, код звонка), §5 (ключи медиа, индекс и перекрытие, требования к S2), §7 (файлы STREAM на XChaCha20-Poly1305, BLAKE3, SQLCipher, пароль устройства на Linux), §8.1–§8.2 (модель угроз, принятые ограничения); инварианты I22–I33.
+- Учтены ответы владельца №11 (картинки на обоих устройствах) и №12 (пароль устройства). Ответы №9–10 — в §6.
 
 ## Технические решения B02 (в рамках ADR)
 
@@ -126,11 +134,15 @@
 - При входе по Welcome проверка срока листьев дерева отключена (`JoinBuilder::skip_lifetime_validation`, openmls 0.9.2): иначе участник, добавленный больше 31 сут назад и не делавший commit-ов, закрыл бы вход всем новичкам (RFC 9420 §7.3). Срок пакета в Add проверяется при commit-е.
 - Назначенный коммитер: вместо свободной гонки после 2–3 с (ADR-0018 п. 7) DS назначает следующее устройство через 3 с.
 - Горизонт офлайна 30 сут = минимальный остаток срока KeyPackage 31 сут − 1 сут на часы.
+- Проверка спорного commit-а приостанавливает только handshake: структурный дефект видят все честные клиенты, они и так не пишут в новой эпохе; заморозка сообщений защиты не добавляет, а одному участнику давала бы выключать канал.
+- Ключ медиа — MLS-Exporter по `(device_id, класс трека)`; стрим — отдельный класс, media-engine получает только свой ключ стрима.
+- Файлы: один ключ на вложение и подключи по виду объекта (файл, превью, миниатюра) — так контракт B1 «миниатюра тем же ключом» выполняется без повторного использования ключа.
+- Пароль устройства на Linux: Argon2id с 256 МиБ (больше, чем у ключа восстановления: пароль придумывает человек), случайный ключ базы обёрнут ключом из пароля.
 
 ## Дальше
 
-- Ждут решений владельца: Р1 (формат сообщения), Р2 (ключи истории), Р4 (секрет mention-hint), Р5 (личная группа), Р6 (общий подход к правкам контракта) — от них зависят `CRYPTO.md` §6, часть §8 и §9.
-- Написать §3 (идентичность, подтверждение устройства, ключ восстановления), §4 (коды), §5 (медиа), §7 (файлы, хранилище), §8 (модель угроз), §9 (API crypto-core).
-- Вопросы контуру A — в `docs/spec/OPEN-QUESTIONS.md` по мере написания §3 и §6.
+- Ждут решений владельца: Р1 (формат сообщения), Р2 (ключи истории), Р4 (секрет mention-hint), Р5 (личная группа), Р6 (общий подход к правкам контракта) — от них зависят `CRYPTO.md` §6, инварианты §6 и §9 (API crypto-core).
+- После решения по Р2 — сверить `continuity_tag` (§2.10.4) с нумерацией поколений ключа истории.
+- Открытые вопросы контуру A: №14 (экран ключа восстановления после «Начать заново»), №15 (история после «Начать заново»).
 - Ревью `security-reviewer` и `cleanroom-reviewer`.
 

@@ -51,7 +51,7 @@
 | `presences` | Присутствие друзей | Точки статуса |
 | `notification_settings` | Настройки уведомлений по сообществам и каналам | Решение показывать ли уведомление |
 | `limits` | Лимиты инстанса (`InstanceLimits`) | Счётчик символов, лимит вложений, пресет стрима |
-| `mls_pending` | Группы с недоставленными Welcome или handshake; `returning` — группы, куда устройство возвращается парой Remove + Add | Догнать MLS-состояние через REST до первого сообщения; группы с `returning` не догонять, а ждать Welcome |
+| `mls_pending` | Группы с недоставленными Welcome или handshake; `returning` — группы, куда устройство возвращается парой Remove + Add | Догнать MLS-состояние через REST до первого сообщения; группы с `returning` не догонять, а ждать Welcome; при `review_seq` — ответить на проверку после догона |
 | `device_returning` | Устройство не подключалось дольше горизонта офлайна (30 сут, CRYPTO.md §2.11) | Не обрабатывать старые handshake, сразу загрузить свежие KeyPackage, показать «Подключаемся к каналу…» (SCREENS/08 §1) |
 | `community_removals` | Сообщества, из которых пользователя удалили, пока устройство было офлайн, и показ которых оно не подтвердило | `Modal` «Тебя выгнали с сервера …» (FLOWS/10 ш. 3) даже после долгого офлайна; подтверждение — `DELETE /users/me/community-removals/{community_id}` |
 | `server_time` | Время сервера | Коррекция часов для таймеров |
@@ -122,7 +122,7 @@
 |---|---|---|
 | Свои устройства | Все устройства пользователя | `UserUpdated` (своё), `DeviceAdded/Verified/Removed`, `DeviceVerificationMessage`, `RelationshipUpdated/Removed`, `ReadStateUpdated`, `NotificationSettingsUpdated`, `CommunityCreated`, `CommunityRemoved`, `LockedChannelsUpdated`, `MlsWelcome`, `CallStarted/Ended`, `SoundAdded/Updated/Removed` для личных звуков |
 | Видящие канал | Участники сообщества с правом `channel.see` на канал (или участники ЛС) | `MessageCreated/Updated/Deleted`, `TypingStarted`, `ChannelCreated/Updated/Deleted`, `VoicePresenceChanged`, `SoundPlayed` (только присутствующим в голосовом канале) |
-| Члены MLS-группы | Устройства, состоящие в группе (по данным DS) | `MlsHandshake`, `MlsGroupFrozen`; `MlsUpdateRequested` — только онлайн-устройствам группы |
+| Члены MLS-группы | Устройства, состоящие в группе (по данным DS) | `MlsHandshake`, `MlsGroupStateChanged`; `MlsUpdateRequested` — только онлайн-устройствам группы |
 | Участники сообщества | Все участники | `CommunityUpdated`, `CategoryCreated/Updated/Deleted`, `MemberJoined/Updated/Left`, `RoleCreated/Updated/Deleted`, `SoundAdded/Updated/Removed` для звуков сообщества, `UserUpdated` (чужой профиль) |
 | Участники с правом | `community.admin` — приглашения (плюс создатель приглашения); `member.remove` — баны | `InviteCreated/Revoked`, `BanAdded/Removed` |
 | Затронутый участник | Тот, чьи права пересчитаны | `PermissionsUpdated` (каждому участнику своя копия с его действующими правами) |
@@ -145,7 +145,7 @@
 | `MlsHandshake{Handshake}` | Принят handshake (`POST /mls/groups/{id}/handshakes`) или сервер как external sender создал proposal | Члены группы |
 | `MlsWelcome{Welcome}` | Commit содержал Welcome для устройства | Устройство-адресат |
 | `MlsUpdateRequested{group_id, reason, designated_device_id, epoch}` | Накопились proposals external sender; плановая ротация; `POST /channels/{id}/mls/rotate`; пересоздание замороженной группы (`REASON_RECREATE`); замена ключа инстанса (`REASON_EXTERNAL_SENDER_ROTATION`). `REASON_HISTORY_BUNDLE` в 1.0 не используется (external commit нет, ADR-0019) | Онлайн-устройства группы; коммитит только `designated_device_id`. Нет commit-а эпохи за 3 с — сервер назначает следующее устройство новым событием (CRYPTO.md §2.6) |
-| `MlsGroupFrozen{group_id, channel_id, successor_group_id}` | Группа заморожена после жалобы или потери журнала (`successor_group_id` пуст) или заменена новой группой канала (задан) — CRYPTO.md §2.10 | Члены группы |
+| `MlsGroupStateChanged{group_id, channel_id, state, review_seq, recreation_reason, recreation_deferred_until, successor_group_id}` | Смена состояния группы на DS (CRYPTO.md §2.9–§2.10): начало проверки спорного commit-а (`REVIEW`, клиент, применивший его, отвечает `POST …/handshakes/{seq}/ack`); жалоба отклонена или пересоздание отложено (`ACTIVE`); заморозка перед пересозданием (`FROZEN`); замена новой группой (`SUPERSEDED`) | Члены группы |
 | `PresenceUpdated{Presence}` | Первое подключение или последнее отключение устройства пользователя | Друзья и подписчики |
 | `VoicePresenceChanged{presence, left_channel_id, user_id}` | Вход в голос (`connecting: true`), подтверждение от медиасервера (`connecting: false`), `SetVoicePresence`, серверный mute/deafen, старт/стоп стрима, выход (`presence` пуст, `left_channel_id` задан) | Видящие канал |
 | `CallStarted{channel_id, caller_id}` / `CallEnded` | Первый вход в звонок ЛС / последний выход | Участники ЛС |
