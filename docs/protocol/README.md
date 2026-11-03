@@ -99,7 +99,7 @@
 | Запрос 1 | `POST /users/me/relationships {username}` |
 | Запрос 2 Проверки, ответ | `NOT_FOUND`, `BLOCKED`, `RELATIONSHIP_EXISTS`; успех — `Relationship{RELATIONSHIP_KIND_REQUEST_OUTGOING}` |
 | Запрос 3 Уведомление, принять/отклонить | событие `RelationshipUpdated{RELATIONSHIP_KIND_REQUEST_INCOMING}`; `PUT /users/me/relationships/{id}` → `RelationshipUpdated{RELATIONSHIP_KIND_FRIEND}` обоим; `DELETE …/relationships/{id}` → `RelationshipRemoved` без уведомления инициатора |
-| ЛС 1 «Написать» | `POST /users/me/dm-channels {participant_ids}` → `Channel{DM}` |
+| ЛС 1 «Написать» | `POST /users/me/dm-channels {participant_ids}` → `Channel{CHANNEL_TYPE_DM}` |
 | ЛС 2 KeyPackage, группа, Welcome | `POST /users/{id}/key-packages/claim` (собеседник и свои устройства) → `POST /mls/groups {channel_id, kind: GROUP_KIND_CHAT}` → `POST /mls/groups/{id}/handshakes` (commit + welcomes) → `MlsWelcome` |
 | ЛС 3 Офлайн-собеседник | пакеты уже на сервере — то же |
 | ЛС 4 Нет KeyPackage | `NO_KEY_PACKAGES` → `Banner`, очередь на клиенте; повтор при `PresenceUpdated{PRESENCE_STATUS_ONLINE}` |
@@ -163,7 +163,7 @@
 | Проиграть 1 Клик или клавиша | клиент |
 | Проиграть 2 Команда и проверки | gateway `PlaySound{channel_id, sound_id}` → право 14, присутствие, существование, кулдаун 2 с → `SoundPlayed{channel_id, user_id, sound_id, volume}` |
 | Проиграть 3–4 Локальное воспроизведение, кольцо | клиент по `SoundPlayed` |
-| Проиграть 5 Ошибки | `CommandRejected{RATE_LIMITED, retry_after_ms}`, `{PERMISSION_DENIED}`, `{NOT_IN_VOICE}`; нет в кэше — `GET /sounds/{id}` + `/audio` |
+| Проиграть 5 Ошибки | `CommandRejected{ERROR_CODE_RATE_LIMITED, retry_after_ms}`, `{ERROR_CODE_PERMISSION_DENIED}`, `{ERROR_CODE_NOT_IN_VOICE}`; нет в кэше — `GET /sounds/{id}` + `/audio` |
 | Личные 1–2 | `POST /users/me/sounds` → `SoundAdded` своим устройствам; лимит `SOUND_SLOTS_FULL` |
 | Личные 3 Скачивание при первом `SoundPlayed` | `GET /sounds/{id}`, `GET /sounds/{id}/audio` |
 | Горячие клавиши 1–3 | клиент; `SoundRemoved` → пометка «Звук больше недоступен» |
@@ -180,6 +180,6 @@
 | Роли 2 Пересчёт прав, `PermissionsUpdated` | `RoleUpdated`, `MemberUpdated`, `PermissionsUpdated`; при смене `channel.see` — шаг 3 выше |
 | Выгнать 1 Подтверждение | клиент |
 | Выгнать/забанить 2 | `DELETE /communities/{id}/members/{uid}` → `MemberLeft{COMMUNITY_REMOVAL_REASON_KICKED}`; `PUT /communities/{id}/bans/{uid} {reason, delete_messages_window_seconds}` → `BanAdded`, `MemberLeft{COMMUNITY_REMOVAL_REASON_BANNED}`, `MessageDeleted` пачками; Remove-предложения во всех группах |
-| Выгнать 3 Modal у выгнанного | `CommunityRemoved{reason: COMMUNITY_REMOVAL_REASON_KICKED|BANNED}`; если устройство было офлайн дольше буфера Resume — `Ready.community_removals` / `GET /users/me/community-removals`, подтверждение показа `DELETE …/community-removals/{community_id}` |
+| Выгнать 3 Modal у выгнанного | `CommunityRemoved{reason: COMMUNITY_REMOVAL_REASON_KICKED | COMMUNITY_REMOVAL_REASON_BANNED}`; если устройство было офлайн дольше буфера Resume — `Ready.community_removals` / `GET /users/me/community-removals`, подтверждение показа `DELETE …/community-removals/{community_id}` |
 | Выгнать 4 Журнал (S) | без события участникам |
 | Снять бан | `DELETE /communities/{id}/bans/{uid}` → `BanRemoved` |
