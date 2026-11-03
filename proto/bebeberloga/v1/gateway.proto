@@ -347,8 +347,8 @@ message MlsUpdateRequested {
     REASON_RECREATE = 5;
     // Перевести группу на новый ключ external sender инстанса (CRYPTO.md §2.12).
     REASON_EXTERNAL_SENDER_ROTATION = 6;
-    // Настройку «Новые участники видят историю» снова включили — нужен разрыв цепочки ключей
-    // истории (CRYPTO.md §6.3.3).
+    // Настройку «Новые участники видят историю» выключили или снова включили — нужен разрыв цепочки
+    // ключей истории `break_disable` или `break_enable` (CRYPTO.md §6.3.3).
     REASON_HISTORY_SETTING = 7;
   }
   Reason reason = 2;

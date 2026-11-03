@@ -2361,8 +2361,9 @@ paths:
         атомарно, переключает канал на новую группу и ставит старой GROUP_STATE_SUPERSEDED. На одну
         замороженную группу DS принимает ровно одну новую; второй создатель получает GROUP_FROZEN с
         `successor_group_id`. Так же создаётся новая группа звонка при сбое (CRYPTO.md §5.1): без
-        проверки, без тега непрерывности и вне лимита пересозданий. Ошибки BAD_DELTA, BAD_WELCOME, UNAUTHORIZED_CHANGE,
-        CHANNEL_MEMBER_LIMIT.
+        проверки, без тега непрерывности и вне лимита пересозданий. Создавать новую группу вправе
+        только устройство, назначенное создателем этого пересоздания (CRYPTO.md §2.10.5). Ошибки
+        BAD_DELTA, BAD_WELCOME, UNAUTHORIZED_CHANGE, CHANNEL_MEMBER_LIMIT, GROUP_FROZEN, NOT_DESIGNATED.
 
         GroupInfo не передаётся: external commit в 1.0 не используется (ADR-0019).
       operationId: createGroup
@@ -2803,8 +2804,8 @@ paths:
         Для устройства, назначенного создателем новой группы (MlsUpdateRequested REASON_RECREATE,
         CRYPTO.md §2.10.4): последняя согласованная эпоха, поколение ключа истории для тега
         непрерывности, целевой состав. Ошибки: CONFLICT — группа не заморожена; GROUP_FROZEN с
-        `successor_group_id` — её уже заменили; PERMISSION_DENIED — устройство не вправе создавать
-        новую группу.
+        `successor_group_id` — её уже заменили; NOT_DESIGNATED — устройство не назначено создателем
+        этого пересоздания (CRYPTO.md §2.10.5; исключение — PERSONAL_RESTORE).
       operationId: getRecreationPlan
       responses:
         '200':
@@ -4129,7 +4130,7 @@ components:
       x-go-type: bebeberlogav1.HistoryChange
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       description: Изменение ключа истории в commit-е (CRYPTO.md §6.3.3).
-      enum: [HISTORY_CHANGE_UNSPECIFIED, HISTORY_CHANGE_NONE, HISTORY_CHANGE_ROTATE, HISTORY_CHANGE_BREAK_NEW_MEMBER, HISTORY_CHANGE_BREAK_ENABLE, HISTORY_CHANGE_BREAK_RESET, HISTORY_CHANGE_BREAK_RECREATE]
+      enum: [HISTORY_CHANGE_UNSPECIFIED, HISTORY_CHANGE_NONE, HISTORY_CHANGE_ROTATE, HISTORY_CHANGE_BREAK_NEW_MEMBER, HISTORY_CHANGE_BREAK_ENABLE, HISTORY_CHANGE_BREAK_RESET, HISTORY_CHANGE_BREAK_RECREATE, HISTORY_CHANGE_BREAK_DISABLE]
     HandshakeKind:
       type: string
       x-proto-enum: bebeberloga.v1.HandshakeKind

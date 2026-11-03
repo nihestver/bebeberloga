@@ -37,6 +37,9 @@ enum HistoryChange {
   HISTORY_CHANGE_BREAK_RESET = 5;
   // Разрыв: начальный commit пересозданной группы (CRYPTO.md §6.3.10).
   HISTORY_CHANGE_BREAK_RECREATE = 6;
+  // Разрыв: настройку выключили или канал создан с выключенной настройкой; дальше история по цепочке
+  // считается выключенной до HISTORY_CHANGE_BREAK_ENABLE (CRYPTO.md §6.3.3).
+  HISTORY_CHANGE_BREAK_DISABLE = 7;
 }
 
 // Состояние группы на DS (CRYPTO.md §2.10).
