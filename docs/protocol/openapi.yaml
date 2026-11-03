@@ -2360,7 +2360,8 @@ paths:
         удалённых; заявки входят следующим Add, §2.10.3), и Welcome — DS применяет всё
         атомарно, переключает канал на новую группу и ставит старой GROUP_STATE_SUPERSEDED. На одну
         замороженную группу DS принимает ровно одну новую; второй создатель получает GROUP_FROZEN с
-        `successor_group_id`. Ошибки BAD_DELTA, BAD_WELCOME, UNAUTHORIZED_CHANGE,
+        `successor_group_id`. Так же создаётся новая группа звонка при сбое (CRYPTO.md §5.1): без
+        проверки, без тега непрерывности и вне лимита пересозданий. Ошибки BAD_DELTA, BAD_WELCOME, UNAUTHORIZED_CHANGE,
         CHANNEL_MEMBER_LIMIT.
 
         GroupInfo не передаётся: external commit в 1.0 не используется (ADR-0019).
