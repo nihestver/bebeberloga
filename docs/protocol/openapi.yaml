@@ -2864,7 +2864,8 @@ paths:
         §5.1); иначе `call_group_exists: false`, и вошедший создаёт группу (`POST /mls/groups`,
         kind CALL). Клиент параллельно подключается к SFU и ждёт Welcome. До подтверждения от
         медиасервера присутствие помечено `connecting`. В ЛС первый вход рассылает CallStarted.
-        Ошибка UNAVAILABLE, если медиасервер недоступен.
+        Ошибка UNAVAILABLE, если медиасервер недоступен. Не чаще раза в 2 с на устройство
+        (RATE_LIMITED с retry_after_ms; CRYPTO.md §5.1).
       operationId: joinVoice
       responses:
         '200':
