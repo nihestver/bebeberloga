@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Рецепты спайка S4. Запускать из spikes/04-mls-ds. Спайк в корневые `just lint`/`just test`
+# не входит. Нужны Docker (Postgres), Go 1.24+, Rust (~/.cargo/bin добавляется в PATH).
+
+set shell := ["bash", "-euo", "pipefail", "-c"]
+export PATH := env_var("HOME") + "/.cargo/bin:" + env_var("HOME") + "/go/bin:" + env_var("PATH")
+
+default: check
+
+check: lint test
+
+lint:
+    cd ds && go vet ./... && test -z "$(gofmt -l .)" && golangci-lint run --enable gosec,errorlint,bodyclose,nolintlint,revive,misspell ./...
+    cd client && cargo fmt --check && cargo clippy --all-targets -- -D warnings
+
+# go test -race (Postgres через testcontainers) + юнит-тесты Rust
+test:
+    cd ds && go test -race ./...
+    cd client && cargo test
+
+# лицензии и уязвимости зависимостей
+deps:
+    cd client && cargo deny check && cargo audit
+    @if command -v go-licenses >/dev/null; then cd ds && go-licenses check ./...; else echo "skip: go-licenses не установлен (go install github.com/google/go-licenses@latest); спайк в CI не проверяется"; fi
+
+# фаззинг разборщиков DS, по 30 с на цель
+fuzz:
+    cd ds && for f in FuzzParseHeader FuzzParseWelcome FuzzParseKeyPackage FuzzParseRosterDelta FuzzSplitWelcome FuzzParseProposalAAD; do go test ./internal/mlswire/ -run='^$' -fuzz="^$f\$" -fuzztime=30s; done
+
+# golden-векторы OpenMLS для тестов mlswire
+vectors:
+    cd client && cargo run -q --bin vectors -- ../ds/testdata/openmls
+
+build:
+    cd ds && go build -o bin/ds ./cmd/ds && go build -o bin/emul ./cmd/emul
+    cd client && cargo build --release --bins
+
+db-up:
+    docker compose up -d --wait
+
+db-down:
+    docker compose down
+
+# e2e настоящими клиентами OpenMLS против DS (сразу публикует Add) и против батчинга 1 с
+e2e: build db-up
+    scripts/with-ds.sh client/target/release/e2e 127.0.0.1:8484
+    DS_FLAGS="-batch-interval=1s" scripts/with-ds.sh client/target/release/e2e 127.0.0.1:8484
+
+# нагрузка: 1 000 одновременных входов в одну группу по матрице сценариев → results/
+load: build db-up
+    scripts/load.sh
+
+# масштаб к лимиту листьев: 4 000 входов (JOINERS=… для другого числа) → results/load-big.*
+load-big: build db-up
+    BIG=1 REPEAT=1 OUT=results/load-big scripts/load.sh
+
+# потолок DS без криптографии: эмулятор клиентов на Go
+emul: build db-up
+    scripts/emul.sh
