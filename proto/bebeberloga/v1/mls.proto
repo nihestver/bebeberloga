@@ -23,6 +23,7 @@ enum GroupKind {
 }
 
 // Изменение ключа истории в commit-е (`RosterDelta.history_change`, CRYPTO.md §6.3.3).
+// Значение здесь = значение в RosterDelta + 1: нуль занят UNSPECIFIED (CRYPTO.md §2.3).
 enum HistoryChange {
   HISTORY_CHANGE_UNSPECIFIED = 0;
   HISTORY_CHANGE_NONE = 1;

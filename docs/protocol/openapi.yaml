@@ -2381,6 +2381,10 @@ paths:
                   deprecated: true
                   description: Не используется в 1.0 (ADR-0019); DS поле игнорирует.
                 history_key_bundle: { $ref: '#/components/schemas/Bytes' }
+                history_key_generation:
+                  type: integer
+                  minimum: 1
+                  description: Головное поколение связки — открыто, DS сверяет его с поколением после commit-а (CRYPTO.md §6.3.5).
                 history_key_link: { $ref: '#/components/schemas/HistoryKeyLink' }
                 history_bridges:
                   type: array
@@ -2498,6 +2502,10 @@ paths:
                   deprecated: true
                   description: Не используется в 1.0 (ADR-0019); DS поле игнорирует.
                 history_key_bundle: { $ref: '#/components/schemas/Bytes' }
+                history_key_generation:
+                  type: integer
+                  minimum: 1
+                  description: Головное поколение связки — открыто, DS сверяет его с поколением после commit-а (CRYPTO.md §6.3.5).
                 history_key_link: { $ref: '#/components/schemas/HistoryKeyLink' }
                 history_bridges:
                   type: array
