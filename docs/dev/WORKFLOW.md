@@ -116,7 +116,47 @@ Host bb-test
 
 Для CI — отдельный ключ: `ssh-keygen -t ed25519 -f ~/.ssh/bebeberloga_ci -C ci` → публичная часть на сервер, приватная — в GitHub Secret `TEST_SSH_KEY`, `ssh-keyscan test.bebeberloga.org` — в `TEST_KNOWN_HOSTS`, `test.bebeberloga.org` — в `TEST_SSH_HOST`; secrets кладутся в environment `test` репозитория. Адрес для smoke-тестов — переменная (не секрет) `TEST_BASE_URL` того же environment; без неё используется `https://test.bebeberloga.org`.
 
-Claude Code выполняет на сервере только `just deploy-test`, `just smoke-test`, `just test-logs` (через `Bash(just *)`); любой другой `ssh` спросит подтверждение.
+Claude Code выполняет на сервере только `just deploy-test`, `just smoke-test`, `just test-logs` (через `Bash(just *)`); любой другой `ssh` спросит подтверждение. Для проверок до merge у агента свой стенд на том же сервере — следующий раздел.
+
+## Стенд агента
+
+Claude Code проверяет серверный код и инфраструктуру (Postgres, Compose, coturn, LiveKit) на железе тест-сервера, не дожидаясь CI. Для этого на сервере — отдельный пользователь `claude` (группа `docker`, без sudo) и отдельный Compose-проект `bb-agent` в `~claude/src/bebeberloga`. Тест-стенд (`deploy`, `bb-test`) агент не трогает: его обновляет только CI.
+
+Группа `docker` даёт права root на хосте, поэтому стенд агента живёт только на тест-сервере и никогда — на проде.
+
+На сервере (от root), после блока из раздела «Тест-сервер»:
+
+```bash
+apt install -y rsync git curl build-essential pkg-config
+usermod -aG docker claude
+gpasswd -d claude sudo 2>/dev/null || true
+install -d -o claude -g claude /home/claude/src
+printf 'Match User claude\n  PasswordAuthentication no\n  KbdInteractiveAuthentication no\n' > /etc/ssh/sshd_config.d/20-claude.conf
+sshd -t && systemctl reload ssh
+su - claude -c 'curl -fsSL https://mise.run | sh && ~/.local/bin/mise use -g just@latest'
+ufw allow 18080/tcp && ufw allow 17881/tcp && ufw allow 13478/udp && ufw allow 40000:40999/udp
+```
+
+На Mac — один раз `tools/dev/setup-agent-access.sh`: отдельный ключ `~/.ssh/bebeberloga_claude` (пароль хранит связка ключей macOS), алиас `bb-claude` в `~/.ssh/config`, ключ на сервере (через уже работающий личный ключ), docker context `bb-claude`, проверка сервера. Затем `just remote-setup` (Go, Rust, Node из `mise.toml` на сервере) и `just remote-check`.
+
+| Рецепт | Что делает |
+|---|---|
+| `just remote-sync` | Копирует рабочее дерево на сервер (rsync); без `.git`, секретов, сборок и `docs/PLAN.md` — список в `tools/dev/remote-sync.exclude` |
+| `just remote <рецепт>` | Синхронизирует и запускает рецепт `just` на сервере: `just remote test-go`, `just remote test-rust` |
+| `just remote-up` / `remote-ps` / `remote-logs [svc]` / `remote-down` | Стенд `bb-agent`: `docker-compose.yml` + `compose.agent.yml` (появится в B17 ч.1) |
+| `just remote-check` | Процессор, память, диск, Docker, mise на сервере |
+
+Порты стендов не пересекаются (уточняются в B7):
+
+| Что | Тест-стенд `bb-test` | Стенд агента `bb-agent` |
+|---|---|---|
+| HTTP API | 80, 443/tcp (Caddy, TLS) | 18080/tcp |
+| LiveKit | 7881/tcp, 50000–60000/udp | 17881/tcp, 40000–40999/udp |
+| coturn | 3478/udp | 13478/udp |
+
+Postgres, Valkey, NATS и MinIO наружу не публикуются ни в одном стенде. Секреты стенда агента — в `.env` на сервере (`rsync` их не перезаписывает и не удаляет).
+
+Рецепты `just remote*` проходят без подтверждения через `Bash(just *)`; произвольный `ssh` по-прежнему спрашивает.
 
 ## CI/CD (GitHub Actions)
 

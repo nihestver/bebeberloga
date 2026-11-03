@@ -91,6 +91,46 @@ smoke-test base_url=env_var_or_default("BB_TEST_URL", "https://test.bebeberloga.
 test-logs svc="server":
     ssh bb-test "cd ~/bebeberloga && docker compose logs --tail=200 {{svc}}"
 
+# --- стенд агента (ssh-алиас bb-claude; настройка — tools/dev/setup-agent-access.sh) ---
+# Рабочее дерево (вместе с незакоммиченными правками) копируется в ~/src/bebeberloga пользователя
+# claude на тест-сервере; тесты и Compose-проект bb-agent запускаются на его железе.
+# Тест-стенд bb-test (пользователь deploy) эти рецепты не трогают — он обновляется только из CI.
+
+agent_host := "bb-claude"
+agent_dir := "~/src/bebeberloga"
+agent_mise := "~/.local/bin/mise"
+agent_compose := "docker compose -p bb-agent -f deploy/compose/docker-compose.yml -f deploy/compose/compose.agent.yml"
+
+# скопировать рабочее дерево на сервер: без .git, секретов, сборок и docs/PLAN.md
+remote-sync:
+    rsync -az --delete --exclude-from=tools/dev/remote-sync.exclude ./ {{agent_host}}:src/bebeberloga/
+
+# установить на сервере тулчейны из mise.toml (первый раз — долго)
+remote-setup: remote-sync
+    ssh {{agent_host}} 'cd {{agent_dir}} && {{agent_mise}} trust -q && {{agent_mise}} install'
+
+# железо и окружение сервера
+remote-check:
+    ssh {{agent_host}} 'uname -srm; echo "cpu: $(nproc)"; free -h | sed -n 2p; df -h ~ | tail -1; docker info >/dev/null 2>&1 && echo "docker: ok" || echo "docker: нет доступа"; {{agent_mise}} --version'
+
+# запустить рецепт этого justfile на сервере: just remote test-go, just remote test-rust
+remote recipe="test": remote-sync
+    ssh {{agent_host}} 'cd {{agent_dir}} && {{agent_mise}} trust -q && {{agent_mise}} exec -- just {{recipe}}'
+
+# поднять стенд агента (Compose-проект bb-agent) на сервере
+remote-up: remote-sync
+    @if [ -f deploy/compose/compose.agent.yml ]; then ssh {{agent_host}} 'cd {{agent_dir}} && {{agent_compose}} up -d --build --remove-orphans && {{agent_compose}} ps'; else echo "skip: deploy/compose/compose.agent.yml ещё нет (B17 ч.1)"; fi
+
+remote-ps:
+    ssh {{agent_host}} 'cd {{agent_dir}} && {{agent_compose}} ps'
+
+remote-logs svc="server":
+    ssh {{agent_host}} 'cd {{agent_dir}} && {{agent_compose}} logs --tail=200 {{svc}}'
+
+# остановить стенд агента; тома с данными сохраняются
+remote-down:
+    ssh {{agent_host}} 'cd {{agent_dir}} && {{agent_compose}} down'
+
 # --- сервис -----------------------------------------------------------------
 
 # установить git-хуки lefthook

@@ -13,7 +13,7 @@ DevOps-инженер в проекте Bebeberloga. Действуют прав
 ## Задача
 **Часть 1 (фаза 0):**
 1. `server/Dockerfile` (multi-stage, distroless или alpine, non-root), сборка образа в CI и публикация в GHCR (`deploy-test.yml` уже ждёт этот файл).
-2. `deploy/compose/docker-compose.yml` (server, postgres:16, valkey:8, nats с JetStream, minio, caddy; livekit и coturn — заглушками до B7) и `compose.dev.yml`; `.env.example`; `Caddyfile` для `test.bebeberloga.org`.
+2. `deploy/compose/docker-compose.yml` (server, postgres:16, valkey:8, nats с JetStream, minio, caddy; livekit и coturn — заглушками до B7) и `compose.dev.yml`; `compose.agent.yml` — стенд агента на тест-сервере (проект `bb-agent`, порты — `docs/dev/WORKFLOW.md`, «Стенд агента»); `.env.example`; `Caddyfile` для `test.bebeberloga.org`.
 3. Инструкция первичной настройки тест-сервера в `deploy/README.md`; `just deploy-test` и `just smoke-test` проходят с заглушкой `/api/v1/health`.
 
 **Часть 2 (фаза 5):** Helm-чарт, `release.yml` (goreleaser, cargo-dist, electron-builder для трёх ОС, SBOM, cosign), воспроизводимые сборки клиентов и публикация хэшей.
