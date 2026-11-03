@@ -58,11 +58,12 @@ message Handshake {
   // Устройство-отправитель; пусто, если отправитель — сервер как external sender.
   string sender_device_id = 5;
   bool from_external_sender = 6;
-  // Handshake участника — MLS PrivateMessage (RFC 9420 §6.3; handshake всегда зашифрованы,
-  // ADR-0016 п. 2), предложение сервера как external sender — PublicMessage (§6.2). Сервер
-  // читает только открытый заголовок (group_id, epoch, content_type). В событии gateway пусто,
-  // если больше 256 КиБ, —
-  // тогда клиент забирает `GET /mls/groups/{id}/handshakes/{seq}`.
+  // Формат блоба по RFC 9420: Proposal и Commit участника — PrivateMessage (§6.3; handshake
+  // участников всегда зашифрованы, ADR-0016 п. 2); предложение сервера как external sender и
+  // external commit присоединяющегося (`new_member_commit`) — PublicMessage (§6.2), потому что
+  // отправитель не член группы. Сервер читает только открытый заголовок (group_id, epoch,
+  // content_type, тип отправителя у PublicMessage) и сверяет его с `kind`. В событии gateway
+  // пусто, если больше 256 КиБ, — тогда клиент забирает `GET /mls/groups/{id}/handshakes/{seq}`.
   bytes blob = 7;
   google.protobuf.Timestamp created_at = 8;
 }

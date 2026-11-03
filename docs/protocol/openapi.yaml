@@ -2303,7 +2303,7 @@ paths:
                 kind: { $ref: '#/components/schemas/HandshakeKind' }
                 blob:
                   allOf: [{ $ref: '#/components/schemas/Bytes' }]
-                  description: MLS PrivateMessage участника (handshake всегда зашифрованы, ADR-0016 п. 2); до 4 МиБ.
+                  description: PrivateMessage для PROPOSAL и COMMIT участника (handshake участников всегда зашифрованы, ADR-0016 п. 2); PublicMessage для EXTERNAL_COMMIT (RFC 9420 §6.2, отправитель new_member_commit); до 4 МиБ.
                 welcomes:
                   type: array
                   items:
