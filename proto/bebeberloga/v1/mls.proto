@@ -27,7 +27,7 @@ enum GroupKind {
 enum HistoryChange {
   HISTORY_CHANGE_UNSPECIFIED = 0;
   HISTORY_CHANGE_NONE = 1;
-  // Новое поколение со ссылкой назад: Remove, срок 30 сут.
+  // Новое поколение со ссылкой назад: Remove (кроме пары возврата того же устройства), срок 30 сут.
   HISTORY_CHANGE_ROTATE = 2;
   // Разрыв: вход нового пользователя при выключенной настройке «Новые участники видят историю».
   HISTORY_CHANGE_BREAK_NEW_MEMBER = 3;

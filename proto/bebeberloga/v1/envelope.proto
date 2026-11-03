@@ -181,7 +181,8 @@ message DeviceNoticeBody {
 }
 
 // Синхронизация между устройствами пользователя через его личный канал (CRYPTO.md §6.5;
-// OPEN-QUESTIONS №7). Действует последнее значение по `MessageEnvelope.message_id`.
+// OPEN-QUESTIONS №7). Действует последнее значение по `MessageEnvelope.message_id` (UUIDv7 автора в
+// пределах окна CRYPTO.md §6.2.8), а не по времени приёма сервером.
 message PersonalSyncBody {
   repeated VerificationStatus verification = 1;
   repeated TrustedDomain trusted_domains = 2;
