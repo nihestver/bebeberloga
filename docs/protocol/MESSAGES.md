@@ -36,7 +36,7 @@ MessageMeta (открыто, хранит сервер)          SealedMessage �
 | `file_key` | `target_message_id`, `file` (`FileRef`) | Отправитель вложения | Повторная выдача ключа вложения, если участник не смог расшифровать исходное |
 | `call_key` | `channel_id`, `epoch`, `key_material` | Не используется в 1.0: ключи медиа — из MLS-Exporter группы звонка (CRYPTO.md §5.5), `deprecated` | Игнорирует |
 | `history_keys` | `keys[]{generation, key, valid_from}` | Не используется в 1.0: ключ поколения выводится из exporter, через разрыв — мост (CRYPTO.md §6.6), `deprecated` | Игнорирует |
-| `personal_sync` | `verification[]{user_id, identity_key, verified, at}`, `trusted_domains[]{domain, trusted}` | Устройство пользователя, только в его личном канале (CRYPTO.md §6.5) | Принимается только в своём личном канале и только от своего пользователя; обновляет статусы проверки и доверенные домены; действует последнее по времени приёма `created_at`, не по `id` (CRYPTO.md §6.5) |
+| `personal_sync` | `verification[]{user_id, identity_key, verified, at}`, `trusted_domains[]{domain, trusted}`, `recovery_key{device_id, created_at}` | Устройство пользователя, только в его личном канале (CRYPTO.md §6.5) | Принимается только в своём личном канале и только от своего пользователя; обновляет статусы проверки и доверенные домены; действует последнее по времени приёма `created_at`, не по `id` (CRYPTO.md §6.5) |
 | `device_notice` | `kind`, `user_id`, `device_name` | Устройство владельца при добавлении/удалении устройства или смене ключа идентичности; принимается только от пользователя `user_id` | Системная строка в ЛС и группах ≤ 50 участников; в больших каналах не показывается (SCREENS/07 §8) |
 | `poll_vote` | — | Опросы (C), поле зарезервировано | — |
 

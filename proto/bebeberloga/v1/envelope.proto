@@ -185,6 +185,13 @@ message DeviceNoticeBody {
 message PersonalSyncBody {
   repeated VerificationStatus verification = 1;
   repeated TrustedDomain trusted_domains = 2;
+  // Создан новый ключ восстановления: на каком устройстве и когда (CRYPTO.md §3.5.4; SCREENS/07 §6).
+  RecoveryKeyRecord recovery_key = 3;
+}
+
+message RecoveryKeyRecord {
+  string device_id = 1;
+  google.protobuf.Timestamp created_at = 2;
 }
 
 // Статус проверки собеседника — для конкретного ключа идентичности (CRYPTO.md §3.2).
