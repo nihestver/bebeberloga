@@ -1,6 +1,6 @@
 # S4 — спайк MLS Delivery Service на Go: состояние
 
-Промпт: `docs/prompts/S4-mls-ds.md`. Ветка `spike/S4-mls-ds`. Отчёт — `REPORT.md`, черновик решения — `docs/adr/0018-spike-s4-mls-ds.md`.
+Промпт: `docs/prompts/S4-mls-ds.md`. Ветка `spike/S4-mls-ds`. Отчёт — `REPORT.md`, решение — `docs/adr/0018-spike-s4-mls-ds.md`.
 
 ## Сделано
 

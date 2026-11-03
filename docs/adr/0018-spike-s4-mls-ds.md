@@ -1,6 +1,6 @@
 # ADR-0018: Результаты спайка S4 — MLS Delivery Service на Go
 
-- Статус: Предложено
+- Статус: Принято 2026-11-03
 - Дата: 2026-11-03
 - Связано: [ADR-0004](0004-e2ee-mls-sframe.md), [ADR-0005](0005-channel-member-limit.md) (уточняет меру «батчинг proposal-ов в тихих каналах, ленивые коммиты» из «Решения», п. 4), [ADR-0016](0016-spike-s1-openmls-ffi.md) п. 3–4; `docs/spec/ARCHITECTURE.md` §4.3, §5.1, §5.6, §8; `docs/spec/FLOWS/02-new-device.md`, `04-invite-join.md`; отчёт [`spikes/04-mls-ds/REPORT.md`](../../spikes/04-mls-ds/REPORT.md); промпты B02, B05
 
