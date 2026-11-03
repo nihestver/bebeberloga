@@ -13,6 +13,8 @@ build/
 out/
 target/
 bin/
+# каталог исходников бинарников Rust (Cargo: src/bin/*.rs) — это код, не сборка
+!**/src/bin/
 coverage/
 *.log
 
