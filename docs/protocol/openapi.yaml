@@ -2746,12 +2746,12 @@ paths:
         Клиент не принял commit номер `seq` (или Welcome, созданный этим commit-ом) по причине
         `reason` (CRYPTO.md §2.9). DS принимает жалобу от устройства, которое было в группе в базовой
         эпохе commit-а или было адресатом его Welcome, не является автором и не имеет ожидающего
-        Remove. Дальше решает подтверждение commit-а другим пользователем (§2.9.2): commit уже
-        подтверждён (`ack` или commit поверх него от устройства другого пользователя, кроме автора) —
-        жалоба личная, возврат подавшего устройства (как `POST …/resync`) без заморозки; не
-        подтверждён — проверка с любой причиной (GROUP_STATE_REVIEW, событие MlsGroupStateChanged),
-        по итогам которой DS либо возвращает пожаловавшихся, либо замораживает и пересоздаёт группу
-        (§2.10), либо откладывает пересоздание сверх лимита. Не чаще раза в час на устройство и группу (RATE_LIMITED). Ошибки
+        Remove. На любую жалобу с любой причиной DS считает голоса пользователей, подтвердивших commit
+        (`ack` или commit поверх него) и пожаловавшихся на него (§2.9.2–§2.9.3): с паузой handshake,
+        если commit последний (GROUP_STATE_REVIEW), иначе без паузы (GROUP_STATE_ACTIVE с review_seq);
+        событие MlsGroupStateChanged. По итогам DS либо возвращает пожаловавшихся (как `POST …/resync`),
+        либо замораживает и пересоздаёт группу от базовой эпохи commit-а (§2.10), либо откладывает
+        пересоздание сверх лимита. Не чаще раза в час на устройство и группу (RATE_LIMITED). Ошибки
         NOT_GROUP_MEMBER, REMOVAL_PENDING, NOT_FOUND.
       operationId: disputeHandshake
       requestBody:
@@ -4187,7 +4187,7 @@ components:
           description: Хэш состава текущей эпохи по карте DS (CRYPTO.md §2.5), 32 байта.
         review_seq:
           allOf: [{ $ref: '#/components/schemas/Int64' }]
-          description: При GROUP_STATE_REVIEW — номер проверяемого commit-а.
+          description: Номер commit-а, по которому DS считает голоса (CRYPTO.md §2.9.3) — при GROUP_STATE_REVIEW с паузой handshake, при GROUP_STATE_ACTIVE без паузы.
         recreation_reason: { $ref: '#/components/schemas/RecreationReason' }
         recreation_deferred_until:
           allOf: [{ $ref: '#/components/schemas/Timestamp' }]

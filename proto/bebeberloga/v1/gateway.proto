@@ -191,7 +191,7 @@ message MlsPending {
   // Устройство возвращается в группу парой Remove + Add (CRYPTO.md §2.11): старые handshake не
   // обрабатывать, ждать Welcome.
   bool returning = 5;
-  // Идёт проверка commit-а с этим номером (CRYPTO.md §2.9.3); 0 — проверки нет.
+  // Идёт подсчёт голосов по commit-у с этим номером (CRYPTO.md §2.9.3), с паузой или без; 0 — нет.
   uint64 review_seq = 6;
 }
 
@@ -361,7 +361,9 @@ message MlsUpdateRequested {
 // Состояние группы на DS изменилось (CRYPTO.md §2.9–§2.10):
 // - REVIEW — идёт проверка спорного commit-а `review_seq`: commit-ы не принимаются, сообщения —
 //   да; клиент, применивший этот commit, отвечает `POST …/handshakes/{seq}/ack`;
-// - ACTIVE после REVIEW — жалоба отклонена или отложена (`recreation_deferred_until`);
+// - ACTIVE с `review_seq` — подсчёт голосов без паузы: commit-ы принимаются, клиент, применивший
+//   commit `review_seq`, отвечает `POST …/handshakes/{seq}/ack`;
+// - ACTIVE без `review_seq` после подсчёта — жалоба отклонена или отложена (`recreation_deferred_until`);
 // - FROZEN — группа заморожена и будет пересоздана (`recreation_reason`); клиент показывает
 //   «ошибку ключей» (SCREENS/08 §8);
 // - SUPERSEDED — группа заменена (`successor_group_id`); клиент ждёт Welcome в новую.

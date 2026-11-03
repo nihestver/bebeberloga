@@ -90,7 +90,8 @@ message Group {
   string successor_group_id = 14;
   // Хэш состава текущей эпохи по карте DS (CRYPTO.md §2.5), 32 байта.
   bytes roster_hash = 15;
-  // При GROUP_STATE_REVIEW: номер проверяемого commit-а.
+  // Номер commit-а, по которому DS считает голоса (CRYPTO.md §2.9.3): при GROUP_STATE_REVIEW — с
+  // паузой handshake, при GROUP_STATE_ACTIVE — без паузы; 0 — подсчёта нет.
   uint64 review_seq = 16;
   // При GROUP_STATE_FROZEN и GROUP_STATE_SUPERSEDED: почему группа пересоздаётся.
   RecreationReason recreation_reason = 17;
@@ -218,8 +219,10 @@ message Roster {
   bytes roster_hash = 4;
 }
 
-// Причина жалобы клиента на commit или Welcome (CRYPTO.md §2.9.1). Личные причины и жалоба
-// адресата Welcome ведут к возврату одного устройства; структурные на последний commit — к проверке.
+// Причина жалобы клиента на commit или Welcome (CRYPTO.md §2.9.1). Действие DS от причины не
+// зависит: на любую жалобу DS считает голоса пользователей, подтвердивших commit и пожаловавшихся на
+// него (§2.9.2–§2.9.3), и по ним возвращает пожаловавшихся или пересоздаёт группу. Причина — для
+// журнала и диагностики.
 enum DisputeReason {
   DISPUTE_REASON_UNSPECIFIED = 0;
   // RosterDelta не совпадает с действием commit-а или флагами.
