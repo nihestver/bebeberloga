@@ -175,6 +175,17 @@ message HistoryKeyLink {
   google.protobuf.Timestamp created_at = 5;
 }
 
+// Поколение ключа истории канала по данным DS (CRYPTO.md §6.3.7 п. 2): когда и чем начато.
+message HistoryGenerationInfo {
+  string channel_id = 1;
+  uint32 generation = 2;
+  // Время приёма DS commit-а, начавшего поколение.
+  google.protobuf.Timestamp started_at = 3;
+  HistoryChange change = 4;
+  string group_id = 5;
+  uint64 epoch = 6;
+}
+
 // Мост для устройства, которое входит commit-ом (CRYPTO.md §6.3.6).
 message HistoryBridge {
   string device_id = 1;

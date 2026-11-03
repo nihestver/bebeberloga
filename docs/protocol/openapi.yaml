@@ -2643,6 +2643,34 @@ paths:
                   page: { $ref: '#/components/schemas/PageInfo' }
         default:
           $ref: '#/components/responses/Error'
+  /channels/{channel_id}/history-generations:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    get:
+      tags: [mls]
+      summary: Поколения ключа истории канала
+      description: Номер, время начала (время приёма DS commit-а) и тип изменения каждого поколения — для перевода `valid_until` истории ключей идентичности в поколения (CRYPTO.md §6.3.7 п. 2). Доступно участникам канала.
+      operationId: listHistoryGenerations
+      parameters:
+        - name: below_generation
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Поколения по убыванию
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [generations, page]
+                properties:
+                  generations:
+                    type: array
+                    items: { $ref: '#/components/schemas/HistoryGenerationInfo' }
+                  page: { $ref: '#/components/schemas/PageInfo' }
+        default:
+          $ref: '#/components/responses/Error'
   /mls/welcomes:
     get:
       tags: [mls]
@@ -4218,6 +4246,19 @@ components:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
           description: Ключ поколения `previous_generation` под подключом поколения `generation` (CRYPTO.md §6.3.4).
         created_at: { $ref: '#/components/schemas/Timestamp' }
+    HistoryGenerationInfo:
+      type: object
+      x-proto-message: bebeberloga.v1.HistoryGenerationInfo
+      x-go-type: bebeberlogav1.HistoryGenerationInfo
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [channel_id, generation, started_at, change]
+      properties:
+        channel_id: { $ref: '#/components/schemas/Id' }
+        generation: { type: integer, minimum: 1 }
+        started_at: { $ref: '#/components/schemas/Timestamp' }
+        change: { $ref: '#/components/schemas/HistoryChange' }
+        group_id: { $ref: '#/components/schemas/Id' }
+        epoch: { $ref: '#/components/schemas/Int64' }
     HistoryBridge:
       type: object
       x-proto-message: bebeberloga.v1.HistoryBridge
