@@ -1,9 +1,10 @@
 // SPDX-FileCopyrightText: 2026 Bebeberloga contributors
 // SPDX-License-Identifier: Apache-2.0
 
-// Delivery Service MLS: группы, handshake-сообщения, Welcome, связки ключей истории.
-// Сервер хранит и упорядочивает непрозрачные блобы (ARCHITECTURE.md §4.3, ADR-0015);
-// их внутренний формат задаёт docs/protocol/CRYPTO.md (B2).
+// Delivery Service MLS: группы, handshake-сообщения, Welcome, связки ключей истории,
+// карта состава, жалобы и пересоздание группы. Сервер хранит и упорядочивает непрозрачные
+// блобы (ARCHITECTURE.md §4.3, ADR-0015); их формат и правила DS задаёт
+// docs/protocol/CRYPTO.md (§1–§2). External commit и GroupInfo в 1.0 не используются (ADR-0019).
 syntax = "proto3";
 
 package bebeberloga.v1;
@@ -17,6 +18,17 @@ enum GroupKind {
   GROUP_KIND_CHAT = 1;
   // Короткоживущая группа звонка голосового канала или ЛС.
   GROUP_KIND_CALL = 2;
+}
+
+// Состояние группы на DS (CRYPTO.md §2.10).
+enum GroupState {
+  GROUP_STATE_UNSPECIFIED = 0;
+  // Обычная работа.
+  GROUP_STATE_ACTIVE = 1;
+  // Заморожена после принятой жалобы или потери журнала; ждёт пересоздания.
+  GROUP_STATE_FROZEN = 2;
+  // Заменена новой группой канала (`successor_group_id`); ничего не принимает.
+  GROUP_STATE_SUPERSEDED = 3;
 }
 
 // Состояние группы на сервере.
@@ -33,18 +45,27 @@ message Group {
   uint64 last_seq = 7;
   google.protobuf.Timestamp created_at = 8;
   google.protobuf.Timestamp last_rotation_at = 9;
-  // Есть зашифрованный GroupInfo текущей эпохи (для external commit).
-  bool has_group_info = 10;
+  // Не используется в 1.0: GroupInfo сервер не хранит (ADR-0019). Всегда false.
+  bool has_group_info = 10 [deprecated = true];
   // Есть связка ключей истории для текущей эпохи.
   bool has_history_key_bundle = 11;
+  GroupState state = 12;
+  // Группа, которую эта заменила при пересоздании; пусто у первой группы канала.
+  string predecessor_group_id = 13;
+  // Группа, которая заменила эту (только при GROUP_STATE_SUPERSEDED).
+  string successor_group_id = 14;
+  // Хэш состава текущей эпохи по карте DS (CRYPTO.md §2.5), 32 байта.
+  bytes roster_hash = 15;
 }
 
 enum HandshakeKind {
   HANDSHAKE_KIND_UNSPECIFIED = 0;
+  // Предложение. От клиентов в 1.0 не принимается (UNAUTHORIZED_CHANGE): предложения
+  // публикует только сервер как external sender (CRYPTO.md §2.2).
   HANDSHAKE_KIND_PROPOSAL = 1;
   HANDSHAKE_KIND_COMMIT = 2;
-  // Commit присоединяющегося по GroupInfo (RFC 9420 §12.4.3.2).
-  HANDSHAKE_KIND_EXTERNAL_COMMIT = 3;
+  // Не используется в 1.0 (ADR-0019): DS отвечает EXTERNAL_COMMIT_UNSUPPORTED.
+  HANDSHAKE_KIND_EXTERNAL_COMMIT = 3 [deprecated = true];
 }
 
 // Handshake-сообщение MLS (Proposal или Commit), упорядоченное сервером по группе.
@@ -58,14 +79,17 @@ message Handshake {
   // Устройство-отправитель; пусто, если отправитель — сервер как external sender.
   string sender_device_id = 5;
   bool from_external_sender = 6;
-  // Формат блоба по RFC 9420: Proposal и Commit участника — PrivateMessage (§6.3; handshake
-  // участников всегда зашифрованы, ADR-0016 п. 2); предложение сервера как external sender и
-  // external commit присоединяющегося (`new_member_commit`) — PublicMessage (§6.2), потому что
-  // отправитель не член группы. Сервер читает только открытый заголовок (group_id, epoch,
-  // content_type, тип отправителя у PublicMessage) и сверяет его с `kind`. В событии gateway
-  // пусто, если больше 256 КиБ, — тогда клиент забирает `GET /mls/groups/{id}/handshakes/{seq}`.
+  // Формат блоба по RFC 9420: commit участника — PrivateMessage (§6.3; handshake участников
+  // всегда зашифрованы, ADR-0016 п. 2); предложение сервера как external sender —
+  // PublicMessage (§6.2) с ProposalAAD в authenticated_data (CRYPTO.md §2.3). Сервер читает
+  // только открытый заголовок (group_id, epoch, content_type, authenticated_data, тип
+  // отправителя у PublicMessage). В событии gateway пусто, если больше 256 КиБ, — тогда клиент
+  // забирает `GET /mls/groups/{id}/handshakes/{seq}`.
   bytes blob = 7;
   google.protobuf.Timestamp created_at = 8;
+  // Для commit: хэш состава после него по карте DS (CRYPTO.md §2.5), 32 байта. Клиент сверяет
+  // его с хэшем своего дерева после merge.
+  bytes roster_hash = 9;
 }
 
 // Welcome для устройства (RFC 9420 §12.4.3.1).
@@ -77,6 +101,10 @@ message Welcome {
   // В событии gateway пусто, если больше 256 КиБ, — тогда `GET /mls/welcomes`.
   bytes blob = 4;
   google.protobuf.Timestamp created_at = 5;
+  // Эпоха, в которую вводит Welcome, и номер commit-а, который его создал (для жалобы,
+  // CRYPTO.md §1.8, §2.9).
+  uint64 epoch = 6;
+  uint64 seq = 7;
 }
 
 // Связка ключей истории канала, зашифрованная для эпохи группы (ADR-0015).
@@ -87,9 +115,68 @@ message HistoryKeyBundle {
   google.protobuf.Timestamp updated_at = 4;
 }
 
-// Зашифрованный GroupInfo для external commit (ARCHITECTURE.md §4.3).
+// Не используется в 1.0: GroupInfo сервер не хранит и не публикует (ADR-0019).
 message EncryptedGroupInfo {
+  option deprecated = true;
+
   string group_id = 1;
   uint64 epoch = 2;
   bytes blob = 3;
+}
+
+// Запись карты состава: лист → устройство (CRYPTO.md §2.5).
+message RosterEntry {
+  uint32 leaf = 1;
+  string device_id = 2;
+}
+
+// Состав группы по карте DS в эпохе.
+message Roster {
+  string group_id = 1;
+  uint64 epoch = 2;
+  // Непустые листья по возрастанию `leaf`.
+  repeated RosterEntry entries = 3;
+  // SHA-256 от RosterHashInput (CRYPTO.md §2.5), 32 байта.
+  bytes roster_hash = 4;
+}
+
+// Причина жалобы клиента на commit или Welcome (CRYPTO.md §2.9).
+enum DisputeReason {
+  DISPUTE_REASON_UNSPECIFIED = 0;
+  // RosterDelta не совпадает с действием commit-а или флагами.
+  DISPUTE_REASON_DELTA_MISMATCH = 1;
+  // В commit нет объявленного сервером Remove.
+  DISPUTE_REASON_MISSING_REMOVE = 2;
+  // Добавленный лист не прошёл проверку credential или добавлен не по предложению сервера.
+  DISPUTE_REASON_UNAUTHORIZED_ADD = 3;
+  // UpdatePath или Update сменили credential или ключ подписи листа.
+  DISPUTE_REASON_LEAF_CREDENTIAL_CHANGED = 4;
+  // Запрещённое предложение: GroupContextExtensions (кроме замены ключа инстанса), PSK, ReInit,
+  // ExternalInit, предложение участника.
+  DISPUTE_REASON_FORBIDDEN_PROPOSAL = 5;
+  // Commit текущей эпохи не расшифровывается или не проходит проверки MLS при полном состоянии
+  // клиента.
+  DISPUTE_REASON_UNDECRYPTABLE = 6;
+  // Состав после merge или из Welcome не совпадает с картой DS.
+  DISPUTE_REASON_ROSTER_MISMATCH = 7;
+  // Расширения группы (group_binding, external_senders, required_capabilities) не те.
+  DISPUTE_REASON_BINDING_MISMATCH = 8;
+  // Срок KeyPackage в Add истёк, хотя commit моложе горизонта офлайна.
+  DISPUTE_REASON_KEY_PACKAGE_EXPIRED = 9;
+  // Пересозданная группа не прошла проверки законности (CRYPTO.md §2.10.6).
+  DISPUTE_REASON_RECREATION_INVALID = 10;
+}
+
+// План пересоздания группы для назначенного создателя (CRYPTO.md §2.10.4).
+message RecreationPlan {
+  string old_group_id = 1;
+  string channel_id = 2;
+  GroupKind kind = 3;
+  // Последняя согласованная эпоха старой группы.
+  uint64 last_agreed_epoch = 4;
+  // Поколение ключа истории, действовавшее в `last_agreed_epoch` (для тега непрерывности);
+  // 0 у групп звонков.
+  uint32 history_key_generation = 5;
+  // Целевой состав новой группы (CRYPTO.md §2.10.3).
+  repeated string target_device_ids = 6;
 }

@@ -24,6 +24,11 @@
 | `VALIDATION_FAILED` | 400 | Тело или параметры не прошли проверку | `field_errors[]{field, reason}` |
 | `TOKEN_INVALID` | 400 | Ссылка из письма недействительна или истекла | |
 | `SIGNATURE_INVALID` | 400 | Подпись ключа устройства не проверяется ключом идентичности | |
+| `INVALID_KEY_PACKAGE` | 400 | KeyPackage не прошёл проверки DS (CRYPTO.md §1.4) | |
+| `EXTERNAL_COMMIT_UNSUPPORTED` | 400 | `HANDSHAKE_KIND_EXTERNAL_COMMIT`: external commit в 1.0 не используется (ADR-0019) | |
+| `BAD_DELTA` | 400 | `RosterDelta` commit-а не разбирается или не сходится с ожидаемым (CRYPTO.md §2.3–§2.4) | |
+| `BAD_WELCOME` | 400 | Адресаты Welcome не совпадают с добавленными устройствами или пакет на исходе | |
+| `BAD_MESSAGE` | 400 | Вид MLS-сообщения не соответствует запросу (`kind`, wire format, `content_type`) | |
 | `ATTACHMENT_INVALID` | 400 | Вложение не загружено, чужое или уже привязано | |
 | `TOO_MANY_ATTACHMENTS` | 400 | Больше 10 вложений | `limit` |
 | `SOUND_INVALID` | 400 | Звук не Opus/ogg или длиннее 5 с (исходные ogg/mp3 проверяет и перекодирует клиент, FLOWS/09 ш. 2) | |
@@ -38,6 +43,7 @@
 | `INVITES_PAUSED` | 403 | Приглашения сообщества приостановлены | |
 | `ROLE_HIERARCHY` | 403 | Действие против участника с равной или старшей ролью; выдача роли не младше своей | |
 | `NOT_GROUP_MEMBER` | 403 | Устройство не состоит в MLS-группе | |
+| `UNAUTHORIZED_CHANGE` | 403 | Изменение состава без предложения сервера; предложение от участника | |
 | `BLOCKED` | 403 | Собеседник заблокировал отправителя или заблокирован им | |
 | `NOT_FOUND` | 404 | Объект не существует или скрыт от запрашивающего (приватный канал выглядит как несуществующий) | |
 | `CONFLICT` | 409 | Общий конфликт состояния (повторное создание, удаление аккаунта владельца сообществ) | `details` |
@@ -53,6 +59,10 @@
 | `RELATIONSHIP_EXISTS` | 409 | Запрос уже отправлен или уже друзья | |
 | `EPOCH_MISMATCH` | 409 | Шифртекст или handshake для устаревшей эпохи | `current_epoch`; клиент догоняет commit-ы и повторяет (до 3 раз для сообщений) |
 | `MESSAGE_EXISTS` | 409 | Повтор id сообщения с другим телом | |
+| `PROPOSALS_MISSING` | 409 | В commit не вошли все опубликованные сервером Remove | |
+| `REMOVAL_PENDING` | 409 | Commit от устройства, для которого опубликован Remove | |
+| `ALREADY_MEMBER` | 409 | Заявка на вход устройства, которое уже в группе | |
+| `GROUP_FROZEN` | 409 | MLS-группа заморожена или заменена новой при пересоздании (CRYPTO.md §2.10) | `successor_group_id`, если замена уже есть |
 | `SOUND_SLOTS_FULL` | 409 | Слоты звуков заняты | `limit` |
 | `INVITE_EXPIRED` | 410 | Срок приглашения истёк | |
 | `INVITE_REVOKED` | 410 | Приглашение отозвано | |
@@ -114,7 +124,7 @@
 | Состояние чтения | `PUT /channels/{id}/read-state`, `POST /communities/{id}/read-state`, `POST /users/me/read-state` | |
 | Уведомления | `GET /users/me/notification-settings`, `PUT/DELETE /communities/{id}/notification-settings`, `PUT/DELETE /channels/{id}/notification-settings` | OPEN-QUESTIONS №6 |
 | Файлы | `POST /files`, `GET/DELETE /files/{id}`, `POST /files/{id}/complete` | Presigned URL, вложения до лимита инстанса |
-| MLS DS | `POST /mls/groups`, `GET /mls/groups/{id}`, `GET/POST /mls/groups/{id}/handshakes`, `GET /mls/groups/{id}/handshakes/{seq}`, `GET /mls/groups/{id}/group-info`, `GET/PUT /mls/groups/{id}/history-key-bundle`, `GET /mls/welcomes`, `DELETE /mls/welcomes/{group_id}` | Транспорт блобов; формат блобов — CRYPTO.md (B2) |
+| MLS DS | `POST /mls/groups`, `GET /mls/groups/{id}`, `GET/POST /mls/groups/{id}/handshakes`, `GET /mls/groups/{id}/handshakes/{seq}`, `GET /mls/groups/{id}/history-key-bundle`, `GET /mls/groups/{id}/roster`, `POST /mls/groups/{id}/disputes`, `POST /mls/groups/{id}/resync`, `GET /mls/groups/{id}/recreation`, `POST /mls/groups/{id}/recreation/key-packages`, `GET /mls/welcomes`, `DELETE /mls/welcomes/{group_id}`; `GET /mls/groups/{id}/group-info` и `PUT …/history-key-bundle` — `deprecated`, в 1.0 не используются (ADR-0019) | Транспорт блобов, карта состава, жалобы, пересоздание; формат и правила — CRYPTO.md §1–§2 |
 | Голос | `POST /channels/{id}/voice/join`, `POST /channels/{id}/voice/leave`, `POST /channels/{id}/voice/members/{uid}/mute`, `POST …/deafen` | Токен SFU; серверный mute/deafen (OPEN-QUESTIONS №4) |
 | Саундборд | `GET /sounds/builtin`, `GET/POST /communities/{id}/sounds`, `GET/POST /users/me/sounds`, `GET/PATCH/DELETE /sounds/{id}`, `GET /sounds/{id}/audio` | FLOWS/09; команда «сыграть» — gateway |
 | Внутренние | `POST /internal/media/webhooks` | Webhook SFU, общий секрет |
@@ -134,17 +144,23 @@
 
 ### Вступление по приглашению
 
-`GET /invites/{code}` (превью, ошибки приглашения) → `POST /invites/{code}/accept` → сервер добавляет участника с ролью «@все», рассылает `MemberJoined`, `CommunityCreated` новым устройствам и как external sender — Add-proposals (`MlsHandshake{from_external_sender}`) во все группы видимых каналов. Ближайший онлайн-участник коммитит; новичок получает `MlsWelcome`, забирает `GET /mls/groups/{id}/history-key-bundle` и читает историю `GET /channels/{id}/messages?before=…` (ADR-0015).
+`GET /invites/{code}` (превью, ошибки приглашения) → `POST /invites/{code}/accept` → сервер добавляет участника с ролью «@все», рассылает `MemberJoined`, `CommunityCreated` новым устройствам и как external sender — Add-proposals (`MlsHandshake{from_external_sender}`) во все группы видимых каналов. Commit делает онлайн-участник, которого назначает DS (`MlsUpdateRequested.designated_device_id`, CRYPTO.md §2.6); если в группе никого нет в сети, вход ждёт его появления (ADR-0019). Новичок получает `MlsWelcome`, забирает `GET /mls/groups/{id}/history-key-bundle` и читает историю `GET /channels/{id}/messages?before=…` (ADR-0015).
 
 ### Вход в голос
 
-`POST /channels/{id}/voice/join` → `{sfu_url, token, call_group_id, call_group_exists, voice_presence{connecting: true}}`. Если группы звонка нет, вошедший создаёт её `POST /mls/groups {channel_id, kind: GROUP_KIND_CALL, group_id: call_group_id}`; иначе ждёт `MlsWelcome` (сервер по webhook SFU шлёт Add-proposal, коммитит участник). Подтверждение подключения приходит webhook-ом от SFU → `VoicePresenceChanged{connecting: false}`. Выход — `POST …/voice/leave` или разрыв с SFU (webhook) → Remove-proposal; последний вышедший — сервер удаляет группу.
+`POST /channels/{id}/voice/join` → `{sfu_url, token, call_group_id, call_group_exists, voice_presence{connecting: true}}`. Если группы звонка нет, вошедший создаёт её `POST /mls/groups {channel_id, kind: GROUP_KIND_CALL, group_id: call_group_id}`; иначе ждёт `MlsWelcome` (сервер по webhook SFU шлёт Add-proposal, коммитит назначенный участник). Подтверждение подключения приходит webhook-ом от SFU → `VoicePresenceChanged{connecting: false}`. Выход — `POST …/voice/leave` или разрыв с SFU (webhook) → Remove-proposal; последний вышедший — сервер удаляет группу.
 
 ### Delivery Service
 
-- `POST /mls/groups` регистрирует группу и привязывает к каналу; вместе с ней — зашифрованный GroupInfo и начальная связка ключей истории.
-- `POST /mls/groups/{id}/handshakes` принимает Proposal/Commit только для текущей эпохи; commit несёт Welcome новых устройств, новый GroupInfo и связку для новой эпохи **одним запросом** — состояние группы на сервере меняется атомарно. External commit (`HANDSHAKE_KIND_EXTERNAL_COMMIT`) связку не несёт: её обновляет первый участник по `MlsUpdateRequested{REASON_HISTORY_BUNDLE}`.
-- Proposal и Commit участников всегда зашифрованы (`PrivateMessage`, ADR-0016 п. 2). Открытыми (`PublicMessage`, RFC 9420 §6.2) идут два вида сообщений от не-участников группы: Add/Remove-предложения самого сервера как external sender и external commit присоединяющегося (`HANDSHAKE_KIND_EXTERNAL_COMMIT`, отправитель `new_member_commit`). Сервер читает лишь открытый заголовок (`group_id`, `epoch`, `content_type`, у `PublicMessage` — ещё тип отправителя) и сверяет его с `kind`: `PROPOSAL`/`COMMIT` должны быть `PrivateMessage`, `EXTERNAL_COMMIT` — `PublicMessage` с `new_member_commit`; проверить commit он не может — процедуру восстановления рассинхрона и хранение невыполненных Remove описывает B02 (ADR-0016 п. 4). Содержимого сообщений и ключей у сервера нет.
+Правила DS — CRYPTO.md §2; здесь — как они ложатся на REST.
+
+- `POST /mls/groups` регистрирует группу, привязывает к каналу и принимает начальную связку ключей истории. При пересоздании замороженной группы (`predecessor_group_id`) тем же запросом идут начальный commit и Welcome; DS принимает ровно одну новую группу на замороженную (CRYPTO.md §2.10.5).
+- `POST /mls/groups/{id}/handshakes` принимает только commit участника (`PrivateMessage`, ADR-0016 п. 2) и только для текущей эпохи; commit несёт Welcome новых устройств и связку для новой эпохи **одним запросом** — состояние группы на сервере меняется атомарно. Предложения публикует только сервер как external sender (`PublicMessage` с `ProposalAAD`, CRYPTO.md §2.3); предложение участника — `UNAUTHORIZED_CHANGE`.
+- **External commit в 1.0 не используется, GroupInfo сервер не хранит** (ADR-0019): на `HANDSHAKE_KIND_EXTERNAL_COMMIT` — `EXTERNAL_COMMIT_UNSUPPORTED`; `GET …/group-info`, `PUT …/history-key-bundle`, поля `encrypted_group_info` помечены `deprecated`.
+- Commit делает устройство, которое назначает DS (`MlsUpdateRequested.designated_device_id`); при подтверждении нового устройства — в первую очередь подтвердившее (CRYPTO.md §2.6).
+- Сервер читает лишь открытый заголовок и `authenticated_data` (`RosterDelta`): по ним он ведёт карту состава (`GET …/roster`, `Handshake.roster_hash`), проверяет, что вошли все опубликованные Remove, и считает лимит листьев. Проверить содержимое commit-а он не может — это делают клиенты, а при отказе подают жалобу (`POST …/disputes`); DS замораживает группу (`GROUP_FROZEN`, событие `MlsGroupFrozen`), и назначенный участник пересоздаёт её (`GET …/recreation`, `POST …/recreation/key-packages`, `POST /mls/groups`).
+- Устройство, не подключавшееся дольше горизонта офлайна (30 сут), получает `Ready.device_returning` и возвращается в группы парой Remove + Add; клиент, которому не хватает состояния, просит то же для одной группы — `POST …/resync` (CRYPTO.md §2.11).
+- Содержимого сообщений и ключей у сервера нет.
 
 ## 6. Генерация кода
 

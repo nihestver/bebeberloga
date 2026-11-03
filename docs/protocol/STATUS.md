@@ -29,8 +29,8 @@
 
 Контракт следует п. 2–4 ADR-0016. Если B02 уточнит эти пункты в `CRYPTO.md`, `mls.proto`, `openapi.yaml` и `REST.md` правятся вместе с ним.
 
-- Proposal и Commit участников — `PrivateMessage` (политика `PURE_CIPHERTEXT`); открытыми (`PublicMessage`) по RFC 9420 идут только сообщения не-участников: предложения сервера как external sender и external commit присоединяющегося. Сервер сверяет вид сообщения с `kind`. Допускает ли клиент external commit и в каких случаях, решает B02 (ADR-0016 п. 3–4): если B02 запретит его или ограничит, из контракта уйдёт `HANDSHAKE_KIND_EXTERNAL_COMMIT`. В `mls.proto`, `openapi.yaml` и `REST.md` блоб handshake описан так; сервер читает лишь открытый заголовок.
-- Хранение невыполненных Remove на DS, отказ в commit от устройства с ожидающим Remove, адресация Remove (leaf index или id устройства) и восстановление рассинхрона — B02/S4; контракт `POST /mls/groups/{id}/handshakes` их не ограничивает, при необходимости B02 добавит код ошибки.
+- Proposal и Commit участников — `PrivateMessage` (политика `PURE_CIPHERTEXT`); открытыми (`PublicMessage`) идут только предложения сервера как external sender. **B02 решил (ADR-0019): external commit в 1.0 не используется**, GroupInfo сервер не хранит. Поля и операции остались в схемах ради `buf breaking` и помечены `deprecated`: `HANDSHAKE_KIND_EXTERNAL_COMMIT` (DS отвечает `EXTERNAL_COMMIT_UNSUPPORTED`), `Group.has_group_info`, `EncryptedGroupInfo`, `encrypted_group_info`, `GET …/group-info`, `PUT …/history-key-bundle`, `MlsUpdateRequested.REASON_HISTORY_BUNDLE`.
+- Хранение невыполненных Remove, отказ в commit от устройства с ожидающим Remove, адресация Remove (`ProposalAAD.device_id`), карта состава и восстановление рассинхрона (жалоба → заморозка → пересоздание группы) — `CRYPTO.md` §2 (B02); коды отказа из ADR-0018 добавлены в `error.proto` и `REST.md`.
 
 ## Собственные значения
 
@@ -83,7 +83,7 @@
 - `DeleteBody`/`PinBody` в группе дублируют REST-команды для офлайн-истории; модератор без текста удаляет только через REST; «убрать реакции у всех» — удаление сообщений-реакций по id.
 - Незавершённое создание сообщества (FLOWS/03 ш. 5): клиент вызывает `DELETE /communities/{id}`; сервер дополнительно удаляет сообщества, у каналов которых за 1 час не появилось ни одной MLS-группы.
 - ЛС — `Channel` типа `CHANNEL_TYPE_DM` с `participant_ids`, адресуется теми же `/channels/{id}/…`; `POST /users/me/dm-channels` идемпотентен для пары.
-- Commit, Welcome, новый GroupInfo и связка ключей истории идут одним запросом `POST /mls/groups/{id}/handshakes` (атомарно).
+- Commit, Welcome и связка ключей истории идут одним запросом `POST /mls/groups/{id}/handshakes` (атомарно); GroupInfo не передаётся (ADR-0019).
 - «🔒 закрытый для тебя»: владелец и администраторы получают `CommunitySnapshot.locked_channels` и событие `LockedChannelsUpdated`; самодобавление — `POST /channels/{id}/access/self`, участники канала видят системное сообщение `KIND_CHANNEL_SELF_JOINED`.
 - «Тебя выгнали» после долгого офлайна: сервер хранит `CommunityRemoval` до подтверждения устройством (`Ready.community_removals`, `DELETE /users/me/community-removals/{community_id}`).
 - Состояние «подключается» в голосе — `VoicePresence.connecting`: true после `voice/join`, false после подтверждения от медиасервера (webhook).
@@ -101,7 +101,36 @@
 
 ## Дальше
 
-- B02 (`CRYPTO.md`): формат KeyPackage/GroupInfo/handshake-блобов, ключ сообщения и обёртка ключом истории, `history_key_bundle`, секрет mention-hint, схема чанков файлов, `CallKeyBody`, коммитменты подтверждения устройства, личная группа пользователя.
+- B02 (`CRYPTO.md`, в работе: §0–§2 готовы в черновике): формат KeyPackage и handshake-блобов (GroupInfo в 1.0 не используется, ADR-0019), ключ сообщения и обёртка ключом истории, `history_key_bundle`, секрет mention-hint, схема чанков файлов, `CallKeyBody`, коммитменты подтверждения устройства, личная группа пользователя.
 - B04: `oapi-codegen` по `openapi.yaml` с `x-go-type`, тест соответствия JSON-моделей Protobuf-схемам.
 - B06: реализация gateway по `GATEWAY.md`.
 - Контур A: перенести ответы №2, 7, 8 в SCREENS/04, SCREENS/07 §7, SCREENS/11 §4.2 и FLOWS; переименовать событие `VoiceStateUpdated` в `VoicePresenceChanged` в FLOWS/07, в ответе №4 и в списке событий промпта B01 (решение владельца по clean room); в `ARCHITECTURE.md` §6.1 заменить «OpenAPI 3.1» на 3.0.3 (ADR-0017).
+
+---
+
+# STATUS — криптографический дизайн (B02)
+
+Промпт — `docs/prompts/B02-crypto-design.md`. Ветка `feat/B02-crypto-design`. Документ — [`CRYPTO.md`](CRYPTO.md).
+
+## Сделано (2026-11-03)
+
+- Решение владельца Р3: external commit в 1.0 не используется, GroupInfo не публикуется. Спецификация обновлена контуром A (коммит `docs(spec): drop external commit from 1.0 (B02 Р3)`); [ADR-0019](../adr/0019-no-external-commit-1-0.md) перечисляет, что меняется в ARCHITECTURE §4.3, §5 и ADR-0004, -0015, -0016, -0018 (их статус — «частично изменено ADR-0019»).
+- `CRYPTO.md` §0–§2 (черновик 1): соглашения и константы; MLS-профиль (credential `DeviceCredential`, KeyPackage, конфигурация группы, расширение `group_binding` 0xF0B1, политика клиента, вход по Welcome, ротация эпох); DS (грамматика `ProposalAAD`/`RosterDelta`, проверки commit-а, карта состава и `roster_hash`, назначенный коммитер, Add без срока ожидания и с заменой пакета по времени, Remove и его подтверждение, жалоба, пересоздание группы с лимитом частоты и оценкой цены, горизонт офлайна и возврат устройства, ключ инстанса); инварианты I1–I21 с тестами.
+- Контракт (только добавления, `buf breaking` против `main` проходит): `deprecated` у `HANDSHAKE_KIND_EXTERNAL_COMMIT`, `Group.has_group_info`, `EncryptedGroupInfo`, `encrypted_group_info`, `getGroupInfo`, `putHistoryKeyBundle`, `REASON_HISTORY_BUNDLE`; новые `GroupState`, `Roster`, `DisputeReason`, `RecreationPlan`, `ExternalSenderKeyRotation`, `MlsGroupFrozen`, поля `designated_device_id`, `roster_hash`, `device_returning`, `returning`, `successor_group_id`; коды `INVALID_KEY_PACKAGE`, `EXTERNAL_COMMIT_UNSUPPORTED`, `PROPOSALS_MISSING`, `REMOVAL_PENDING`, `BAD_DELTA`, `BAD_WELCOME`, `BAD_MESSAGE`, `UNAUTHORIZED_CHANGE`, `ALREADY_MEMBER`, `GROUP_FROZEN`; операции `roster`, `disputes`, `resync`, `recreation`, `recreation/key-packages`. `REST.md`, `GATEWAY.md`, `MESSAGES.md` §7, `README.md` приведены в соответствие.
+
+## Технические решения B02 (в рамках ADR)
+
+- `device_id`, `group_id` и прочие id в криптографических структурах — 16 байт двоичного UUID, не строка (спайк S4 использовал строку UTF-8): фиксированная длина, нет вопроса регистра.
+- Credential не содержит ключа идентичности: клиент всё равно сверяет его с известным ключом пользователя; так лист короче на 32 байта.
+- KeyPackage загружает только подтверждённое устройство (credential несёт подпись ключом идентичности).
+- При входе по Welcome проверка срока листьев дерева отключена (`JoinBuilder::skip_lifetime_validation`, openmls 0.9.2): иначе участник, добавленный больше 31 сут назад и не делавший commit-ов, закрыл бы вход всем новичкам (RFC 9420 §7.3). Срок пакета в Add проверяется при commit-е.
+- Назначенный коммитер: вместо свободной гонки после 2–3 с (ADR-0018 п. 7) DS назначает следующее устройство через 3 с.
+- Горизонт офлайна 30 сут = минимальный остаток срока KeyPackage 31 сут − 1 сут на часы.
+
+## Дальше
+
+- Ждут решений владельца: Р1 (формат сообщения), Р2 (ключи истории), Р4 (секрет mention-hint), Р5 (личная группа), Р6 (общий подход к правкам контракта) — от них зависят `CRYPTO.md` §6, часть §8 и §9.
+- Написать §3 (идентичность, подтверждение устройства, ключ восстановления), §4 (коды), §5 (медиа), §7 (файлы, хранилище), §8 (модель угроз), §9 (API crypto-core).
+- Вопросы контуру A — в `docs/spec/OPEN-QUESTIONS.md` по мере написания §3 и §6.
+- Ревью `security-reviewer` и `cleanroom-reviewer`.
+

@@ -57,6 +57,7 @@ message ServerFrame {
     MlsHandshake mls_handshake = 110;
     MlsWelcome mls_welcome = 111;
     MlsUpdateRequested mls_update_requested = 112;
+    MlsGroupFrozen mls_group_frozen = 113;
 
     // --- присутствие и голос -------------------------------------------
     PresenceUpdated presence_updated = 120;
@@ -151,6 +152,10 @@ message Ready {
   // Сообщества, из которых пользователя удалили, пока устройство не было в сети, и показ
   // которых оно ещё не подтвердило (`DELETE /users/me/community-removals/{community_id}`).
   repeated CommunityRemoval community_removals = 15;
+  // Устройство не подключалось дольше горизонта офлайна (30 сут): старые handshake групп с
+  // `MlsPending.returning` не обрабатываются, устройство загружает свежие KeyPackage и входит
+  // заново по Welcome (CRYPTO.md §2.11, FLOWS/02 «Возвращение после долгого перерыва»).
+  bool device_returning = 16;
 }
 
 // Сообщество целиком, кроме списка участников.
@@ -178,6 +183,9 @@ message MlsPending {
   bool welcome_pending = 3;
   // Число handshake-сообщений после последнего подтверждённого `seq` устройства.
   uint32 handshake_count = 4;
+  // Устройство возвращается в группу парой Remove + Add (CRYPTO.md §2.11): старые handshake не
+  // обрабатывать, ждать Welcome.
+  bool returning = 5;
 }
 
 // Возобновление сессии после разрыва.
@@ -305,8 +313,11 @@ message MlsWelcome {
   Welcome welcome = 1;
 }
 
-// Сервер просит онлайн-устройство сделать commit (ротация по сроку, «Обновить ключи канала»,
-// незакоммиченные proposals external sender). Обрабатывает первое устройство, которое успеет.
+// Сервер назначает устройство, которое должно сделать commit (незакоммиченные предложения
+// external sender, ротация по сроку, «Обновить ключи канала», пересоздание группы, замена ключа
+// инстанса). Событие получают все онлайн-устройства группы, коммитит только
+// `designated_device_id`; если commit эпохи не пришёл за 3 с, сервер назначает следующее
+// устройство новым событием (CRYPTO.md §2.6).
 message MlsUpdateRequested {
   string group_id = 1;
   enum Reason {
@@ -317,10 +328,28 @@ message MlsUpdateRequested {
     REASON_SCHEDULED_ROTATION = 2;
     // Запрос участника с правом `channel.edit`.
     REASON_MANUAL = 3;
-    // После external commit нужно обновить связку ключей истории (ADR-0015).
-    REASON_HISTORY_BUNDLE = 4;
+    // Не используется в 1.0: связку ключей истории всегда обновляет автор commit-а, external
+    // commit-а нет (ADR-0019).
+    REASON_HISTORY_BUNDLE = 4 [deprecated = true];
+    // Группа заморожена; назначенное устройство создаёт новую группу канала (CRYPTO.md §2.10).
+    REASON_RECREATE = 5;
+    // Перевести группу на новый ключ external sender инстанса (CRYPTO.md §2.12).
+    REASON_EXTERNAL_SENDER_ROTATION = 6;
   }
   Reason reason = 2;
+  // Устройство, которое должно сделать commit (или создать новую группу при REASON_RECREATE).
+  string designated_device_id = 3;
+  // Эпоха группы, на которой ожидается commit.
+  uint64 epoch = 4;
+}
+
+// Группа заморожена (жалоба на commit, потеря журнала) или заменена новой группой канала
+// (CRYPTO.md §2.10). Пока `successor_group_id` пуст, клиент показывает состояние «ошибка ключей»
+// (SCREENS/08 §8) и ждёт; после — ждёт Welcome в новую группу.
+message MlsGroupFrozen {
+  string group_id = 1;
+  string channel_id = 2;
+  string successor_group_id = 3;
 }
 
 message PresenceUpdated {

@@ -9,14 +9,14 @@
 | [`GATEWAY.md`](GATEWAY.md) | WebSocket-шлюз: `Identify` → `Ready`, события с монотонным `seq`, heartbeat, `Resume(seq)` с буфером 5 минут, сжатие zstd, лимиты и коды закрытия 41xx, адресация событий, команды клиента (включая `PlaySound`), шардинг по пользователю | B1 | черновик 2 (после ревью), готов для B6 |
 | [`REST.md`](REST.md) + [`openapi.yaml`](openapi.yaml) | Контракт REST (OpenAPI 3.0.3, Apache-2.0), из которого генерируются обработчики и клиент (`just gen`, ADR-0017); модели — Protobuf через `x-proto-message`/`x-go-type`: учётная запись, устройства и KeyPackage, сообщества/каналы/роли/участники/приглашения/баны, история сообщений (пагинация по UUIDv7), файлы, MLS DS, голос, саундборд, уведомления; таблица ошибок и коды прав | B1 | черновик 2, `redocly lint` чистый |
 | [`MESSAGES.md`](MESSAGES.md) | Конверт application-сообщения MLS по типам (text, edit, delete, reaction, pin, file-key, call-key, history-keys, device-notice; poll-vote зарезервирован), упоминания и mention-hint, лимиты (текст 4 000, шифртекст 128 КиБ) | B1 (крипто-часть — B2) | черновик 2 |
-| `CRYPTO.md` | MLS-профиль, ключи идентичности и устройств, Delivery Service, external sender, ротация эпох, вывод SFrame-ключей, ключи истории и связки, формат блобов, формальные инварианты | B2 | не начат |
+| [`CRYPTO.md`](CRYPTO.md) | MLS-профиль, ключи идентичности и устройств, Delivery Service (карта состава, назначенный коммитер, жалобы, пересоздание группы, горизонт офлайна, ключ инстанса), вывод SFrame-ключей, ключи истории и связки, формат блобов, формальные инварианты | B2 | черновик 1: §0–§2 и инварианты I1–I21; §3–§9 — в работе |
 | `MEDIA.md` | Комнаты SFU, токены с правами, webhooks, смена эпохи звонка, лимиты качества стрима | B7 (контракт `voice/*` и `PlaySound`/`SoundPlayed` уже в REST и gateway) | не начат |
 | [`../../proto/`](../../proto/bebeberloga/v1) | Protobuf-схемы `bebeberloga.v1` — единственный источник моделей для Go/TS/Kotlin/Swift: `common`, `error`, `identity`, `community`, `sound`, `message`, `envelope`, `mls`, `gateway` | B1 | черновик 2, `buf lint` чистый |
 
 ## Уже зафиксировано
 
 - MLS RFC 9420 через OpenMLS; ciphersuite `MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519` (0x0001); credential Basic. Одна группа на DM, групповой DM, текстовый канал, приватную ветку, активный звонок ([ADR-0004](../adr/0004-e2ee-mls-sframe.md)).
-- Сервер = Delivery Service + Authentication Service: принимает commit только для текущей эпохи; external-sender-предложения Add/Remove по правам; external commit по зашифрованному GroupInfo для быстрого входа; ротация эпохи при смене состава и не реже раза в сутки.
+- Сервер = Delivery Service + Authentication Service: принимает commit только для текущей эпохи; external-sender-предложения Add/Remove по правам; commit делает онлайн-участник, которого назначает DS. External commit и GroupInfo в 1.0 не используются: любой вход — Add сервера и commit участника, возврат после горизонта офлайна — Remove + Add, рассинхрон — пересоздание группы канала ([ADR-0019](../adr/0019-no-external-commit-1-0.md), `CRYPTO.md` §2). Ротация эпохи при смене состава и не реже раза в сутки.
 - Лимит участников канала по умолчанию 2 000 ([ADR-0005](../adr/0005-channel-member-limit.md)).
 - История видна всем, кто видит канал, через ключи истории канала ([ADR-0015](../adr/0015-history-visible-to-members.md)).
 - Файлы: XChaCha20-Poly1305 чанками по 1 МиБ, presigned URL в S3, ключ и хэш — в MLS-сообщении; превью генерирует отправитель.
@@ -50,17 +50,20 @@
 | Шаг | Вызов или событие |
 |---|---|
 | 1 Вход, сессия с неподтверждённым устройством | `POST /auth/login` → `Session.device.verification = DEVICE_VERIFICATION_UNVERIFIED` |
-| 2 Ключи нового устройства, экран «Подтверди» | `PUT /devices/me/keys`, `POST /devices/me/key-packages` |
+| 2 Ключи нового устройства, экран «Подтверди» | `PUT /devices/me/keys` (ключ подписи устройства); KeyPackage — только после подтверждения (ш. 4.4, `CRYPTO.md` §1.4) |
 | 3 Уведомление других устройств | событие `DeviceAdded{device, verification_request}` своим устройствам |
 | 4.1 Окно «Новое устройство хочет войти» | данные из `DeviceAdded` |
 | 4.2 Обмен коммитментами, сравнение картинок | `POST /devices/{id}/verification/messages` ↔ событие `DeviceVerificationMessage` |
 | 4.3 Подпись ключа нового устройства | клиент |
-| 4.4 Пометка `verified`, Add-предложения во все группы | `POST /devices/{id}/verify` → `DeviceVerified`, `MlsHandshake{from_external_sender, HANDSHAKE_KIND_PROPOSAL}`; commit — `POST /mls/groups/{id}/handshakes` первого онлайн-устройства |
+| 4.4 Пометка `verified`, Add-предложения во все группы | `POST /devices/{id}/verify` → `DeviceVerified`, `MlsHandshake{from_external_sender, HANDSHAKE_KIND_PROPOSAL}`; `MlsUpdateRequested{designated_device_id}` — в первую очередь подтвердившему устройству; commit — `POST /mls/groups/{id}/handshakes`; новое устройство загружает KeyPackage `POST /devices/me/key-packages` сразу после `DeviceVerified` |
 | 4.5 История на новом устройстве | `MlsWelcome` → `GET /mls/groups/{id}/history-key-bundle` → `GET /channels/{id}/messages?before=` |
 | 5 Ключом восстановления | `GET /users/me/recovery-key/identity` → клиент расшифровывает → `POST /devices/{id}/verify` (своё устройство) → далее 4.4 |
 | 6 «Начать заново» | `PUT /users/me/identity-key {reset: true}` → `DeviceRemoved` и `SessionInvalid{REASON_DEVICE_REMOVED}` (код 4109) прочим устройствам, Remove-предложения; `UserUpdated` (новый `identity_pubkey`); системное «Ключи изменились» — конверт `DeviceNoticeBody{KIND_IDENTITY_KEY_CHANGED}` от клиента |
 | 7 «Это не я» | `POST /devices/{id}/reject` → `DeviceRemoved`; смена пароля `POST /auth/password/change` |
 | Таймаут 10 минут, «отправить снова» | `VERIFICATION_EXPIRED`; `POST /devices/me/verification/request` → повторный `DeviceAdded` |
+| Возвращение 1 Устройство дольше горизонта офлайна | `Identify` → `Ready.device_returning`, `MlsPending.returning`; `POST /devices/me/key-packages`; сервер публикует Remove + Add (`MlsHandshake{from_external_sender}`), `MlsUpdateRequested{designated_device_id}` |
+| Возвращение 2 «Подключаемся к каналу…» | клиент до `MlsWelcome` |
+| Возвращение 3 История и очередь | `GET /mls/groups/{id}/history-key-bundle`, `GET /channels/{id}/messages?before=`; очередь шифруется в момент отправки (CRYPTO.md §2.11.4); запасной путь клиента — `POST /mls/groups/{id}/resync` |
 | Выход на устройстве 1–2 | `DELETE /devices/{id}` → `DeviceRemoved`, `MlsHandshake` (Remove-предложения); удалённое устройство получает `SessionInvalid{REASON_DEVICE_REMOVED}` / код 4109 и стирает ключи; так же для `POST /auth/logout` и «выйти на всех других устройствах». Смена пароля (`POST /auth/password/change`) завершает только сессии: код 4108, ключи остаются |
 | Выход 3 | клиент стирает ключи и базу |
 | Выход 4 Системное сообщение собеседникам | конверт `DeviceNoticeBody{KIND_DEVICE_REMOVED}` от оставшегося устройства |
@@ -88,7 +91,7 @@
 | Создать 3 Настроить ссылку | `POST /communities/{id}/invites` с параметрами; старая действует |
 | Вступить 1 Превью; ошибки | `GET /invites/{code}` → `INVITE_EXPIRED`, `INVITE_REVOKED`, `INVITE_USES_EXHAUSTED`, `BANNED`, `CHANNEL_MEMBER_LIMIT`, `INVITES_PAUSED` |
 | Вступить 2 Принять | `POST /invites/{code}/accept` → `MemberJoined` участникам, `CommunityCreated` своим устройствам |
-| Вступить 3 Add-предложения, Skeleton до commit | `MlsHandshake{from_external_sender}` членам групп; commit онлайн-участником |
+| Вступить 3 Add-предложения, Skeleton до commit; ожидание, если никого нет в сети | `MlsHandshake{from_external_sender}` членам групп; `MlsUpdateRequested{designated_device_id}`; commit назначенным онлайн-участником; без онлайн-участников заявка ждёт (ADR-0019) |
 | Вступить 4 Связка ключей истории; история | `MlsWelcome` → `GET /mls/groups/{id}/history-key-bundle` → `GET /channels/{id}/messages` (при выключенной истории сервер не отдаёт сообщения до вступления) |
 | Вступить 5 Системное сообщение о входе | `MessageCreated{system: KIND_MEMBER_JOINED}` в канале системных сообщений |
 
