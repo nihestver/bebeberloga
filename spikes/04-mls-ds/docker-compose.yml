@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Postgres для e2e и нагрузки спайка S4 (go test поднимает свой через testcontainers).
+name: s4-mls-ds
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: s4
+      POSTGRES_PASSWORD: s4
+      POSTGRES_DB: s4
+    ports:
+      - "127.0.0.1:55432:5432"
+    command: ["postgres", "-c", "max_connections=200", "-c", "shared_buffers=256MB", "-c", "synchronous_commit=on"]
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "s4"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
