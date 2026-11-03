@@ -79,6 +79,10 @@ message Device {
   string last_seen_location = 11;
   // Это устройство — то, с которого сделан запрос.
   bool current = 12;
+  // Ключ HPKE истории устройства (X25519, 32 байта) и его подпись ключом подписи устройства
+  // (CRYPTO.md §6.3.6). Не ключ MLS.
+  bytes history_hpke_key = 13;
+  bytes history_hpke_key_signature = 14;
 }
 
 // Устройство чужого пользователя для вкладки «Безопасность» (SCREENS/09 §4.2):
@@ -92,6 +96,56 @@ message PublicDevice {
   bytes identity_signature = 5;
   DeviceVerification verification = 6;
   google.protobuf.Timestamp created_at = 7;
+  bytes history_hpke_key = 8;
+  bytes history_hpke_key_signature = 9;
+  // Время удаления; запись удалённого устройства сервер хранит навсегда — по ней проверяются
+  // подписи его сообщений в истории (CRYPTO.md §6.2.8).
+  google.protobuf.Timestamp removed_at = 10;
+}
+
+// Ключ идентичности пользователя с периодом действия: история ключей после «Начать заново»
+// (CRYPTO.md §6.2.6). Сервер хранит её навсегда.
+message IdentityKeyRecord {
+  bytes identity_pubkey = 1;
+  google.protobuf.Timestamp valid_from = 2;
+  // Пусто у действующего ключа.
+  google.protobuf.Timestamp valid_until = 3;
+}
+
+// Открытый ключ HPKE восстановления, выведенный из ключа восстановления и подписанный ключом
+// идентичности (CRYPTO.md §6.5).
+message RecoveryPublicKey {
+  bytes key = 1;
+  google.protobuf.Timestamp created_at = 2;
+  bytes signature = 3;
+}
+
+// Резервная копия поколения ключа истории личной группы на ключ восстановления (CRYPTO.md §6.5).
+message PersonalBackup {
+  uint32 generation = 1;
+  bytes blob = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+enum IdentityResetState {
+  IDENTITY_RESET_STATE_UNSPECIFIED = 0;
+  // Ждёт `applies_at`; подтверждённые устройства могут отменить.
+  IDENTITY_RESET_STATE_PENDING = 1;
+  // Можно применять (`PUT /users/me/identity-key` с `reset_request_id`).
+  IDENTITY_RESET_STATE_READY = 2;
+  IDENTITY_RESET_STATE_CANCELLED = 3;
+  IDENTITY_RESET_STATE_APPLIED = 4;
+}
+
+// Запрос сброса ключа идентичности («Начать заново», CRYPTO.md §6.3.9; FLOWS/02 ш. 6).
+message IdentityResetRequest {
+  string id = 1;
+  IdentityResetState state = 2;
+  string requested_by_device_id = 3;
+  google.protobuf.Timestamp created_at = 4;
+  // Когда сброс можно применить: через 24 ч, если есть подтверждённое устройство, бывшее в сети
+  // за последние 30 дней; иначе — сразу.
+  google.protobuf.Timestamp applies_at = 5;
 }
 
 // Данные устройства при входе (`POST /auth/login`).

@@ -483,9 +483,13 @@ paths:
       tags: [users]
       summary: Опубликовать ключ идентичности
       description: |
-        Первое устройство публикует открытый ключ идентичности и его копию, зашифрованную ключом
-        восстановления (FLOWS/01 ш. 5–6). Повторный вызов разрешён только при «начать заново»
-        с `reset: true` — тогда все прочие устройства удаляются (FLOWS/02 ш. 6).
+        Первое устройство публикует открытый ключ идентичности, его копию, зашифрованную ключом
+        восстановления, и открытый ключ HPKE восстановления (FLOWS/01 ш. 5–6; CRYPTO.md §3.5, §6.5).
+        Повторный вызов — только при «Начать заново»: `reset: true` и `reset_request_id` запроса в
+        состоянии READY (`POST /users/me/identity-reset`); раньше срока — IDENTITY_RESET_PENDING.
+        Сервер удаляет все прочие устройства, их KeyPackage и прежний блоб восстановления, записывает
+        прежний ключ идентичности в историю ключей (`GET /users/{id}/identity-keys`) и рассылает
+        UserUpdated (FLOWS/02 ш. 6; CRYPTO.md §6.3.9).
       operationId: putIdentityKey
       requestBody:
         required: true
@@ -502,6 +506,10 @@ paths:
                 reset:
                   type: boolean
                   description: Заменить существующий ключ («начать заново»).
+                reset_request_id:
+                  allOf: [{ $ref: '#/components/schemas/Id' }]
+                  description: Запрос сброса в состоянии READY; обязателен при `reset`.
+                recovery_public_key: { $ref: '#/components/schemas/RecoveryPublicKey' }
       responses:
         '204': { description: Ключ опубликован }
         default:
@@ -513,19 +521,20 @@ paths:
       operationId: getRecoveryKeyInfo
       responses:
         '200':
-          description: Дата создания
+          description: Дата создания и открытый ключ HPKE восстановления (для резервной копии личной группы, CRYPTO.md §6.5)
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   created_at: { $ref: '#/components/schemas/Timestamp' }
+                  recovery_public_key: { $ref: '#/components/schemas/RecoveryPublicKey' }
         default:
           $ref: '#/components/responses/Error'
     put:
       tags: [devices]
       summary: Создать новый ключ восстановления
-      description: Клиент перешифровывает приватный ключ идентичности новым ключом восстановления; старый ключ перестаёт работать.
+      description: Клиент перешифровывает приватный ключ идентичности новым ключом восстановления и шифрует текущее поколение личной группы на новый открытый ключ восстановления; старый ключ перестаёт работать, прежние копии сервер удаляет (CRYPTO.md §3.5.4, §6.5).
       operationId: rotateRecoveryKey
       requestBody:
         required: true
@@ -533,11 +542,103 @@ paths:
           application/json:
             schema:
               type: object
-              required: [encrypted_identity_key]
+              required: [encrypted_identity_key, recovery_public_key]
               properties:
                 encrypted_identity_key: { $ref: '#/components/schemas/Bytes' }
+                recovery_public_key: { $ref: '#/components/schemas/RecoveryPublicKey' }
+                personal_backup: { $ref: '#/components/schemas/PersonalBackup' }
       responses:
         '204': { description: Ключ заменён }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/identity-reset:
+    get:
+      tags: [devices]
+      summary: Действующий запрос сброса ключа идентичности
+      operationId: getIdentityReset
+      responses:
+        '200':
+          description: Запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityResetRequest'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [devices]
+      summary: Запросить сброс ключа идентичности («Начать заново»)
+      description: |
+        С неподтверждённого нового устройства (FLOWS/02 ш. 6; CRYPTO.md §6.3.9). Если у пользователя
+        есть подтверждённое устройство, бывшее в сети за последние 30 дней, запрос PENDING на 24 ч:
+        сервер рассылает этим устройствам IdentityResetRequested и отправляет письмо на email
+        аккаунта; иначе — сразу READY. Повторный запрос возвращает действующий.
+      operationId: requestIdentityReset
+      responses:
+        '201':
+          description: Запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityResetRequest'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [devices]
+      summary: Отменить сброс ключа идентичности («Это не я»)
+      description: С любого подтверждённого устройства пользователя. Запрос — CANCELLED, сессия запросившего устройства отзывается, событие IdentityResetCancelled (SCREENS/07 §8).
+      operationId: cancelIdentityReset
+      responses:
+        '204': { description: Отменено }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/personal-backup:
+    get:
+      tags: [devices]
+      summary: Последняя резервная копия ключа истории личной группы
+      description: Для восстановления без старых устройств (CRYPTO.md §6.5). Доступно устройству, подтверждённому ключом восстановления. Частота ограничена.
+      operationId: getPersonalBackup
+      responses:
+        '200':
+          description: Копия
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalBackup'
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/mention-hints:
+    put:
+      tags: [messages]
+      summary: Зарегистрировать свои mention-hint во всех каналах одним запросом
+      description: |
+        Хинт своего `user_id` и своих ролей для каждого канала и поколения ключа истории (CRYPTO.md
+        §6.4). Клиент шлёт после нового поколения в любом канале, смены ролей, входа и возвращения.
+        Хинт, пришедший позже сообщения, сервер сопоставляет задним числом и пересчитывает бейджи.
+      operationId: putMyMentionHints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entries]
+              properties:
+                entries:
+                  type: array
+                  maxItems: 1000
+                  items:
+                    type: object
+                    required: [channel_id, generation, hints]
+                    properties:
+                      channel_id: { $ref: '#/components/schemas/Id' }
+                      generation: { type: integer, minimum: 1 }
+                      hints:
+                        type: array
+                        maxItems: 64
+                        items: { $ref: '#/components/schemas/Bytes' }
+      responses:
+        '204': { description: Сохранено }
         default:
           $ref: '#/components/responses/Error'
   /users/me/recovery-key/identity:
@@ -579,9 +680,13 @@ paths:
       - $ref: '#/components/parameters/UserId'
     get:
       tags: [devices]
-      summary: Устройства пользователя (для вкладки «Безопасность»)
-      description: Только тип, дата добавления, статус проверки и открытые ключи; город и время входа видит лишь владелец.
+      summary: Устройства пользователя (для вкладки «Безопасность» и проверки подписей истории)
+      description: 'Только тип, дата добавления, статус проверки и открытые ключи; город и время входа видит лишь владелец. С `include_removed=true` — и удалённые устройства с `removed_at`: их записи сервер хранит навсегда, по ним проверяются подписи сообщений в истории (CRYPTO.md §6.2.8).'
       operationId: listUserDevices
+      parameters:
+        - name: include_removed
+          in: query
+          schema: { type: boolean, default: false }
       responses:
         '200':
           description: Устройства с открытыми ключами
@@ -594,6 +699,28 @@ paths:
                   devices:
                     type: array
                     items: { $ref: '#/components/schemas/PublicDevice' }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/{user_id}/identity-keys:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      tags: [users]
+      summary: История ключей идентичности пользователя
+      description: Все ключи идентичности с периодами действия, включая прежние после «Начать заново»; сервер хранит навсегда (CRYPTO.md §6.2.6, §6.3.9).
+      operationId: listIdentityKeys
+      responses:
+        '200':
+          description: Ключи по возрастанию `valid_from`
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [keys]
+                properties:
+                  keys:
+                    type: array
+                    items: { $ref: '#/components/schemas/IdentityKeyRecord' }
         default:
           $ref: '#/components/responses/Error'
   /users/{user_id}/key-packages/claim:
@@ -668,12 +795,18 @@ paths:
           application/json:
             schema:
               type: object
-              required: [signature_pubkey]
+              required: [signature_pubkey, history_hpke_key, history_hpke_key_signature]
               properties:
                 signature_pubkey: { $ref: '#/components/schemas/Bytes' }
                 identity_signature:
                   allOf: [{ $ref: '#/components/schemas/Bytes' }]
                   description: Подпись ключом идентичности, если устройство само его знает (первое устройство, восстановление ключом).
+                history_hpke_key:
+                  allOf: [{ $ref: '#/components/schemas/Bytes' }]
+                  description: Ключ HPKE истории устройства (X25519) для мостов ключей истории (CRYPTO.md §6.3.6).
+                history_hpke_key_signature:
+                  allOf: [{ $ref: '#/components/schemas/Bytes' }]
+                  description: Подпись `history_hpke_key` ключом подписи устройства.
       responses:
         '200':
           description: Устройство
@@ -1870,8 +2003,10 @@ paths:
       description: |
         Сервер проверяет `chat.post`, при вложениях — `chat.upload`, при `broadcast_mention` или
         хинтах ролей — `chat.ping_all` (без права упоминание сохраняется, но без уведомлений),
-        членство устройства в группе, эпоху и размер шифртекста (≤ 128 КиБ). Ошибки: PERMISSION_DENIED, EPOCH_MISMATCH (клиент
-        догоняет commit-ы и повторяет до 3 раз), MESSAGE_EXISTS, ATTACHMENT_INVALID,
+        членство устройства в группе, поколение ключа истории (текущее поколение канала) и размер
+        шифртекста (≤ 128 КиБ). Ошибки: PERMISSION_DENIED, HISTORY_GENERATION_MISMATCH (клиент
+        догоняет commit-ы и повторяет до 3 раз; смена эпохи без нового поколения отправку не
+        прерывает, CRYPTO.md §6.2.8), GROUP_FROZEN, MESSAGE_EXISTS, ATTACHMENT_INVALID,
         TOO_MANY_ATTACHMENTS, PAYLOAD_TOO_LARGE, BLOCKED (ЛС). Рассылает MessageCreated и push без текста.
       operationId: createMessage
       requestBody:
@@ -1962,7 +2097,8 @@ paths:
       - $ref: '#/components/parameters/ChannelId'
     put:
       tags: [messages]
-      summary: Зарегистрировать свои mention-hint в канале
+      deprecated: true
+      summary: Зарегистрировать свои mention-hint в канале (заменено `PUT /users/me/mention-hints`)
       description: |
         Участник присылает HMAC своего id и id своих ролей с секретом канала из MLS exporter
         (ARCHITECTURE.md §4.4). Сервер сравнивает их с хинтами входящих сообщений для бейджей и
@@ -2244,6 +2380,12 @@ paths:
                   deprecated: true
                   description: Не используется в 1.0 (ADR-0019); DS поле игнорирует.
                 history_key_bundle: { $ref: '#/components/schemas/Bytes' }
+                history_key_link: { $ref: '#/components/schemas/HistoryKeyLink' }
+                history_bridges:
+                  type: array
+                  description: Мосты ключей истории устройствам, которые входит этот commit (CRYPTO.md §6.3.6).
+                  items: { $ref: '#/components/schemas/HistoryBridge' }
+                personal_backup: { $ref: '#/components/schemas/PersonalBackup' }
                 predecessor_group_id:
                   allOf: [{ $ref: '#/components/schemas/Id' }]
                   description: Замороженная группа, которую заменяет эта (пересоздание, CRYPTO.md §2.10).
@@ -2354,6 +2496,12 @@ paths:
                   deprecated: true
                   description: Не используется в 1.0 (ADR-0019); DS поле игнорирует.
                 history_key_bundle: { $ref: '#/components/schemas/Bytes' }
+                history_key_link: { $ref: '#/components/schemas/HistoryKeyLink' }
+                history_bridges:
+                  type: array
+                  description: Мосты ключей истории устройствам, которые входит этот commit (CRYPTO.md §6.3.6).
+                  items: { $ref: '#/components/schemas/HistoryBridge' }
+                personal_backup: { $ref: '#/components/schemas/PersonalBackup' }
       responses:
         '201':
           description: Принято и упорядочено
@@ -2464,6 +2612,34 @@ paths:
               $ref: '#/components/schemas/HistoryKeyBundle'
       responses:
         '204': { description: Сохранена }
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/history-key-links:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    get:
+      tags: [mls]
+      summary: Ссылки цепочки ключей истории канала
+      description: Ссылки поколений ниже `below_generation` по убыванию (CRYPTO.md §6.3.4, §6.3.8). Доступно участникам канала; сервер хранит ссылки, пока хранит сообщения канала.
+      operationId: listHistoryKeyLinks
+      parameters:
+        - name: below_generation
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Ссылки
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [links, page]
+                properties:
+                  links:
+                    type: array
+                    items: { $ref: '#/components/schemas/HistoryKeyLink' }
+                  page: { $ref: '#/components/schemas/PageInfo' }
         default:
           $ref: '#/components/responses/Error'
   /mls/welcomes:
@@ -3067,6 +3243,7 @@ components:
         limit: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Значение лимита, который превышен.' }
         current_epoch: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: Для EPOCH_MISMATCH. }
         successor_group_id: { allOf: [{ $ref: '#/components/schemas/Id' }], description: 'Для GROUP_FROZEN: группа, которая заменила эту; пусто, пока пересоздание не завершено.' }
+        current_generation: { type: integer, description: 'Для HISTORY_GENERATION_MISMATCH: текущее поколение ключа истории канала.' }
         field_errors:
           type: array
           items:
@@ -3108,6 +3285,7 @@ components:
         - ERROR_CODE_VERIFICATION_EXPIRED
         - ERROR_CODE_SIGNATURE_INVALID
         - ERROR_CODE_INVALID_KEY_PACKAGE
+        - ERROR_CODE_IDENTITY_RESET_PENDING
         - ERROR_CODE_CHANNEL_MEMBER_LIMIT
         - ERROR_CODE_COMMUNITY_LIMIT
         - ERROR_CODE_BANNED
@@ -3137,6 +3315,7 @@ components:
         - ERROR_CODE_ALREADY_MEMBER
         - ERROR_CODE_GROUP_FROZEN
         - ERROR_CODE_GROUP_UNDER_REVIEW
+        - ERROR_CODE_HISTORY_GENERATION_MISMATCH
         - ERROR_CODE_SOUND_INVALID
         - ERROR_CODE_SOUND_SLOTS_FULL
 
@@ -3290,6 +3469,8 @@ components:
         last_seen_at: { $ref: '#/components/schemas/Timestamp' }
         last_seen_location: { type: string }
         current: { type: boolean }
+        history_hpke_key: { $ref: '#/components/schemas/Bytes' }
+        history_hpke_key_signature: { $ref: '#/components/schemas/Bytes' }
     DeviceVerificationRequest:
       type: object
       x-proto-message: bebeberloga.v1.DeviceVerificationRequest
@@ -3314,6 +3495,64 @@ components:
         identity_signature: { $ref: '#/components/schemas/Bytes' }
         verification: { $ref: '#/components/schemas/DeviceVerification' }
         created_at: { $ref: '#/components/schemas/Timestamp' }
+        history_hpke_key: { $ref: '#/components/schemas/Bytes' }
+        history_hpke_key_signature: { $ref: '#/components/schemas/Bytes' }
+        removed_at:
+          allOf: [{ $ref: '#/components/schemas/Timestamp' }]
+          description: Время удаления; запись удалённого устройства хранится навсегда (CRYPTO.md §6.2.8).
+    IdentityKeyRecord:
+      type: object
+      x-proto-message: bebeberloga.v1.IdentityKeyRecord
+      x-go-type: bebeberlogav1.IdentityKeyRecord
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [identity_pubkey, valid_from]
+      properties:
+        identity_pubkey: { $ref: '#/components/schemas/Bytes' }
+        valid_from: { $ref: '#/components/schemas/Timestamp' }
+        valid_until:
+          allOf: [{ $ref: '#/components/schemas/Timestamp' }]
+          description: Пусто у действующего ключа.
+    RecoveryPublicKey:
+      type: object
+      x-proto-message: bebeberloga.v1.RecoveryPublicKey
+      x-go-type: bebeberlogav1.RecoveryPublicKey
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [key, created_at, signature]
+      properties:
+        key: { $ref: '#/components/schemas/Bytes' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        signature:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: AppSign ключом идентичности с меткой «recovery hpke key» (CRYPTO.md §6.5).
+    PersonalBackup:
+      type: object
+      x-proto-message: bebeberloga.v1.PersonalBackup
+      x-go-type: bebeberlogav1.PersonalBackup
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [generation, blob]
+      properties:
+        generation: { type: integer, minimum: 1 }
+        blob:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: HPKE на открытый ключ восстановления (CRYPTO.md §6.5).
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+    IdentityResetRequest:
+      type: object
+      x-proto-message: bebeberloga.v1.IdentityResetRequest
+      x-go-type: bebeberlogav1.IdentityResetRequest
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [id, state, requested_by_device_id, created_at, applies_at]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        state:
+          type: string
+          x-proto-enum: bebeberloga.v1.IdentityResetState
+          x-go-type: bebeberlogav1.IdentityResetState
+          x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+          enum: [IDENTITY_RESET_STATE_UNSPECIFIED, IDENTITY_RESET_STATE_PENDING, IDENTITY_RESET_STATE_READY, IDENTITY_RESET_STATE_CANCELLED, IDENTITY_RESET_STATE_APPLIED]
+        requested_by_device_id: { $ref: '#/components/schemas/Id' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        applies_at: { $ref: '#/components/schemas/Timestamp' }
     Session:
       type: object
       x-proto-message: bebeberloga.v1.Session
@@ -3395,7 +3634,7 @@ components:
       x-proto-enum: bebeberloga.v1.ChannelType
       x-go-type: bebeberlogav1.ChannelType
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [CHANNEL_TYPE_UNSPECIFIED, CHANNEL_TYPE_TEXT, CHANNEL_TYPE_VOICE, CHANNEL_TYPE_DM, CHANNEL_TYPE_GROUP_DM, CHANNEL_TYPE_THREAD]
+      enum: [CHANNEL_TYPE_UNSPECIFIED, CHANNEL_TYPE_TEXT, CHANNEL_TYPE_VOICE, CHANNEL_TYPE_DM, CHANNEL_TYPE_GROUP_DM, CHANNEL_TYPE_THREAD, CHANNEL_TYPE_PERSONAL]
     HistoryVisibility:
       type: string
       x-proto-enum: bebeberloga.v1.HistoryVisibility
@@ -3793,12 +4032,16 @@ components:
           allOf: [{ $ref: '#/components/schemas/Id' }]
           description: UUIDv7, сгенерирован клиентом; повтор с тем же id идемпотентен (MESSAGE_EXISTS, если тело отличается).
         group_id: { $ref: '#/components/schemas/Id' }
-        epoch: { $ref: '#/components/schemas/Int64' }
+        epoch:
+          allOf: [{ $ref: '#/components/schemas/Int64' }]
+          description: Эпоха группы у отправителя — для диагностики; сервер проверяет поколение ключа истории.
         ciphertext:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
-          description: MLS PrivateMessage с MessageEnvelope внутри; до 128 КиБ (MESSAGES.md §3).
-        wrapped_message_key: { $ref: '#/components/schemas/Bytes' }
-        history_key_generation: { type: integer }
+          description: SealedMessage — конверт и подпись устройства под ключом сообщения, длина кратна 256 байтам; не MLS (CRYPTO.md §6.2.3); до 128 КиБ (MESSAGES.md §3).
+        wrapped_message_key:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: Ключ сообщения под подключом текущего поколения ключа истории (CRYPTO.md §6.2.4).
+        history_key_generation: { type: integer, minimum: 1 }
         mention_hints:
           type: array
           maxItems: 50
@@ -3840,7 +4083,14 @@ components:
       x-proto-enum: bebeberloga.v1.GroupKind
       x-go-type: bebeberlogav1.GroupKind
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [GROUP_KIND_UNSPECIFIED, GROUP_KIND_CHAT, GROUP_KIND_CALL]
+      enum: [GROUP_KIND_UNSPECIFIED, GROUP_KIND_CHAT, GROUP_KIND_CALL, GROUP_KIND_PERSONAL]
+    HistoryChange:
+      type: string
+      x-proto-enum: bebeberloga.v1.HistoryChange
+      x-go-type: bebeberlogav1.HistoryChange
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      description: Изменение ключа истории в commit-е (CRYPTO.md §6.3.3).
+      enum: [HISTORY_CHANGE_UNSPECIFIED, HISTORY_CHANGE_NONE, HISTORY_CHANGE_ROTATE, HISTORY_CHANGE_BREAK_NEW_MEMBER, HISTORY_CHANGE_BREAK_ENABLE, HISTORY_CHANGE_BREAK_RESET]
     HandshakeKind:
       type: string
       x-proto-enum: bebeberloga.v1.HandshakeKind
@@ -3861,7 +4111,7 @@ components:
       x-go-type: bebeberlogav1.RecreationReason
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       description: Почему группа заморожена и пересоздаётся (CRYPTO.md §2.10.1).
-      enum: [RECREATION_REASON_UNSPECIFIED, RECREATION_REASON_DISPUTE, RECREATION_REASON_JOURNAL_LOSS]
+      enum: [RECREATION_REASON_UNSPECIFIED, RECREATION_REASON_DISPUTE, RECREATION_REASON_JOURNAL_LOSS, RECREATION_REASON_PERSONAL_RESTORE]
     Group:
       type: object
       x-proto-message: bebeberloga.v1.Group
@@ -3900,6 +4150,7 @@ components:
         recreation_deferred_until:
           allOf: [{ $ref: '#/components/schemas/Timestamp' }]
           description: Подтверждённая жалоба отложена до этого момента — лимит пересозданий исчерпан (CRYPTO.md §2.9.4).
+        history_key_generation: { type: integer, description: Текущее поколение ключа истории канала (CRYPTO.md §6.3). }
     Handshake:
       type: object
       x-proto-message: bebeberloga.v1.Handshake
@@ -3918,6 +4169,8 @@ components:
         roster_hash:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
           description: Для commit — хэш состава после него по карте DS (CRYPTO.md §2.5).
+        history_change: { $ref: '#/components/schemas/HistoryChange' }
+        history_key_generation: { type: integer, description: Для commit — поколение ключа истории после него. }
     Welcome:
       type: object
       x-proto-message: bebeberloga.v1.Welcome
@@ -3932,6 +4185,9 @@ components:
         created_at: { $ref: '#/components/schemas/Timestamp' }
         epoch: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Эпоха, в которую вводит Welcome.' }
         seq: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Номер commit-а, создавшего Welcome (для жалобы).' }
+        history_bridge:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: Мост ключей истории через разрывы цепочки (CRYPTO.md §6.3.6); пусто, если не нужен.
     HistoryKeyBundle:
       type: object
       x-proto-message: bebeberloga.v1.HistoryKeyBundle
@@ -3943,8 +4199,34 @@ components:
         epoch: { $ref: '#/components/schemas/Int64' }
         blob:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
-          description: Связка, зашифрованная для эпохи (формат — CRYPTO.md).
+          description: Связка — головной ключ, зашифрованный для эпохи (CRYPTO.md §6.3.5).
         updated_at: { $ref: '#/components/schemas/Timestamp' }
+        generation: { type: integer, description: 'Головное поколение — открыто, DS сверяет с текущим.' }
+    HistoryKeyLink:
+      type: object
+      x-proto-message: bebeberloga.v1.HistoryKeyLink
+      x-go-type: bebeberlogav1.HistoryKeyLink
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [channel_id, generation, previous_generation, blob]
+      properties:
+        channel_id: { $ref: '#/components/schemas/Id' }
+        generation: { type: integer, minimum: 2 }
+        previous_generation: { type: integer, minimum: 1 }
+        blob:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: Ключ поколения `previous_generation` под подключом поколения `generation` (CRYPTO.md §6.3.4).
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+    HistoryBridge:
+      type: object
+      x-proto-message: bebeberloga.v1.HistoryBridge
+      x-go-type: bebeberlogav1.HistoryBridge
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [device_id, blob]
+      properties:
+        device_id: { $ref: '#/components/schemas/Id' }
+        blob:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: HPKE на ключ истории устройства (CRYPTO.md §6.3.6).
     RosterEntry:
       type: object
       x-proto-message: bebeberloga.v1.RosterEntry
@@ -3988,6 +4270,8 @@ components:
         - DISPUTE_REASON_BINDING_MISMATCH
         - DISPUTE_REASON_KEY_PACKAGE_EXPIRED
         - DISPUTE_REASON_RECREATION_INVALID
+        - DISPUTE_REASON_HISTORY_ROTATION_MISSING
+        - DISPUTE_REASON_HISTORY_LINK_INVALID
     RecreationPlan:
       type: object
       x-proto-message: bebeberloga.v1.RecreationPlan
@@ -4008,6 +4292,7 @@ components:
           description: Целевой состав новой группы (CRYPTO.md §2.10.3).
           items: { $ref: '#/components/schemas/Id' }
         reason: { $ref: '#/components/schemas/RecreationReason' }
+        next_generation: { type: integer, description: 'Поколение ключа истории, которое начнёт новая группа (CRYPTO.md §6.3.10).' }
 
     # --- голос и звуки -------------------------------------------------------
     VoiceJoin:

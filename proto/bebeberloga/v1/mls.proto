@@ -18,6 +18,22 @@ enum GroupKind {
   GROUP_KIND_CHAT = 1;
   // Короткоживущая группа звонка голосового канала или ЛС.
   GROUP_KIND_CALL = 2;
+  // Личная группа пользователя: все его устройства (CRYPTO.md §6.5).
+  GROUP_KIND_PERSONAL = 3;
+}
+
+// Изменение ключа истории в commit-е (`RosterDelta.history_change`, CRYPTO.md §6.3.3).
+enum HistoryChange {
+  HISTORY_CHANGE_UNSPECIFIED = 0;
+  HISTORY_CHANGE_NONE = 1;
+  // Новое поколение со ссылкой назад: Remove, срок 30 сут, пересоздание группы.
+  HISTORY_CHANGE_ROTATE = 2;
+  // Разрыв: вход нового пользователя при выключенной настройке «Новые участники видят историю».
+  HISTORY_CHANGE_BREAK_NEW_MEMBER = 3;
+  // Разрыв: настройку снова включили.
+  HISTORY_CHANGE_BREAK_ENABLE = 4;
+  // Разрыв: вход устройства пользователя со сменившимся ключом идентичности.
+  HISTORY_CHANGE_BREAK_RESET = 5;
 }
 
 // Состояние группы на DS (CRYPTO.md §2.10).
@@ -41,6 +57,9 @@ enum RecreationReason {
   RECREATION_REASON_DISPUTE = 1;
   // DS потерял хвост журнала (восстановление из копии); клиентам допустим откат эпох.
   RECREATION_REASON_JOURNAL_LOSS = 2;
+  // В личной группе не осталось устройств, кроме удаляемых; устройство, восстановленное ключом
+  // восстановления, пересоздаёт её из резервной копии (CRYPTO.md §6.5).
+  RECREATION_REASON_PERSONAL_RESTORE = 3;
 }
 
 // Состояние группы на сервере.
@@ -74,6 +93,8 @@ message Group {
   RecreationReason recreation_reason = 17;
   // Подтверждённая жалоба отложена до этого момента: лимит пересозданий исчерпан (CRYPTO.md §2.9.4).
   google.protobuf.Timestamp recreation_deferred_until = 18;
+  // Текущее поколение ключа истории канала (CRYPTO.md §6.3); сообщения обязаны быть обёрнуты им.
+  uint32 history_key_generation = 19;
 }
 
 enum HandshakeKind {
@@ -108,6 +129,9 @@ message Handshake {
   // Для commit: хэш состава после него по карте DS (CRYPTO.md §2.5), 32 байта. Клиент сверяет
   // его с хэшем своего дерева после merge.
   bytes roster_hash = 9;
+  // Для commit: изменение ключа истории и поколение после него (CRYPTO.md §6.3.3).
+  HistoryChange history_change = 10;
+  uint32 history_key_generation = 11;
 }
 
 // Welcome для устройства (RFC 9420 §12.4.3.1).
@@ -123,14 +147,36 @@ message Welcome {
   // CRYPTO.md §1.8, §2.9).
   uint64 epoch = 6;
   uint64 seq = 7;
+  // Мост: ключи истории через разрывы цепочки, HPKE на ключ истории устройства
+  // (CRYPTO.md §6.3.6); пусто, если не нужен.
+  bytes history_bridge = 8;
 }
 
-// Связка ключей истории канала, зашифрованная для эпохи группы (ADR-0015).
+// Связка ключей истории канала — головной ключ, зашифрованный для эпохи группы
+// (CRYPTO.md §6.3.5; ADR-0015, ADR-0020).
 message HistoryKeyBundle {
   string group_id = 1;
   uint64 epoch = 2;
   bytes blob = 3;
   google.protobuf.Timestamp updated_at = 4;
+  // Головное поколение — открыто, DS сверяет его с текущим поколением канала.
+  uint32 generation = 5;
+}
+
+// Ссылка цепочки ключей истории: ключ поколения `previous_generation`, зашифрованный подключом
+// поколения `generation` (CRYPTO.md §6.3.4). У разрывов ссылки нет.
+message HistoryKeyLink {
+  string channel_id = 1;
+  uint32 generation = 2;
+  uint32 previous_generation = 3;
+  bytes blob = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+// Мост для устройства, которое входит commit-ом (CRYPTO.md §6.3.6).
+message HistoryBridge {
+  string device_id = 1;
+  bytes blob = 2;
 }
 
 // Не используется в 1.0: GroupInfo сервер не хранит и не публикует (ADR-0019).
@@ -184,6 +230,10 @@ enum DisputeReason {
   DISPUTE_REASON_KEY_PACKAGE_EXPIRED = 9;
   // Пересозданная группа не прошла проверки законности (CRYPTO.md §2.10.6).
   DISPUTE_REASON_RECREATION_INVALID = 10;
+  // Нет обязательной ротации или разрыва ключа истории (CRYPTO.md §6.3.3).
+  DISPUTE_REASON_HISTORY_ROTATION_MISSING = 11;
+  // Ссылка цепочки ключей истории не расшифровывается в предыдущий ключ (CRYPTO.md §6.3.4).
+  DISPUTE_REASON_HISTORY_LINK_INVALID = 12;
 }
 
 // План пересоздания группы для назначенного создателя (CRYPTO.md §2.10.4).
@@ -200,4 +250,6 @@ message RecreationPlan {
   repeated string target_device_ids = 6;
   // Причина пересоздания: от неё зависит проверка точки согласия у клиентов (CRYPTO.md §2.10.6).
   RecreationReason reason = 7;
+  // Номер поколения ключа истории, которое начнёт новая группа (CRYPTO.md §6.3.10).
+  uint32 next_generation = 8;
 }

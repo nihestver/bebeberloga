@@ -52,6 +52,7 @@
 | `notification_settings` | Настройки уведомлений по сообществам и каналам | Решение показывать ли уведомление |
 | `limits` | Лимиты инстанса (`InstanceLimits`) | Счётчик символов, лимит вложений, пресет стрима |
 | `mls_pending` | Группы с недоставленными Welcome или handshake; `returning` — группы, куда устройство возвращается парой Remove + Add | Догнать MLS-состояние через REST до первого сообщения; группы с `returning` не догонять, а ждать Welcome; при `review_seq` — ответить на проверку после догона |
+| `identity_reset` | Действующий запрос сброса ключа идентичности (CRYPTO.md §6.3.9) | Предупреждение «Запрошен сброс твоих ключей» с отменой на старых устройствах и обратный отсчёт на новом (SCREENS/07 §4, §8) |
 | `device_returning` | Устройство не подключалось дольше горизонта офлайна (30 сут, CRYPTO.md §2.11) | Не обрабатывать старые handshake, сразу загрузить свежие KeyPackage, показать «Подключаемся к каналу…» (SCREENS/08 §1) |
 | `community_removals` | Сообщества, из которых пользователя удалили, пока устройство было офлайн, и показ которых оно не подтвердило | `Modal` «Тебя выгнали с сервера …» (FLOWS/10 ш. 3) даже после долгого офлайна; подтверждение — `DELETE /users/me/community-removals/{community_id}` |
 | `server_time` | Время сервера | Коррекция часов для таймеров |
@@ -120,7 +121,7 @@
 
 | Область | Кто получает | События |
 |---|---|---|
-| Свои устройства | Все устройства пользователя | `UserUpdated` (своё), `DeviceAdded/Verified/Removed`, `DeviceVerificationMessage`, `RelationshipUpdated/Removed`, `ReadStateUpdated`, `NotificationSettingsUpdated`, `CommunityCreated`, `CommunityRemoved`, `LockedChannelsUpdated`, `MlsWelcome`, `CallStarted/Ended`, `SoundAdded/Updated/Removed` для личных звуков |
+| Свои устройства | Все устройства пользователя | `UserUpdated` (своё), `DeviceAdded/Verified/Removed`, `DeviceVerificationMessage`, `IdentityResetRequested/Cancelled`, `RelationshipUpdated/Removed`, `ReadStateUpdated`, `NotificationSettingsUpdated`, `CommunityCreated`, `CommunityRemoved`, `LockedChannelsUpdated`, `MlsWelcome`, `CallStarted/Ended`, `SoundAdded/Updated/Removed` для личных звуков |
 | Видящие канал | Участники сообщества с правом `channel.see` на канал (или участники ЛС) | `MessageCreated/Updated/Deleted`, `TypingStarted`, `ChannelCreated/Updated/Deleted`, `VoicePresenceChanged`, `SoundPlayed` (только присутствующим в голосовом канале) |
 | Члены MLS-группы | Устройства, состоящие в группе (по данным DS) | `MlsHandshake`, `MlsGroupStateChanged`; `MlsUpdateRequested` — только онлайн-устройствам группы |
 | Участники сообщества | Все участники | `CommunityUpdated`, `CategoryCreated/Updated/Deleted`, `MemberJoined/Updated/Left`, `RoleCreated/Updated/Deleted`, `SoundAdded/Updated/Removed` для звуков сообщества, `UserUpdated` (чужой профиль) |
@@ -144,7 +145,7 @@
 | `ReadStateUpdated{ReadState}` | `PUT …/read-state` с другого устройства; сброс счётчиков сервером | Свои устройства |
 | `MlsHandshake{Handshake}` | Принят handshake (`POST /mls/groups/{id}/handshakes`) или сервер как external sender создал proposal | Члены группы |
 | `MlsWelcome{Welcome}` | Commit содержал Welcome для устройства | Устройство-адресат |
-| `MlsUpdateRequested{group_id, reason, designated_device_id, epoch}` | Накопились proposals external sender; плановая ротация; `POST /channels/{id}/mls/rotate`; пересоздание замороженной группы (`REASON_RECREATE`); замена ключа инстанса (`REASON_EXTERNAL_SENDER_ROTATION`). `REASON_HISTORY_BUNDLE` в 1.0 не используется (external commit нет, ADR-0019) | Онлайн-устройства группы; коммитит только `designated_device_id`. Нет commit-а эпохи за 3 с — сервер назначает следующее устройство новым событием (CRYPTO.md §2.6) |
+| `MlsUpdateRequested{group_id, reason, designated_device_id, epoch}` | Накопились proposals external sender; плановая ротация; `POST /channels/{id}/mls/rotate`; пересоздание замороженной группы (`REASON_RECREATE`); замена ключа инстанса (`REASON_EXTERNAL_SENDER_ROTATION`); повторное включение настройки «Новые участники видят историю» (`REASON_HISTORY_SETTING`, разрыв цепочки ключей истории). `REASON_HISTORY_BUNDLE` в 1.0 не используется (external commit нет, ADR-0019) | Онлайн-устройства группы; коммитит только `designated_device_id`. Нет commit-а эпохи за 3 с — сервер назначает следующее устройство новым событием (CRYPTO.md §2.6) |
 | `MlsGroupStateChanged{group_id, channel_id, state, review_seq, recreation_reason, recreation_deferred_until, successor_group_id}` | Смена состояния группы на DS (CRYPTO.md §2.9–§2.10): начало проверки спорного commit-а (`REVIEW`, клиент, применивший его, отвечает `POST …/handshakes/{seq}/ack`); жалоба отклонена или пересоздание отложено (`ACTIVE`); заморозка перед пересозданием (`FROZEN`); замена новой группой (`SUPERSEDED`) | Члены группы |
 | `PresenceUpdated{Presence}` | Первое подключение или последнее отключение устройства пользователя | Друзья и подписчики |
 | `VoicePresenceChanged{presence, left_channel_id, user_id}` | Вход в голос (`connecting: true`), подтверждение от медиасервера (`connecting: false`), `SetVoicePresence`, серверный mute/deafen, старт/стоп стрима, выход (`presence` пуст, `left_channel_id` задан) | Видящие канал |
@@ -167,6 +168,7 @@
 | `DeviceVerified{Device}` | `POST /devices/{id}/verify` | Свои устройства |
 | `DeviceRemoved{user_id, device_id}` | `DELETE /devices/{id}`, «это не я», «начать заново» | Свои устройства |
 | `DeviceVerificationMessage{request_id, from_device_id, payload}` | `POST /devices/{id}/verification/messages` | Устройство-адресат |
+| `IdentityResetRequested{IdentityResetRequest}` / `IdentityResetCancelled{request_id}` | `POST /users/me/identity-reset` с задержкой 24 ч / отмена `DELETE …/identity-reset` или подтверждение нового устройства другим способом (CRYPTO.md §6.3.9) | Свои подтверждённые устройства |
 | `RelationshipUpdated{Relationship}` / `RelationshipRemoved{user_id}` | Запрос в друзья, принятие, удаление, блокировка | Оба пользователя (у каждого своя сторона `kind`) |
 | `NotificationSettingsUpdated{NotificationSettings}` | REST настроек уведомлений | Свои устройства |
 

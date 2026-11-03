@@ -63,6 +63,8 @@
 | `REMOVAL_PENDING` | 409 | Commit от устройства, для которого опубликован Remove | |
 | `ALREADY_MEMBER` | 409 | Заявка на вход устройства, которое уже в группе | |
 | `GROUP_FROZEN` | 409 | MLS-группа заморожена или заменена новой при пересоздании (CRYPTO.md §2.10) | `successor_group_id`, если замена уже есть |
+| `IDENTITY_RESET_PENDING` | 409 | Сброс ключа идентичности ещё не применим — идёт задержка 24 ч (CRYPTO.md §6.3.9) | `retry_after_ms` |
+| `HISTORY_GENERATION_MISMATCH` | 409 | Сообщение обёрнуто не текущим поколением ключа истории канала (CRYPTO.md §6.2.8) | `current_generation`; клиент догоняет commit-ы и повторяет (до 3 раз) |
 | `GROUP_UNDER_REVIEW` | 409 | Идёт проверка спорного commit-а: commit-ы приостановлены, сообщения принимаются (CRYPTO.md §2.9.3) | |
 | `SOUND_SLOTS_FULL` | 409 | Слоты звуков заняты | `limit` |
 | `INVITE_EXPIRED` | 410 | Срок приглашения истёк | |
@@ -109,7 +111,7 @@
 | Пароль и email | `POST /auth/password/forgot`, `POST /auth/password/reset`, `POST /auth/password/change`, `POST /auth/email/change`, `POST /auth/email/change/confirm` | Смена пароля завершает остальные сессии, устройства и ключи остаются; смена email — с подтверждением на новый адрес (OPEN-QUESTIONS №2) |
 | Профиль | `GET/PATCH/DELETE /users/me`, `GET /users/availability`, `GET /users/{id}`, `GET /users/{id}/devices` | Имя, аватар из набора, «о себе», цвет баннера; вкладка «Безопасность» чужого профиля (только открытые данные устройств) |
 | Ключи идентичности и восстановление | `PUT /users/me/identity-key`, `GET/PUT /users/me/recovery-key`, `GET /users/me/recovery-key/identity` | Публикация ключа; копия приватного ключа, зашифрованная ключом восстановления; «начать заново» |
-| Устройства | `GET/DELETE /users/me/devices`, `PUT /devices/me/keys`, `PATCH/DELETE /devices/{id}`, `POST /devices/{id}/verify`, `POST /devices/{id}/reject`, `POST /devices/me/verification/request`, `POST /devices/{id}/verification/messages` | Подтверждение, выход, «это не я», обмен коммитментами |
+| Устройства | `GET/DELETE /users/me/devices`, `GET /users/{id}/devices?include_removed=`, `GET /users/{id}/identity-keys`, `GET/POST/DELETE /users/me/identity-reset`, `GET /users/me/personal-backup`, `PUT /devices/me/keys`, `PATCH/DELETE /devices/{id}`, `POST /devices/{id}/verify`, `POST /devices/{id}/reject`, `POST /devices/me/verification/request`, `POST /devices/{id}/verification/messages` | Подтверждение, выход, «это не я», обмен коммитментами; история ключей идентичности и записи удалённых устройств хранятся навсегда; отложенный сброс ключей (CRYPTO.md §6.2.8, §6.3.9) |
 | KeyPackage | `POST/GET /devices/me/key-packages`, `POST /users/{id}/key-packages/claim` | Склад одноразовых пакетов |
 | Push (S) | `PUT/DELETE /devices/me/push-endpoint` | Схема есть, реализация после 1.0 (OPEN-QUESTIONS №3) |
 | Друзья | `GET/POST /users/me/relationships`, `PUT/DELETE /users/me/relationships/{id}`, `PUT/DELETE /users/me/blocks/{id}` | FLOWS/05 |
@@ -121,7 +123,7 @@
 | Участники | `GET /communities/{id}/members`, `GET/DELETE /communities/{id}/members/{uid}` | Список с поиском; выгнать |
 | Баны | `GET /communities/{id}/bans`, `PUT/DELETE /communities/{id}/bans/{uid}` | Бан с удалением сообщений за период |
 | Приглашения | `GET/POST /communities/{id}/invites`, `GET /channels/{id}/invites`, `GET/DELETE /invites/{code}`, `POST /invites/{code}/accept` | FLOWS/04 |
-| Сообщения | `GET/POST /channels/{id}/messages`, `GET/DELETE /channels/{id}/messages/{mid}`, `GET /channels/{id}/pins`, `PUT/DELETE /channels/{id}/pins/{mid}`, `PUT /channels/{id}/mention-hints` | FLOWS/06 |
+| Сообщения | `GET/POST /channels/{id}/messages`, `GET/DELETE /channels/{id}/messages/{mid}`, `GET /channels/{id}/pins`, `PUT/DELETE /channels/{id}/pins/{mid}`, `PUT /users/me/mention-hints` (`PUT /channels/{id}/mention-hints` — `deprecated`), `GET /channels/{id}/history-key-links` | FLOWS/06; CRYPTO.md §6 |
 | Состояние чтения | `PUT /channels/{id}/read-state`, `POST /communities/{id}/read-state`, `POST /users/me/read-state` | |
 | Уведомления | `GET /users/me/notification-settings`, `PUT/DELETE /communities/{id}/notification-settings`, `PUT/DELETE /channels/{id}/notification-settings` | OPEN-QUESTIONS №6 |
 | Файлы | `POST /files`, `GET/DELETE /files/{id}`, `POST /files/{id}/complete` | Presigned URL, вложения до лимита инстанса |
@@ -134,9 +136,9 @@
 
 ### Отправка сообщения
 
-1. Клиент шифрует `MessageEnvelope` в текущей эпохе группы канала (MESSAGES.md), получает ключ сообщения и оборачивает его действующим ключом истории.
+1. Клиент подписывает `MessageEnvelope` ключом устройства, шифрует случайным ключом сообщения в `SealedMessage` и оборачивает ключ сообщения подключом текущего поколения ключа истории (CRYPTO.md §6.2). MLS в отправке сообщения не участвует.
 2. `POST /channels/{id}/messages {id, group_id, epoch, ciphertext, wrapped_message_key, history_key_generation, mention_hints[], broadcast_mention, attachment_ids[]}`.
-3. Сервер проверяет: устройство в группе; эпоха текущая (иначе `EPOCH_MISMATCH{current_epoch}`); `chat.post`; `chat.upload`, если есть вложения; `chat.ping_all`, если `broadcast_mention ≠ BROADCAST_MENTION_NONE` или среди хинтов есть хинт роли — без права сообщение принимается, но без уведомлений; размер шифртекста ≤ 128 КиБ; в ЛС — отсутствие блокировки.
+3. Сервер проверяет: устройство в группе; поколение ключа истории текущее (иначе `HISTORY_GENERATION_MISMATCH{current_generation}`; смена эпохи без нового поколения отправку не прерывает); `chat.post`; `chat.upload`, если есть вложения; `chat.ping_all`, если `broadcast_mention ≠ BROADCAST_MENTION_NONE` или среди хинтов есть хинт роли — без права сообщение принимается, но без уведомлений; размер шифртекста ≤ 128 КиБ; в ЛС — отсутствие блокировки.
 4. Сервер сохраняет метаданные (включая `size`) и шифртекст, рассылает `MessageCreated`, считает упоминания по хинтам, шлёт push без текста.
 
 ### Вложение
@@ -145,7 +147,7 @@
 
 ### Вступление по приглашению
 
-`GET /invites/{code}` (превью, ошибки приглашения) → `POST /invites/{code}/accept` → сервер добавляет участника с ролью «@все», рассылает `MemberJoined`, `CommunityCreated` новым устройствам и как external sender — Add-proposals (`MlsHandshake{from_external_sender}`) во все группы видимых каналов. Commit делает онлайн-участник, которого назначает DS (`MlsUpdateRequested.designated_device_id`, CRYPTO.md §2.6); если в группе никого нет в сети, вход ждёт его появления (ADR-0019). Новичок получает `MlsWelcome`, забирает `GET /mls/groups/{id}/history-key-bundle` и читает историю `GET /channels/{id}/messages?before=…` (ADR-0015).
+`GET /invites/{code}` (превью, ошибки приглашения) → `POST /invites/{code}/accept` → сервер добавляет участника с ролью «@все», рассылает `MemberJoined`, `CommunityCreated` новым устройствам и как external sender — Add-proposals (`MlsHandshake{from_external_sender}`) во все группы видимых каналов. Commit делает онлайн-участник, которого назначает DS (`MlsUpdateRequested.designated_device_id`, CRYPTO.md §2.6); если в группе никого нет в сети, вход ждёт его появления (ADR-0019). Новичок получает `MlsWelcome` (с мостом, если есть), забирает `GET /mls/groups/{id}/history-key-bundle?epoch=` и ссылки `GET /channels/{id}/history-key-links`, затем читает историю `GET /channels/{id}/messages?before=…` (ADR-0015, CRYPTO.md §6.3.8).
 
 ### Вход в голос
 
@@ -156,7 +158,7 @@
 Правила DS — CRYPTO.md §2; здесь — как они ложатся на REST.
 
 - `POST /mls/groups` регистрирует группу, привязывает к каналу и принимает начальную связку ключей истории. При пересоздании замороженной группы (`predecessor_group_id`) тем же запросом идут начальный commit и Welcome; DS принимает ровно одну новую группу на замороженную (CRYPTO.md §2.10.5).
-- `POST /mls/groups/{id}/handshakes` принимает только commit участника (`PrivateMessage`, ADR-0016 п. 2) и только для текущей эпохи; commit несёт Welcome новых устройств и связку для новой эпохи **одним запросом** — состояние группы на сервере меняется атомарно. Предложения публикует только сервер как external sender (`PublicMessage` с `ProposalAAD`, CRYPTO.md §2.3); предложение участника — `UNAUTHORIZED_CHANGE`.
+- `POST /mls/groups/{id}/handshakes` принимает только commit участника (`PrivateMessage`, ADR-0016 п. 2) и только для текущей эпохи; commit несёт Welcome новых устройств, связку для новой эпохи, ссылку цепочки ключей истории при ротации, мосты входящим устройствам и (в личной группе) резервную копию поколения **одним запросом** — состояние группы на сервере меняется атомарно (CRYPTO.md §6.3). DS по `RosterDelta.history_change` ведёт текущее поколение ключа истории канала. Предложения публикует только сервер как external sender (`PublicMessage` с `ProposalAAD`, CRYPTO.md §2.3); предложение участника — `UNAUTHORIZED_CHANGE`.
 - **External commit в 1.0 не используется, GroupInfo сервер не хранит** (ADR-0019): на `HANDSHAKE_KIND_EXTERNAL_COMMIT` — `EXTERNAL_COMMIT_UNSUPPORTED`; `GET …/group-info`, `PUT …/history-key-bundle`, поля `encrypted_group_info` помечены `deprecated`.
 - Commit делает устройство, которое назначает DS (`MlsUpdateRequested.designated_device_id`); при подтверждении нового устройства — в первую очередь подтвердившее (CRYPTO.md §2.6).
 - Сервер читает лишь открытый заголовок и `authenticated_data` (`RosterDelta`): по ним он ведёт карту состава (`GET …/roster`, `Handshake.roster_hash`), проверяет, что вошли все опубликованные Remove, и считает лимит листьев. Проверить содержимое commit-а он не может — это делают клиенты, а при отказе подают жалобу (`POST …/disputes`). Личная жалоба и жалоба на commit, поверх которого уже есть другие, лечатся возвратом одного устройства. Структурная жалоба на последний commit запускает проверку: commit-ы приостановлены (`GROUP_UNDER_REVIEW`), сообщения идут, устройства, применившие спорный commit, отвечают `POST …/handshakes/{seq}/ack`. По итогам DS возвращает пожаловавшихся или замораживает группу (`GROUP_FROZEN`), и назначенный участник пересоздаёт её (`GET …/recreation`, `POST …/recreation/key-packages`, `POST /mls/groups`). Все смены состояния — событие `MlsGroupStateChanged`.

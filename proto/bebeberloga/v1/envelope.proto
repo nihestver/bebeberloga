@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2026 Bebeberloga contributors
 // SPDX-License-Identifier: Apache-2.0
 
-// Конверт application-сообщения MLS: то, что лежит внутри шифртекста
-// `MessageMeta.ciphertext`. Сервер этот файл не использует — он не видит
-// открытого текста. Правила и лимиты — docs/protocol/MESSAGES.md.
+// Конверт сообщения: то, что лежит внутри `MessageMeta.ciphertext` (SealedMessage,
+// CRYPTO.md §6.2) вместе с подписью устройства-отправителя. Сервер этот файл не использует —
+// он не видит открытого текста. Правила и лимиты — docs/protocol/MESSAGES.md.
 syntax = "proto3";
 
 package bebeberloga.v1;
@@ -23,9 +23,13 @@ message MessageEnvelope {
     ReactionBody reaction = 13;
     PinBody pin = 14;
     FileKeyBody file_key = 15;
-    CallKeyBody call_key = 16;
-    HistoryKeysBody history_keys = 17;
+    // Не используется в 1.0: ключи медиа выводятся из MLS-Exporter (CRYPTO.md §5.5).
+    CallKeyBody call_key = 16 [deprecated = true];
+    // Не используется в 1.0: ключи поколений выводятся из exporter, через разрыв — мостом (CRYPTO.md §6.6).
+    HistoryKeysBody history_keys = 17 [deprecated = true];
     DeviceNoticeBody device_notice = 18;
+    // Только в личном канале пользователя (CRYPTO.md §6.5).
+    PersonalSyncBody personal_sync = 20;
   }
   // 19 — poll_vote (C, опросы), зарезервировано.
   reserved 19;
@@ -134,21 +138,26 @@ message FileKeyBody {
   FileRef file = 2;
 }
 
-// Материал ключа звонка. Основной путь вывода SFrame-ключей — MLS exporter группы звонка
-// (ADR-0004 п. 4); этот тип зарезервирован для случаев, которые опишет CRYPTO.md (B2).
+// Не используется в 1.0 (CRYPTO.md §5.5): ключи медиа выводятся только из MLS-Exporter группы звонка.
 message CallKeyBody {
+  option deprecated = true;
+
   string channel_id = 1;
   uint64 epoch = 2;
   bytes key_material = 3;
 }
 
-// Ключи истории канала (ADR-0015), передаваемые внутри группы при вступлении или ротации.
-// Точный состав и порядок поколений — CRYPTO.md (B2).
+// Не используется в 1.0 (CRYPTO.md §6.6): ключ поколения выводится из MLS-Exporter, через
+// разрыв цепочки ключи доставляет мост (HPKE на ключ истории устройства).
 message HistoryKeysBody {
+  option deprecated = true;
+
   repeated HistoryKey keys = 1;
 }
 
 message HistoryKey {
+  option deprecated = true;
+
   // Поколение ключа; растёт при каждой смене.
   uint32 generation = 1;
   bytes key = 2;
@@ -169,4 +178,25 @@ message DeviceNoticeBody {
   Kind kind = 1;
   string user_id = 2;
   string device_name = 3;
+}
+
+// Синхронизация между устройствами пользователя через его личный канал (CRYPTO.md §6.5;
+// OPEN-QUESTIONS №7). Действует последнее значение по `MessageEnvelope.message_id`.
+message PersonalSyncBody {
+  repeated VerificationStatus verification = 1;
+  repeated TrustedDomain trusted_domains = 2;
+}
+
+// Статус проверки собеседника — для конкретного ключа идентичности (CRYPTO.md §3.2).
+message VerificationStatus {
+  string user_id = 1;
+  bytes identity_key = 2;
+  bool verified = 3;
+  google.protobuf.Timestamp at = 4;
+}
+
+// «Доверять этому домену» при переходе по ссылкам (SCREENS/08 §3).
+message TrustedDomain {
+  string domain = 1;
+  bool trusted = 2;
 }

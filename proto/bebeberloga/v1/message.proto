@@ -38,24 +38,28 @@ message MessageMeta {
   // UUIDv7, сгенерирован клиентом; задаёт порядок в ленте.
   string id = 1;
   string channel_id = 2;
-  // MLS-группа и эпоха, в которой зашифрован конверт.
+  // MLS-группа канала и эпоха группы у отправителя в момент отправки — для диагностики;
+  // сервер проверяет не эпоху, а поколение ключа истории (CRYPTO.md §6.2.8).
   string group_id = 3;
   uint64 epoch = 4;
   string author_user_id = 5;
   string author_device_id = 6;
   // Время приёма сервером.
   google.protobuf.Timestamp created_at = 7;
-  // MLS PrivateMessage (RFC 9420 §6.3) с конвертом MessageEnvelope внутри; до 128 КиБ
-  // (обоснование — STATUS.md). Пусто у tombstone и системных сообщений.
+  // SealedMessage (CRYPTO.md §6.2.3): конверт MessageEnvelope и подпись устройства-отправителя,
+  // зашифрованные XChaCha20-Poly1305 ключом сообщения; длина кратна 256 байтам; не MLS.
+  // До 128 КиБ (обоснование — STATUS.md). Пусто у tombstone и системных сообщений.
   bytes ciphertext = 8;
   // Размер шифртекста в байтах (ARCHITECTURE.md §4.4); сохраняется и у tombstone.
   uint32 size = 9;
-  // Ключ сообщения, обёрнутый действующим ключом истории канала (ADR-0015; формат — CRYPTO.md).
+  // Ключ сообщения, обёрнутый подключом текущего поколения ключа истории канала
+  // (WrappedMessageKey, CRYPTO.md §6.2.4; ADR-0020).
   bytes wrapped_message_key = 10;
   // Поколение ключа истории, которым обёрнут ключ сообщения.
   uint32 history_key_generation = 11;
-  // mention-hint = HMAC(id упоминаемого пользователя или роли, секрет канала из MLS exporter).
-  // Сервер сравнивает с хинтами, заранее присланными участниками, не узнавая адресата.
+  // mention-hint — 16 байт HMAC подключом поколения ключа истории от id упоминаемого пользователя
+  // или роли (CRYPTO.md §6.4). Сервер сравнивает с хинтами, присланными участниками
+  // (`PUT /users/me/mention-hints`), в том числе задним числом.
   repeated bytes mention_hints = 12;
   BroadcastMention broadcast_mention = 13;
   repeated Attachment attachments = 14;

@@ -9,7 +9,7 @@
 | [`GATEWAY.md`](GATEWAY.md) | WebSocket-шлюз: `Identify` → `Ready`, события с монотонным `seq`, heartbeat, `Resume(seq)` с буфером 5 минут, сжатие zstd, лимиты и коды закрытия 41xx, адресация событий, команды клиента (включая `PlaySound`), шардинг по пользователю | B1 | черновик 2 (после ревью), готов для B6 |
 | [`REST.md`](REST.md) + [`openapi.yaml`](openapi.yaml) | Контракт REST (OpenAPI 3.0.3, Apache-2.0), из которого генерируются обработчики и клиент (`just gen`, ADR-0017); модели — Protobuf через `x-proto-message`/`x-go-type`: учётная запись, устройства и KeyPackage, сообщества/каналы/роли/участники/приглашения/баны, история сообщений (пагинация по UUIDv7), файлы, MLS DS, голос, саундборд, уведомления; таблица ошибок и коды прав | B1 | черновик 2, `redocly lint` чистый |
 | [`MESSAGES.md`](MESSAGES.md) | Конверт application-сообщения MLS по типам (text, edit, delete, reaction, pin, file-key, call-key, history-keys, device-notice; poll-vote зарезервирован), упоминания и mention-hint, лимиты (текст 4 000, шифртекст 128 КиБ) | B1 (крипто-часть — B2) | черновик 2 |
-| [`CRYPTO.md`](CRYPTO.md) | MLS-профиль, ключи идентичности и устройств, Delivery Service (карта состава, назначенный коммитер, жалобы, пересоздание группы, горизонт офлайна, ключ инстанса), вывод SFrame-ключей, ключи истории и связки, формат блобов, формальные инварианты | B2 | черновик 1: §0–§5, §7, §8 (без §6) и инварианты I1–I33; §6 и §9 — после решений по Р1, Р2, Р4, Р5 |
+| [`CRYPTO.md`](CRYPTO.md) | MLS-профиль, ключи идентичности и устройств, Delivery Service (карта состава, назначенный коммитер, жалобы, пересоздание группы, горизонт офлайна, ключ инстанса), вывод SFrame-ключей, ключи истории и связки, формат блобов, формальные инварианты | B2 | черновик 1: §0–§10, инварианты §1–§5 и §7; инварианты §6 и §9 — следующим шагом |
 | `MEDIA.md` | Комнаты SFU, токены с правами, webhooks, смена эпохи звонка, лимиты качества стрима | B7 (контракт `voice/*` и `PlaySound`/`SoundPlayed` уже в REST и gateway) | не начат |
 | [`../../proto/`](../../proto/bebeberloga/v1) | Protobuf-схемы `bebeberloga.v1` — единственный источник моделей для Go/TS/Kotlin/Swift: `common`, `error`, `identity`, `community`, `sound`, `message`, `envelope`, `mls`, `gateway` | B1 | черновик 2, `buf lint` чистый |
 
@@ -56,9 +56,9 @@
 | 4.2 Обмен коммитментами, сравнение картинок | `POST /devices/{id}/verification/messages` ↔ событие `DeviceVerificationMessage` |
 | 4.3 Подпись ключа нового устройства | клиент |
 | 4.4 Пометка `verified`, Add-предложения во все группы | `POST /devices/{id}/verify` → `DeviceVerified`, `MlsHandshake{from_external_sender, HANDSHAKE_KIND_PROPOSAL}`; `MlsUpdateRequested{designated_device_id}` — в первую очередь подтвердившему устройству; commit — `POST /mls/groups/{id}/handshakes`; новое устройство загружает KeyPackage `POST /devices/me/key-packages` сразу после `DeviceVerified` |
-| 4.5 История на новом устройстве | `MlsWelcome` → `GET /mls/groups/{id}/history-key-bundle` → `GET /channels/{id}/messages?before=` |
+| 4.5 История на новом устройстве | `MlsWelcome` (с мостом `history_bridge`, если были разрывы; при выключенной истории — с момента входа пользователя) → `GET /mls/groups/{id}/history-key-bundle?epoch=` → `GET /channels/{id}/history-key-links` → `GET /channels/{id}/messages?before=` (CRYPTO.md §6.3.7–§6.3.8) |
 | 5 Ключом восстановления | `GET /users/me/recovery-key/identity` → клиент расшифровывает → `POST /devices/{id}/verify` (своё устройство) → далее 4.4 |
-| 6 «Начать заново» | `PUT /users/me/identity-key {reset: true}` → `DeviceRemoved` и `SessionInvalid{REASON_DEVICE_REMOVED}` (код 4109) прочим устройствам, Remove-предложения; `UserUpdated` (новый `identity_pubkey`); системное «Ключи изменились» — конверт `DeviceNoticeBody{KIND_IDENTITY_KEY_CHANGED}` от клиента |
+| 6 «Начать заново» | `POST /users/me/identity-reset` → `IdentityResetRequest` (PENDING на 24 ч при недавно активном подтверждённом устройстве: `IdentityResetRequested` ему, письмо; иначе READY); отмена — `DELETE /users/me/identity-reset` → `IdentityResetCancelled`; применение — `PUT /users/me/identity-key {reset: true, reset_request_id, recovery_public_key}` (раньше срока — `IDENTITY_RESET_PENDING`) → `DeviceRemoved` и `SessionInvalid{REASON_DEVICE_REMOVED}` (код 4109) прочим устройствам, Remove-предложения; `UserUpdated` (новый `identity_pubkey`, прежний — в `GET /users/{id}/identity-keys`); обязательный новый ключ восстановления; истории до сброса новое устройство не получает — разрыв `break_reset` у коммитеров (CRYPTO.md §6.3.9); системное «Ключи изменились» — конверт `DeviceNoticeBody{KIND_IDENTITY_KEY_CHANGED}` от клиента |
 | 7 «Это не я» | `POST /devices/{id}/reject` → `DeviceRemoved`; смена пароля `POST /auth/password/change` |
 | Таймаут 10 минут, «отправить снова» | `VERIFICATION_EXPIRED`; `POST /devices/me/verification/request` → повторный `DeviceAdded` |
 | Возвращение 1 Устройство дольше горизонта офлайна | `Identify` → `Ready.device_returning`, `MlsPending.returning`; `POST /devices/me/key-packages`; сервер публикует Remove + Add (`MlsHandshake{from_external_sender}`), `MlsUpdateRequested{designated_device_id}` |
@@ -92,7 +92,7 @@
 | Вступить 1 Превью; ошибки | `GET /invites/{code}` → `INVITE_EXPIRED`, `INVITE_REVOKED`, `INVITE_USES_EXHAUSTED`, `BANNED`, `CHANNEL_MEMBER_LIMIT`, `INVITES_PAUSED` |
 | Вступить 2 Принять | `POST /invites/{code}/accept` → `MemberJoined` участникам, `CommunityCreated` своим устройствам |
 | Вступить 3 Add-предложения, Skeleton до commit; ожидание, если никого нет в сети | `MlsHandshake{from_external_sender}` членам групп; `MlsUpdateRequested{designated_device_id}`; commit назначенным онлайн-участником; без онлайн-участников заявка ждёт (ADR-0019) |
-| Вступить 4 Связка ключей истории; история | `MlsWelcome` → `GET /mls/groups/{id}/history-key-bundle` → `GET /channels/{id}/messages` (при выключенной истории сервер не отдаёт сообщения до вступления) |
+| Вступить 4 Связка ключей истории; история | `MlsWelcome` → `GET /mls/groups/{id}/history-key-bundle` → `GET /channels/{id}/history-key-links` → `GET /channels/{id}/messages` (при выключенной истории вход — разрыв цепочки, сервер не отдаёт сообщения до вступления; повторное включение — тоже разрыв, CRYPTO.md §6.3.3) |
 | Вступить 5 Системное сообщение о входе | `MessageCreated{system: KIND_MEMBER_JOINED}` в канале системных сообщений |
 
 ### 05 — Друзья и личные сообщения
@@ -113,9 +113,9 @@
 | Шаг | Вызов или событие |
 |---|---|
 | Отправка 1 UUIDv7, «отправляется» | клиент |
-| Отправка 2 Шифрование и отправка | `POST /channels/{id}/messages {id, group_id, epoch, ciphertext, wrapped_message_key, mention_hints, broadcast_mention, attachment_ids}` |
+| Отправка 2 Шифрование и отправка | `POST /channels/{id}/messages {id, group_id, epoch, ciphertext (SealedMessage), wrapped_message_key, history_key_generation, mention_hints, broadcast_mention, attachment_ids}` (CRYPTO.md §6.2) |
 | Отправка 3 Права, сохранение, рассылка, push | сервер: `chat.post`, `chat.upload`, `chat.ping_all`; `MessageCreated`; push без текста |
-| Отправка 4 Ошибки | очередь без сети; `PERMISSION_DENIED{missing_permission}`; `EPOCH_MISMATCH{current_epoch}` → `GET /mls/groups/{id}/handshakes?after_seq=` и повтор до 3 раз |
+| Отправка 4 Ошибки | очередь без сети; `PERMISSION_DENIED{missing_permission}`; `HISTORY_GENERATION_MISMATCH{current_generation}` → `GET /mls/groups/{id}/handshakes?after_seq=` и повтор до 3 раз |
 | Отправка 5 У других | `MessageCreated`; бейдж по `mention_hints`/`broadcast_mention`; `ReadStateUpdated` |
 | Ответ | `TextBody.reply_to` |
 | Правка | `MessageCreated` с конвертом `EditBody` |

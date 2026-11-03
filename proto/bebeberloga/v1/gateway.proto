@@ -101,6 +101,8 @@ message ServerFrame {
     RelationshipUpdated relationship_updated = 165;
     RelationshipRemoved relationship_removed = 166;
     NotificationSettingsUpdated notification_settings_updated = 167;
+    IdentityResetRequested identity_reset_requested = 168;
+    IdentityResetCancelled identity_reset_cancelled = 169;
   }
 }
 
@@ -156,6 +158,9 @@ message Ready {
   // `MlsPending.returning` не обрабатываются, устройство загружает свежие KeyPackage и входит
   // заново по Welcome (CRYPTO.md §2.11, FLOWS/02 «Возвращение после долгого перерыва»).
   bool device_returning = 16;
+  // Действующий запрос сброса ключа идентичности пользователя (CRYPTO.md §6.3.9): на старых
+  // устройствах — предупреждение с отменой (SCREENS/07 §8), на новом — обратный отсчёт (§4).
+  IdentityResetRequest identity_reset = 17;
 }
 
 // Сообщество целиком, кроме списка участников.
@@ -337,6 +342,9 @@ message MlsUpdateRequested {
     REASON_RECREATE = 5;
     // Перевести группу на новый ключ external sender инстанса (CRYPTO.md §2.12).
     REASON_EXTERNAL_SENDER_ROTATION = 6;
+    // Настройку «Новые участники видят историю» снова включили — нужен разрыв цепочки ключей
+    // истории (CRYPTO.md §6.3.3).
+    REASON_HISTORY_SETTING = 7;
   }
   Reason reason = 2;
   // Устройство, которое должно сделать commit (или создать новую группу при REASON_RECREATE).
@@ -524,6 +532,17 @@ message DeviceVerified {
 message DeviceRemoved {
   string user_id = 1;
   string device_id = 2;
+}
+
+// Запрошен сброс ключа идентичности пользователя (CRYPTO.md §6.3.9). Своим подтверждённым
+// устройствам; они показывают предупреждение с отменой (SCREENS/07 §8).
+message IdentityResetRequested {
+  IdentityResetRequest request = 1;
+}
+
+// Сброс отменён (с другого устройства или потому, что новое устройство подтвердили иначе).
+message IdentityResetCancelled {
+  string request_id = 1;
 }
 
 // Обмен коммитментами между старым и новым устройством при подтверждении (FLOWS/02 ш. 4.2).
