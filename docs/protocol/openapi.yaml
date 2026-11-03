@@ -2006,7 +2006,8 @@ paths:
         членство устройства в группе, поколение ключа истории (текущее поколение канала) и размер
         шифртекста (≤ 128 КиБ). Ошибки: PERMISSION_DENIED, HISTORY_GENERATION_MISMATCH (клиент
         догоняет commit-ы и повторяет до 3 раз; смена эпохи без нового поколения отправку не
-        прерывает, CRYPTO.md §6.2.8), GROUP_FROZEN, MESSAGE_EXISTS, ATTACHMENT_INVALID,
+        прерывает, CRYPTO.md §6.2.8), MESSAGE_ID_OUT_OF_WINDOW (время в `id` старше 30 сут или
+        больше чем на 5 мин впереди), GROUP_FROZEN, MESSAGE_EXISTS, ATTACHMENT_INVALID,
         TOO_MANY_ATTACHMENTS, PAYLOAD_TOO_LARGE, BLOCKED (ЛС). Рассылает MessageCreated и push без текста.
       operationId: createMessage
       requestBody:
@@ -3346,6 +3347,7 @@ components:
         - ERROR_CODE_GROUP_UNDER_REVIEW
         - ERROR_CODE_HISTORY_GENERATION_MISMATCH
         - ERROR_CODE_NOT_DESIGNATED
+        - ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW
         - ERROR_CODE_SOUND_INVALID
         - ERROR_CODE_SOUND_SLOTS_FULL
 

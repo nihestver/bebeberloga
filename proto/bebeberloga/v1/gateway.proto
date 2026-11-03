@@ -227,8 +227,13 @@ message SessionInvalid {
     REASON_DEVICE_REMOVED = 3;
     // Несовместимая версия протокола.
     REASON_PROTOCOL_MISMATCH = 4;
+    // Устройство удалено сбросом ключа идентичности («Начать заново»): клиент не стирает базу
+    // молча, а спрашивает «Это был ты?» (CRYPTO.md §3.7, SCREENS/07 §8).
+    REASON_DEVICE_REMOVED_BY_RESET = 5;
   }
   Reason reason = 1;
+  // Для REASON_DEVICE_REMOVED_BY_RESET: запрос сброса (с какого устройства и когда).
+  IdentityResetRequest identity_reset = 2;
 }
 
 // Heartbeat: клиент шлёт каждые heartbeat_interval_ms с последним seq, сервер отвечает HeartbeatAck.
@@ -532,6 +537,8 @@ message DeviceVerified {
 message DeviceRemoved {
   string user_id = 1;
   string device_id = 2;
+  // Удалено сбросом ключа идентичности (CRYPTO.md §3.7).
+  bool by_identity_reset = 3;
 }
 
 // Запрошен сброс ключа идентичности пользователя (CRYPTO.md §6.3.9). Своим подтверждённым
