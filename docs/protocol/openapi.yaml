@@ -2464,7 +2464,8 @@ paths:
         для новых устройств и связка ключей истории для новой эпохи — так состояние группы на сервере
         меняется атомарно (ADR-0015). Повтор уже принятого commit-а получает тот же ответ.
 
-        Ошибки: NOT_GROUP_MEMBER, REMOVAL_PENDING, PROPOSALS_MISSING, UNAUTHORIZED_CHANGE (в том числе
+        Commit принимается только от устройства, назначенного на эту эпоху (`MlsUpdateRequested.designated_device_id`), иначе
+        NOT_DESIGNATED. Ошибки: NOT_GROUP_MEMBER, REMOVAL_PENDING, PROPOSALS_MISSING, UNAUTHORIZED_CHANGE (в том числе
         `kind = HANDSHAKE_KIND_PROPOSAL`: предложения публикует только сервер), BAD_DELTA,
         BAD_WELCOME, BAD_MESSAGE, CHANNEL_MEMBER_LIMIT, GROUP_FROZEN. External commit в 1.0 не
         используется: на `kind = HANDSHAKE_KIND_EXTERNAL_COMMIT` — EXTERNAL_COMMIT_UNSUPPORTED
@@ -2706,12 +2707,12 @@ paths:
         Клиент не принял commit номер `seq` (или Welcome, созданный этим commit-ом) по причине
         `reason` (CRYPTO.md §2.9). DS принимает жалобу от устройства, которое было в группе в базовой
         эпохе commit-а или было адресатом его Welcome, не является автором и не имеет ожидающего
-        Remove. Дальше — по виду жалобы (§2.9.2): личная причина, жалоба адресата Welcome и
-        структурная жалоба не на последний commit группы — возврат подавшего устройства (как
-        `POST …/resync`), без заморозки; структурная жалоба на последний commit — проверка
-        (GROUP_STATE_REVIEW, событие MlsGroupStateChanged), по итогам которой DS либо возвращает
-        пожаловавшихся, либо замораживает и пересоздаёт группу (§2.10), либо откладывает пересоздание
-        сверх лимита. Не чаще раза в час на устройство и группу (RATE_LIMITED). Ошибки
+        Remove. Дальше решает подтверждение commit-а другим пользователем (§2.9.2): commit уже
+        подтверждён (`ack` или commit поверх него от устройства другого пользователя, кроме автора) —
+        жалоба личная, возврат подавшего устройства (как `POST …/resync`) без заморозки; не
+        подтверждён — проверка с любой причиной (GROUP_STATE_REVIEW, событие MlsGroupStateChanged),
+        по итогам которой DS либо возвращает пожаловавшихся, либо замораживает и пересоздаёт группу
+        (§2.10), либо откладывает пересоздание сверх лимита. Не чаще раза в час на устройство и группу (RATE_LIMITED). Ошибки
         NOT_GROUP_MEMBER, REMOVAL_PENDING, NOT_FOUND.
       operationId: disputeHandshake
       requestBody:
@@ -3316,6 +3317,7 @@ components:
         - ERROR_CODE_GROUP_FROZEN
         - ERROR_CODE_GROUP_UNDER_REVIEW
         - ERROR_CODE_HISTORY_GENERATION_MISMATCH
+        - ERROR_CODE_NOT_DESIGNATED
         - ERROR_CODE_SOUND_INVALID
         - ERROR_CODE_SOUND_SLOTS_FULL
 

@@ -134,6 +134,8 @@ enum ErrorCode {
   ERROR_CODE_GROUP_UNDER_REVIEW = 514;
   // Сообщение обёрнуто не текущим поколением ключа истории канала (CRYPTO.md §6.2.8). HTTP 409.
   ERROR_CODE_HISTORY_GENERATION_MISMATCH = 515;
+  // Commit не от устройства, назначенного DS на текущую эпоху (CRYPTO.md §2.6). HTTP 409.
+  ERROR_CODE_NOT_DESIGNATED = 516;
 
   // --- саундборд ---------------------------------------------------------
   // Звук не в формате Opus/ogg (клиент перекодирует перед загрузкой, FLOWS/09 ш. 2)
