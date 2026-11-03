@@ -2356,7 +2356,8 @@ paths:
         канала уже есть действующая группа этой роли.
 
         Пересоздание замороженной группы (CRYPTO.md §2.10): `predecessor_group_id` задан, и тем же
-        запросом идут начальный commit, добавляющий целевой состав, и Welcome — DS применяет всё
+        запросом идут начальный commit, добавляющий начальный состав (устройства старой группы без
+        удалённых; заявки входят следующим Add, §2.10.3), и Welcome — DS применяет всё
         атомарно, переключает канал на новую группу и ставит старой GROUP_STATE_SUPERSEDED. На одну
         замороженную группу DS принимает ровно одну новую; второй создатель получает GROUP_FROZEN с
         `successor_group_id`. Ошибки BAD_DELTA, BAD_WELCOME, UNAUTHORIZED_CHANGE,
@@ -2387,11 +2388,6 @@ paths:
                   type: integer
                   minimum: 1
                   description: Головное поколение связки — открыто, DS сверяет его с поколением после commit-а (CRYPTO.md §6.3.5).
-                history_key_link: { $ref: '#/components/schemas/HistoryKeyLink' }
-                history_bridges:
-                  type: array
-                  description: Мосты ключей истории устройствам, которые входит этот commit (CRYPTO.md §6.3.6).
-                  items: { $ref: '#/components/schemas/HistoryBridge' }
                 personal_backup: { $ref: '#/components/schemas/PersonalBackup' }
                 predecessor_group_id:
                   allOf: [{ $ref: '#/components/schemas/Id' }]
@@ -2511,7 +2507,7 @@ paths:
                 history_key_link: { $ref: '#/components/schemas/HistoryKeyLink' }
                 history_bridges:
                   type: array
-                  description: Мосты ключей истории устройствам, которые входит этот commit (CRYPTO.md §6.3.6).
+                  description: Мосты ключей истории устройствам, которые добавляет этот commit (CRYPTO.md §6.3.6).
                   items: { $ref: '#/components/schemas/HistoryBridge' }
                 personal_backup: { $ref: '#/components/schemas/PersonalBackup' }
       responses:
@@ -4344,7 +4340,7 @@ components:
           description: Поколение ключа истории в `last_agreed_epoch` (для тега непрерывности); 0 у групп звонков.
         target_device_ids:
           type: array
-          description: Целевой состав новой группы (CRYPTO.md §2.10.3).
+          description: Начальный состав новой группы — устройства старой группы в `last_agreed_epoch` без удалённых (CRYPTO.md §2.10.3); остальные входят следующим Add.
           items: { $ref: '#/components/schemas/Id' }
         reason: { $ref: '#/components/schemas/RecreationReason' }
         next_generation: { type: integer, description: 'Поколение ключа истории, которое начнёт новая группа (CRYPTO.md §6.3.10).' }
