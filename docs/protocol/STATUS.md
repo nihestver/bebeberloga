@@ -27,9 +27,9 @@
 
 ## Согласование со спайком S1 (ADR-0016)
 
-ADR-0016 пока в статусе «Предложено»; контракт опирается на его п. 2–4 как на ориентир для B02. Если B02 решит иначе, `mls.proto`, `openapi.yaml` и `REST.md` правятся вместе с `CRYPTO.md`.
+Контракт следует п. 2–4 ADR-0016. Если B02 уточнит эти пункты в `CRYPTO.md`, `mls.proto`, `openapi.yaml` и `REST.md` правятся вместе с ним.
 
-- Proposal и Commit участников — `PrivateMessage` (политика `PURE_CIPHERTEXT`); открытыми (`PublicMessage`) по RFC 9420 идут только сообщения не-участников: предложения сервера как external sender и external commit присоединяющегося. Сервер сверяет вид сообщения с `kind`. Открытый вопрос ADR-0016 п. 4 (Add только по предложению сервера) касается и external commit: если B02 запретит его или ограничит, из контракта уйдёт `HANDSHAKE_KIND_EXTERNAL_COMMIT`. В `mls.proto`, `openapi.yaml` и `REST.md` блоб handshake описан так; сервер читает лишь открытый заголовок.
+- Proposal и Commit участников — `PrivateMessage` (политика `PURE_CIPHERTEXT`); открытыми (`PublicMessage`) по RFC 9420 идут только сообщения не-участников: предложения сервера как external sender и external commit присоединяющегося. Сервер сверяет вид сообщения с `kind`. Допускает ли клиент external commit и в каких случаях, решает B02 (ADR-0016 п. 3–4): если B02 запретит его или ограничит, из контракта уйдёт `HANDSHAKE_KIND_EXTERNAL_COMMIT`. В `mls.proto`, `openapi.yaml` и `REST.md` блоб handshake описан так; сервер читает лишь открытый заголовок.
 - Хранение невыполненных Remove на DS, отказ в commit от устройства с ожидающим Remove, адресация Remove (leaf index или id устройства) и восстановление рассинхрона — B02/S4; контракт `POST /mls/groups/{id}/handshakes` их не ограничивает, при необходимости B02 добавит код ошибки.
 
 ## Собственные значения
