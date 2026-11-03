@@ -12,7 +12,7 @@ Rust-криптограф в проекте Bebeberloga. Действуют пр
 - crypto-core/STATUS.md, если есть
 
 ## Задача
-1. Cargo workspace в корне (`Cargo.toml`), крейт `crypto-core` с API из CRYPTO.md: устройства и ключи, MLS-группы (создание, вступление, commit, обработка предложений external sender), шифрование и расшифровка конвертов, exporter → SFrame-ключи, коды безопасности и SAS, ключ восстановления, шифрование файлов, ключи истории и связки (ADR-0015), хранилище состояния (SQLCipher).
+1. Cargo workspace в корне (`Cargo.toml`), крейт `crypto-core` с API из CRYPTO.md: устройства и ключи, MLS-группы (создание, вступление, commit, обработка предложений external sender, пересоздание группы канала при рассинхроне — ADR-0019), шифрование и расшифровка конвертов, exporter → SFrame-ключи, коды безопасности и SAS, ключ восстановления, шифрование файлов, ключи истории и связки (ADR-0015), хранилище состояния (SQLCipher).
 2. FFI: `napi-rs` для Electron (`crypto-core-node`), `wasm-bindgen` для веб-запасного варианта, `uniffi` — только проверка сборки (мобильные после 1.0).
 3. Тесты T1…Tn из CRYPTO.md, `proptest` для сценариев групп, `cargo fuzz` для парсеров конвертов; `zeroize` для секретов.
 4. `crypto-core/SECURITY-CHANGELOG.md` и `crypto-core/STATUS.md`.
