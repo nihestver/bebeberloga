@@ -4092,7 +4092,7 @@ components:
       x-go-type: bebeberlogav1.HistoryChange
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       description: Изменение ключа истории в commit-е (CRYPTO.md §6.3.3).
-      enum: [HISTORY_CHANGE_UNSPECIFIED, HISTORY_CHANGE_NONE, HISTORY_CHANGE_ROTATE, HISTORY_CHANGE_BREAK_NEW_MEMBER, HISTORY_CHANGE_BREAK_ENABLE, HISTORY_CHANGE_BREAK_RESET]
+      enum: [HISTORY_CHANGE_UNSPECIFIED, HISTORY_CHANGE_NONE, HISTORY_CHANGE_ROTATE, HISTORY_CHANGE_BREAK_NEW_MEMBER, HISTORY_CHANGE_BREAK_ENABLE, HISTORY_CHANGE_BREAK_RESET, HISTORY_CHANGE_BREAK_RECREATE]
     HandshakeKind:
       type: string
       x-proto-enum: bebeberloga.v1.HandshakeKind

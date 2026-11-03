@@ -26,7 +26,7 @@ enum GroupKind {
 enum HistoryChange {
   HISTORY_CHANGE_UNSPECIFIED = 0;
   HISTORY_CHANGE_NONE = 1;
-  // Новое поколение со ссылкой назад: Remove, срок 30 сут, пересоздание группы.
+  // Новое поколение со ссылкой назад: Remove, срок 30 сут.
   HISTORY_CHANGE_ROTATE = 2;
   // Разрыв: вход нового пользователя при выключенной настройке «Новые участники видят историю».
   HISTORY_CHANGE_BREAK_NEW_MEMBER = 3;
@@ -34,6 +34,8 @@ enum HistoryChange {
   HISTORY_CHANGE_BREAK_ENABLE = 4;
   // Разрыв: вход устройства пользователя со сменившимся ключом идентичности.
   HISTORY_CHANGE_BREAK_RESET = 5;
+  // Разрыв: начальный commit пересозданной группы (CRYPTO.md §6.3.10).
+  HISTORY_CHANGE_BREAK_RECREATE = 6;
 }
 
 // Состояние группы на DS (CRYPTO.md §2.10).
