@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Bebeberloga contributors
 // SPDX-License-Identifier: Apache-2.0
 //
-// Проверка Kotlin-привязки uniffi на JVM (dev-контейнер x86_64): два устройства, одно сообщение.
+// Проверка Kotlin-привязки uniffi на JVM хоста: два устройства, одно сообщение.
 
 import uniffi.s1_uniffi_ffi.Device
 import uniffi.s1_uniffi_ffi.openmlsVersion
