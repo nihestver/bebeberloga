@@ -547,7 +547,8 @@ message IdentityResetRequested {
   IdentityResetRequest request = 1;
 }
 
-// Сброс отменён (с другого устройства или потому, что новое устройство подтвердили иначе).
+// Сброс отменён: с подтверждённого устройства («Это не я»), с самого запросившего устройства или
+// потому, что новое устройство подтвердили иначе (CRYPTO.md §6.3.9).
 message IdentityResetCancelled {
   string request_id = 1;
 }
