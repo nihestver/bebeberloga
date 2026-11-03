@@ -149,7 +149,7 @@
 
 ### Вход в голос
 
-`POST /channels/{id}/voice/join` → `{sfu_url, token, call_group_id, call_group_exists, voice_presence{connecting: true}}`. Если группы звонка нет, вошедший создаёт её `POST /mls/groups {channel_id, kind: GROUP_KIND_CALL, group_id: call_group_id}`; иначе ждёт `MlsWelcome` (сервер по webhook SFU шлёт Add-proposal, коммитит назначенный участник). Подтверждение подключения приходит webhook-ом от SFU → `VoicePresenceChanged{connecting: false}`. Выход — `POST …/voice/leave` или разрыв с SFU (webhook) → Remove-proposal; последний вышедший — сервер удаляет группу.
+`POST /channels/{id}/voice/join` → `{sfu_url, token, call_group_id, call_group_exists, voice_presence{connecting: true}}`. Если группы звонка нет, вошедший создаёт её `POST /mls/groups {channel_id, kind: GROUP_KIND_CALL, group_id: call_group_id}`; иначе ждёт `MlsWelcome`: сервер публикует Add-proposal сразу в ответ на `voice/join`, не дожидаясь подключения к SFU, коммитит назначенный участник звонка (CRYPTO.md §5.1), а клиент тем временем подключается к SFU. Подтверждение подключения приходит webhook-ом от SFU → `VoicePresenceChanged{connecting: false}`. Webhook SFU нужен для сверки состава и Remove: `POST …/voice/leave` — Remove сразу; обрыв с SFU без переподключения за 30 с или не подключился к SFU за 15 с после входа — Remove; последний вышедший — сервер удаляет группу.
 
 ### Delivery Service
 
