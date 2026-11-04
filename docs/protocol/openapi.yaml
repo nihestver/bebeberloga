@@ -2558,8 +2558,9 @@ paths:
         Только пока DS считает голоса по commit-у `seq` (`review_seq` = `seq`: GROUP_STATE_REVIEW — с
         паузой handshake, GROUP_STATE_ACTIVE — без паузы; CRYPTO.md §2.9.3): устройство, применившее
         этот commit, сообщает об этом. DS учитывает подтверждение, если устройство было в группе в
-        базовой эпохе commit-а и не добавлено и не удалено им. Вне подсчёта — CONFLICT. Ошибка
-        NOT_GROUP_MEMBER.
+        базовой эпохе commit-а и не добавлено и не удалено им; для начального commit-а группы-преемника
+        — если устройство было адресатом его Welcome (CRYPTO.md §2.9.2). Вне подсчёта — CONFLICT.
+        Ошибка NOT_GROUP_MEMBER.
       operationId: ackHandshake
       responses:
         '202': { description: Учтено }
@@ -2709,6 +2710,11 @@ paths:
     delete:
       tags: [mls]
       summary: Подтвердить получение Welcome
+      description: |
+        Клиент вошёл в группу по Welcome и прошёл проверки (CRYPTO.md §1.8). Для Welcome начального
+        commit-а группы-преемника это ещё и подтверждение этого commit-а в подсчёте голосов (§2.9.2);
+        пока начальный commit не подтверждён, DS назначает коммитером группы только создателя и
+        устройства, вызвавшие этот запрос (§2.6).
       operationId: ackWelcome
       responses:
         '204': { description: Подтверждено }
