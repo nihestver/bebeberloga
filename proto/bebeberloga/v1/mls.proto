@@ -94,7 +94,8 @@ message Group {
   // Хэш состава текущей эпохи по карте DS (CRYPTO.md §2.5), 32 байта.
   bytes roster_hash = 15;
   // Номер commit-а, по которому DS считает голоса (CRYPTO.md §2.9.3): при GROUP_STATE_REVIEW — с
-  // паузой handshake, при GROUP_STATE_ACTIVE — без паузы; 0 — подсчёта нет.
+  // паузой handshake, при GROUP_STATE_ACTIVE — без паузы; 0 — подсчёта нет. В группе не больше одного
+  // подсчёта сразу: жалобы на другие commit-ы ждут в очереди DS.
   uint64 review_seq = 16;
   // При GROUP_STATE_FROZEN и GROUP_STATE_SUPERSEDED: почему группа пересоздаётся.
   RecreationReason recreation_reason = 17;

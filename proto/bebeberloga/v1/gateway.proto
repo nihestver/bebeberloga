@@ -363,7 +363,8 @@ message MlsUpdateRequested {
 //   да; клиент, применивший этот commit, отвечает `POST …/handshakes/{seq}/ack`;
 // - ACTIVE с `review_seq` — подсчёт голосов без паузы: commit-ы принимаются, клиент, применивший
 //   commit `review_seq`, отвечает `POST …/handshakes/{seq}/ack`;
-// - ACTIVE без `review_seq` после подсчёта — жалоба отклонена или отложена (`recreation_deferred_until`);
+// - ACTIVE без `review_seq` после подсчёта — жалоба отклонена или отложена (`recreation_deferred_until`).
+// В группе идёт не больше одного подсчёта сразу, поэтому `review_seq` — один номер.
 // - FROZEN — группа заморожена и будет пересоздана (`recreation_reason`); клиент показывает
 //   «ошибку ключей» (SCREENS/08 §8);
 // - SUPERSEDED — группа заменена (`successor_group_id`); клиент ждёт Welcome в новую.
