@@ -64,7 +64,7 @@ tags:
   - name: files
     description: Зашифрованные вложения через presigned URL
   - name: mls
-    description: Delivery Service MLS — группы, handshake, Welcome, связки ключей истории, карта состава, жалобы и пересоздание группы (GroupInfo и external commit в 1.0 не используются, ADR-0019)
+    description: Delivery Service MLS — группы, handshake, Welcome, связки ключей истории, карта состава, журнал оператора и пересоздание группы (GroupInfo и external commit в 1.0 не используются, ADR-0019)
   - name: voice
     description: Вход в голос, токен SFU, серверный mute/deafen
   - name: sounds
@@ -2357,19 +2357,17 @@ paths:
         или звонок, и передаёт начальную связку ключей истории (ADR-0015). Ошибка CONFLICT, если у
         канала уже есть действующая группа этой роли.
 
-        Пересоздание замороженной группы (CRYPTO.md §2.10): `predecessor_group_id` задан, и тем же
-        запросом идут начальный commit, добавляющий начальный состав (устройства старой группы без
-        удалённых; заявки входят следующим Add, §2.10.3), и Welcome — DS применяет всё
-        атомарно, переключает канал на новую группу и ставит старой GROUP_STATE_SUPERSEDED. На одну
-        замороженную группу DS принимает ровно одну новую; второй создатель получает GROUP_FROZEN с
-        `successor_group_id`. При пересоздании по команде оператора (CRYPTO.md §2.10.11) DS
-        принимает новую группу от создателя, назначенного оператором, от заданной группы P и эпохи E
-        и переключает на неё и P, и текущую группу канала; начальный состав сверяется с R₀ на момент
-        запроса — Remove, опубликованные после выдачи плана, из него исключены. Так же создаётся новая группа звонка при сбое (CRYPTO.md §5.1): без
-        проверки, без тега непрерывности и вне лимита пересозданий. Создавать новую группу вправе
-        только устройство, назначенное создателем этого пересоздания (CRYPTO.md §2.10.5). Ошибки
-        BAD_DELTA, BAD_WELCOME, UNAUTHORIZED_CHANGE, CHANNEL_MEMBER_LIMIT, GROUP_FROZEN, NOT_DESIGNATED,
-        REMOVAL_PENDING.
+        Пересоздание группы по команде оператора или восстановление личной группы (CRYPTO.md §2.10):
+        `predecessor_group_id` задан, и тем же запросом идут начальный commit, добавляющий начальный
+        состав (устройства группы P в эпохе E без удалённых; заявки входят следующим Add, §2.10.3), и
+        Welcome — DS применяет всё атомарно, переключает канал на новую группу и ставит
+        GROUP_STATE_SUPERSEDED и P, и текущей группе канала. На одно пересоздание DS принимает ровно
+        одну новую группу; второй создатель получает GROUP_FROZEN с `successor_group_id`. Начальный
+        состав сверяется с R₀ на момент запроса — Remove, опубликованные после выдачи плана, из него
+        исключены. Так же создаётся новая группа звонка при сбое (CRYPTO.md §5.1): без тега
+        непрерывности, создателя назначает DS. Создавать новую группу вправе только устройство,
+        назначенное создателем этого пересоздания (CRYPTO.md §2.10.5). Ошибки BAD_DELTA, BAD_WELCOME,
+        UNAUTHORIZED_CHANGE, CHANNEL_MEMBER_LIMIT, GROUP_FROZEN, NOT_DESIGNATED, REMOVAL_PENDING.
 
         GroupInfo не передаётся: external commit в 1.0 не используется (ADR-0019).
       operationId: createGroup
@@ -2545,27 +2543,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Handshake'
-        default:
-          $ref: '#/components/responses/Error'
-  /mls/groups/{group_id}/handshakes/{seq}/ack:
-    parameters:
-      - $ref: '#/components/parameters/GroupId'
-      - name: seq
-        in: path
-        required: true
-        schema: { type: integer, format: int64, minimum: 1 }
-    post:
-      tags: [mls]
-      summary: Подтвердить, что спорный commit принят
-      description: |
-        Только пока DS считает голоса по commit-у `seq` (`review_seq` = `seq`: GROUP_STATE_REVIEW — с
-        паузой handshake, GROUP_STATE_ACTIVE — без паузы; CRYPTO.md §2.9.3): устройство, применившее
-        этот commit, сообщает об этом. DS учитывает подтверждение, если устройство было в группе в
-        базовой эпохе commit-а и не добавлено и не удалено им; по начальному commit-у группы-преемника
-        подсчёта нет (CRYPTO.md §2.9.2). Вне подсчёта — CONFLICT. Ошибка NOT_GROUP_MEMBER.
-      operationId: ackHandshake
-      responses:
-        '202': { description: Учтено }
         default:
           $ref: '#/components/responses/Error'
   /mls/groups/{group_id}/group-info:
@@ -2750,21 +2727,15 @@ paths:
       - $ref: '#/components/parameters/GroupId'
     post:
       tags: [mls]
-      summary: Пожаловаться на commit или Welcome
+      summary: Записать в журнал оператора отказ от commit-а или Welcome
       description: |
-        Клиент не принял commit номер `seq` (или Welcome, созданный этим commit-ом) по причине
-        `reason` (CRYPTO.md §2.9). DS принимает жалобу от устройства, которое было в группе в базовой
-        эпохе commit-а или было адресатом его Welcome, не является автором, не удалено этим commit-ом
-        и не имеет ожидающего Remove. В группе идёт не больше одного подсчёта сразу: жалоба на другой
-        commit ждёт в очереди. На любую жалобу с любой причиной DS считает голоса пользователей, подтвердивших commit
-        (`ack` или commit поверх него) и пожаловавшихся на него (§2.9.2–§2.9.3): с паузой handshake,
-        если commit последний (GROUP_STATE_REVIEW), иначе без паузы (GROUP_STATE_ACTIVE с review_seq);
-        событие MlsGroupStateChanged. По итогам DS либо возвращает пожаловавшихся (как `POST …/resync`),
-        либо замораживает и пересоздаёт группу от базовой эпохи commit-а (§2.10), либо откладывает
-        пересоздание сверх лимита при ничьей или одиночной жалобе (§2.9.4, §2.14.5). Жалобу адресата
-        Welcome начального commit-а группы-преемника DS только записывает в журнал оператора: в голоса
-        она не входит, возврата не даёт (§2.9.2, §2.10.11). Не чаще раза в час на устройство и группу (RATE_LIMITED). Ошибки
-        NOT_GROUP_MEMBER, REMOVAL_PENDING, NOT_FOUND.
+        Клиент не смог применить commit номер `seq` (или Welcome, созданный этим commit-ом) по причине
+        `reason`, уже запросил возврат своего устройства (`POST …/resync`) и после возврата дефект на
+        месте (CRYPTO.md §2.9). DS принимает запись от устройства из карты группы в базовой эпохе
+        commit-а или адресата его Welcome и пишет в журнал оператора; голосования нет, на состояние
+        группы запись не влияет, возврата не даёт. В группе звонка та же запись — сигнал DS завести
+        новую группу звонка (CRYPTO.md §5.1). Не чаще раза в час на устройство и группу (RATE_LIMITED).
+        Ошибки NOT_GROUP_MEMBER, NOT_FOUND.
       operationId: disputeHandshake
       requestBody:
         required: true
@@ -2777,7 +2748,7 @@ paths:
                 seq: { $ref: '#/components/schemas/Int64' }
                 reason: { $ref: '#/components/schemas/DisputeReason' }
       responses:
-        '202': { description: Жалоба принята }
+        '202': { description: Запись принята }
         default:
           $ref: '#/components/responses/Error'
   /mls/groups/{group_id}/resync:
@@ -2790,9 +2761,9 @@ paths:
         Клиенту не хватает состояния, чтобы обработать поток группы: журнал обрезан, срок KeyPackage в
         commit-е старше горизонта офлайна истёк, локальная база потеряна (CRYPTO.md §2.11.2). DS
         публикует пару: Remove старого листа устройства и Add со свежим KeyPackage; клиент старые
-        handshake не обрабатывает и ждёт Welcome. Не чаще раза в час на устройство и группу
-        (RATE_LIMITED). Ошибки NOT_GROUP_MEMBER, GROUP_FROZEN; если свежих KeyPackage нет, пара
-        публикуется после их загрузки.
+        handshake не обрабатывает и ждёт Welcome. То же — когда клиент не смог применить чужой commit
+        (CRYPTO.md §2.9.1). Не чаще раза в час на устройство и группу (RATE_LIMITED). Ошибки
+        NOT_GROUP_MEMBER, GROUP_FROZEN; если свежих KeyPackage нет, пара публикуется после их загрузки.
       operationId: requestGroupResync
       requestBody:
         required: false
@@ -2803,7 +2774,7 @@ paths:
               properties:
                 local_epoch:
                   allOf: [{ $ref: '#/components/schemas/Int64' }]
-                  description: Последняя эпоха группы у клиента. Если она больше эпохи DS в окне восстановления после потери журнала и такие заявления пришли от устройств не менее двух разных пользователей (в личной группе — двух устройств), DS замораживает группу с RECREATION_REASON_JOURNAL_LOSS (CRYPTO.md §2.10.10). В группе звонка заявление одного пользователя заводит новую группу звонка в пределах его CALL_RESTART_RATE (§2.14.7).
+                  description: Последняя эпоха группы у клиента. Если она больше эпохи DS (потеря журнала после восстановления из копии), DS возвращает устройство как обычно и пишет это в журнал оператора; пересоздание — только командой оператора (CRYPTO.md §2.10.9). В группе звонка такое заявление одного пользователя заводит новую группу звонка в пределах его CALL_RESTART_RATE (§2.14.5).
       responses:
         '202': { description: Возврат запрошен }
         default:
@@ -2815,14 +2786,14 @@ paths:
       tags: [mls]
       summary: План пересоздания замороженной группы
       description: |
-        Для устройства, назначенного создателем новой группы (MlsUpdateRequested REASON_RECREATE,
-        CRYPTO.md §2.10.4): последняя согласованная эпоха, поколение ключа истории для тега
-        непрерывности, целевой состав. Ошибки: CONFLICT — группа не заморожена; GROUP_FROZEN с
-        `successor_group_id` — её уже заменили; NOT_DESIGNATED — устройство не назначено создателем
-        этого пересоздания (CRYPTO.md §2.10.5; исключение — PERSONAL_RESTORE); REMOVAL_PENDING — у
-        устройства опубликован Remove: создателем оно не бывает ни при какой причине. При
-        пересоздании по команде оператора (CRYPTO.md §2.10.11) план от заданной группы P и эпохи E
-        выдаётся назначенному оператором создателю, даже если P уже SUPERSEDED.
+        Для устройства, которое команда оператора назначила создателем новой группы
+        (MlsUpdateRequested REASON_RECREATE, CRYPTO.md §2.10.1, §2.10.4): точка согласия E, поколение
+        ключа истории для тега непрерывности, начальный состав. Ошибки: CONFLICT — группа не
+        заморожена; GROUP_FROZEN с `successor_group_id` — её уже заменили; NOT_DESIGNATED — устройство
+        не назначено создателем (CRYPTO.md §2.10.5; исключение — PERSONAL_RESTORE: устройство,
+        восстановленное ключом восстановления); REMOVAL_PENDING — у устройства опубликован Remove:
+        создателем оно не бывает ни при какой причине. План выдаётся от группы P, заданной командой,
+        даже если P уже SUPERSEDED.
       operationId: getRecreationPlan
       responses:
         '200':
@@ -3372,7 +3343,6 @@ components:
         - ERROR_CODE_UNAUTHORIZED_CHANGE
         - ERROR_CODE_ALREADY_MEMBER
         - ERROR_CODE_GROUP_FROZEN
-        - ERROR_CODE_GROUP_UNDER_REVIEW
         - ERROR_CODE_HISTORY_GENERATION_MISMATCH
         - ERROR_CODE_NOT_DESIGNATED
         - ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW
@@ -4164,7 +4134,7 @@ components:
       x-go-type: bebeberlogav1.GroupState
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
       description: Состояние группы на DS (CRYPTO.md §2.10).
-      enum: [GROUP_STATE_UNSPECIFIED, GROUP_STATE_ACTIVE, GROUP_STATE_FROZEN, GROUP_STATE_SUPERSEDED, GROUP_STATE_REVIEW]
+      enum: [GROUP_STATE_UNSPECIFIED, GROUP_STATE_ACTIVE, GROUP_STATE_FROZEN, GROUP_STATE_SUPERSEDED]
     RecreationReason:
       type: string
       x-proto-enum: bebeberloga.v1.RecreationReason
@@ -4203,13 +4173,7 @@ components:
         roster_hash:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
           description: Хэш состава текущей эпохи по карте DS (CRYPTO.md §2.5), 32 байта.
-        review_seq:
-          allOf: [{ $ref: '#/components/schemas/Int64' }]
-          description: Номер commit-а, по которому DS считает голоса (CRYPTO.md §2.9.3) — при GROUP_STATE_REVIEW с паузой handshake, при GROUP_STATE_ACTIVE без паузы.
         recreation_reason: { $ref: '#/components/schemas/RecreationReason' }
-        recreation_deferred_until:
-          allOf: [{ $ref: '#/components/schemas/Timestamp' }]
-          description: Подтверждённая жалоба отложена до этого момента — лимит пересозданий исчерпан, а перевеса жалоб против commit-а нет (ничья или одиночная жалоба, CRYPTO.md §2.9.4).
         history_key_generation: { type: integer, description: Текущее поколение ключа истории канала (CRYPTO.md §6.3). }
     Handshake:
       type: object
@@ -4244,7 +4208,7 @@ components:
         blob: { $ref: '#/components/schemas/Bytes' }
         created_at: { $ref: '#/components/schemas/Timestamp' }
         epoch: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Эпоха, в которую вводит Welcome.' }
-        seq: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Номер commit-а, создавшего Welcome (для жалобы).' }
+        seq: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Номер commit-а, создавшего Welcome (для записи в журнал оператора).' }
         history_bridge:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
           description: Мост ключей истории через разрывы цепочки (CRYPTO.md §6.3.6); пусто, если не нужен.
@@ -4330,7 +4294,7 @@ components:
       x-proto-enum: bebeberloga.v1.DisputeReason
       x-go-type: bebeberlogav1.DisputeReason
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      description: Причина жалобы на commit или Welcome (CRYPTO.md §2.9).
+      description: Причина записи в журнал оператора о commit-е или Welcome, который клиент не смог применить (CRYPTO.md §2.9.2).
       enum:
         - DISPUTE_REASON_UNSPECIFIED
         - DISPUTE_REASON_DELTA_MISMATCH

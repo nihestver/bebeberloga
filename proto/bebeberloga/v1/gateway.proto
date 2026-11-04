@@ -191,8 +191,9 @@ message MlsPending {
   // Устройство возвращается в группу парой Remove + Add (CRYPTO.md §2.11): старые handshake не
   // обрабатывать, ждать Welcome.
   bool returning = 5;
-  // Идёт подсчёт голосов по commit-у с этим номером (CRYPTO.md §2.9.3), с паузой или без; 0 — нет.
-  uint64 review_seq = 6;
+  // 6 — бывшее review_seq: снято вместе с голосованием по жалобам (ADR-0021 п. 17).
+  reserved 6;
+  reserved "review_seq";
 }
 
 // Возобновление сессии после разрыва.
@@ -358,26 +359,22 @@ message MlsUpdateRequested {
   uint64 epoch = 4;
 }
 
-// Состояние группы на DS изменилось (CRYPTO.md §2.9–§2.10):
-// - REVIEW — идёт проверка спорного commit-а `review_seq`: commit-ы не принимаются, сообщения —
-//   да; клиент, применивший этот commit, отвечает `POST …/handshakes/{seq}/ack`;
-// - ACTIVE с `review_seq` — подсчёт голосов без паузы: commit-ы принимаются, клиент, применивший
-//   commit `review_seq`, отвечает `POST …/handshakes/{seq}/ack`;
-// - ACTIVE без `review_seq` после подсчёта — жалоба отклонена или отложена (`recreation_deferred_until`);
-// - FROZEN — группа заморожена и будет пересоздана (`recreation_reason`); в группе канала клиент
-//   показывает «ошибку ключей» (SCREENS/08 §8); в группе звонка заморожен только handshake на время
-//   создания новой группы (около 1 с), медиа идут, а при ожидающем Remove действует пауза своих медиа
-//   (CRYPTO.md §5.3 п. 7);
-// - SUPERSEDED — группа заменена (`successor_group_id`); клиент ждёт Welcome в новую.
-// В группе идёт не больше одного подсчёта сразу, поэтому `review_seq` — один номер.
+// Состояние группы на DS изменилось (CRYPTO.md §2.10, §2.14):
+// - FROZEN — группа заморожена по команде оператора или для восстановления личной группы и будет
+//   пересоздана (`recreation_reason`); в группе канала клиент показывает «ошибку ключей»
+//   (SCREENS/08 §8); в группе звонка заморожен только handshake на время создания новой группы
+//   (около 1 с), медиа идут, а при ожидающем Remove действует пауза своих медиа (CRYPTO.md §5.3 п. 7);
+// - SUPERSEDED — группа заменена (`successor_group_id`); клиент ждёт Welcome в новую;
+// - ACTIVE — не используется: автоматических переходов из заморозки назад нет.
 message MlsGroupStateChanged {
   string group_id = 1;
   string channel_id = 2;
   string successor_group_id = 3;
   GroupState state = 4;
-  uint64 review_seq = 5;
+  // 5 — бывшее review_seq, 7 — бывшее recreation_deferred_until (ADR-0021 п. 17).
+  reserved 5, 7;
+  reserved "review_seq", "recreation_deferred_until";
   RecreationReason recreation_reason = 6;
-  google.protobuf.Timestamp recreation_deferred_until = 7;
 }
 
 message PresenceUpdated {
