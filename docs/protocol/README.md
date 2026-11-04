@@ -139,7 +139,7 @@
 | В звонке: говорящий | клиент |
 | В звонке: mute/deafen | команда `SetVoicePresence{mic_off, sound_off}` → `VoicePresenceChanged` |
 | В звонке: вход/выход участников, смена эпохи | вход — Add сразу по `POST …/voice/join`, не дожидаясь SFU; выход — Remove по `voice/leave` или по webhook SFU (обрыв без переподключения, вход без подключения к SFU); `MlsHandshake{from_external_sender}` → commit назначенного участника → новый ключ (CRYPTO.md §5.1, §5.3) |
-| В звонке: сбой смены ключа | клиент: commit с Remove не применён за 2 с — пауза своих медиа, «Обновляем ключи звонка…» (CRYPTO.md §5.3 п. 7); сервер: новая группа звонка — `MlsGroupStateChanged{FROZEN}` на время её создания (около 1 с, заморожен только handshake, медиа идут), затем `MlsGroupStateChanged{SUPERSEDED, successor_group_id}` и `MlsWelcome` в новую группу (CRYPTO.md §5.1, §2.14.7) |
+| В звонке: сбой смены ключа | клиент: commit с Remove не применён за 2 с — пауза своих медиа, «Обновляем ключи звонка…» (CRYPTO.md §5.3 п. 7); сервер: новая группа звонка — `MlsGroupStateChanged{FROZEN}` на время её создания (около 1 с, заморожен только handshake, медиа идут), затем `MlsGroupStateChanged{SUPERSEDED, successor_group_id}` и `MlsWelcome` в новую группу (CRYPTO.md §5.1, §2.14.5) |
 | В звонке: громкость участника | клиент |
 | Переподключение | gateway `Resume`; `GET /mls/groups/{id}/handshakes?after_seq=`; повторный `join` → `connecting: true` у других на время переподключения |
 | Выход | `POST /channels/{id}/voice/leave` → `VoicePresenceChanged{left_channel_id}`, Remove-предложение; последний — сервер удаляет группу |

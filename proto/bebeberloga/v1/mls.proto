@@ -47,9 +47,9 @@ enum GroupState {
   GROUP_STATE_UNSPECIFIED = 0;
   // Обычная работа.
   GROUP_STATE_ACTIVE = 1;
-  // Заморожена и ждёт пересоздания (CRYPTO.md §2.10, §2.14): по команде оператора или для
-  // восстановления личной группы. У группы звонка — только handshake и только на время создания
-  // новой группы звонка (около 1 с); медиа при этом идут.
+  // Заморожена и ждёт пересоздания (CRYPTO.md §2.10, §2.14): по команде оператора, для
+  // восстановления личной группы или, у группы звонка, на время создания новой группы звонка
+  // (около 1 с, заморожен только handshake, медиа идут).
   GROUP_STATE_FROZEN = 2;
   // Заменена новой группой канала или звонка (`successor_group_id`); ничего не принимает.
   GROUP_STATE_SUPERSEDED = 3;
@@ -63,7 +63,8 @@ enum GroupState {
 enum RecreationReason {
   RECREATION_REASON_UNSPECIFIED = 0;
   // Команда оператора «пересоздать канал от группы P и эпохи E с создателем X» по записям журнала
-  // (CRYPTO.md §2.10.1); клиентам допустим откат эпох до E.
+  // (CRYPTO.md §2.10.1); клиентам допустим откат эпох до E. У группы звонка — новая группа звонка по
+  // записи о дефектном commit-е, застою или `local_epoch` впереди DS (§5.1).
   RECREATION_REASON_DISPUTE = 1;
   // Та же команда после восстановления базы DS из копии (CRYPTO.md §2.10.9); клиентам допустим
   // откат эпох.
@@ -242,14 +243,14 @@ enum DisputeReason {
   // Запрещённое предложение: GroupContextExtensions (кроме замены ключа инстанса), PSK, ReInit,
   // ExternalInit, предложение участника.
   DISPUTE_REASON_FORBIDDEN_PROPOSAL = 5;
-  // Личная: commit текущей эпохи не расшифровывается или не проходит проверки MLS при полном
+  // Commit текущей эпохи не расшифровывается или не проходит проверки MLS при полном
   // состоянии клиента.
   DISPUTE_REASON_UNDECRYPTABLE = 6;
   // Состав после merge или из Welcome не совпадает с картой DS.
   DISPUTE_REASON_ROSTER_MISMATCH = 7;
   // Расширения группы (group_binding, external_senders, required_capabilities) не те.
   DISPUTE_REASON_BINDING_MISMATCH = 8;
-  // Личная: срок KeyPackage в Add истёк по часам клиента, хотя commit моложе горизонта офлайна.
+  // Срок KeyPackage в Add истёк по часам клиента, хотя commit моложе горизонта офлайна.
   DISPUTE_REASON_KEY_PACKAGE_EXPIRED = 9;
   // Пересозданная группа не прошла проверки законности (CRYPTO.md §2.10.6).
   DISPUTE_REASON_RECREATION_INVALID = 10;
