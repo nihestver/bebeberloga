@@ -134,7 +134,7 @@
 | Голос | `POST /channels/{id}/voice/join`, `POST /channels/{id}/voice/leave`, `POST /channels/{id}/voice/members/{uid}/mute`, `POST …/deafen` | Токен SFU; серверный mute/deafen (OPEN-QUESTIONS №4) |
 | Саундборд | `GET /sounds/builtin`, `GET/POST /communities/{id}/sounds`, `GET/POST /users/me/sounds`, `GET/PATCH/DELETE /sounds/{id}`, `GET /sounds/{id}/audio` | FLOWS/09; команда «сыграть» — gateway |
 | Внутренние | `POST /internal/media/webhooks` | Webhook SFU, общий секрет |
-| Админ-API (заготовка для B16, в `openapi.yaml` пока нет) | `GET /admin/channels/{id}/recreation`, `POST /admin/channels/{id}/recreation/repeat {creator_device_id}` | Неудавшееся пересоздание канала и ручной повтор с явным создателем (CRYPTO.md §2.10.11): команда админ-CLI оператора инстанса, не право сообщества; DS проверяет, что пересоздание помечено неудавшимся, а создатель — устройство начального состава без ожидающего Remove |
+| Админ-API (заготовка для B16, в `openapi.yaml` пока нет) | `GET /admin/channels/{id}/recreation` (журнал: группы линии, точки согласия, жалобы на начальные commit-ы), `POST /admin/channels/{id}/recreation {predecessor_group_id, last_agreed_epoch, creator_device_id}` | Пересоздание канала по команде оператора «от группы P и эпохи E с создателем X» (CRYPTO.md §2.10.11): команда админ-CLI инстанса, не право сообщества; DS проверяет, что P — группа линии канала, E ≤ её последней эпохи, X — устройство из карты P в E без ожидающего Remove (`NOT_FOUND`, `VALIDATION_FAILED`, `REMOVAL_PENDING`); дальше — обычное пересоздание |
 
 ## 5. Ключевые сценарии
 
