@@ -575,8 +575,8 @@ paths:
         бывшее в сети за последние 30 дней, запрос PENDING на 24 ч и сервер рассылает этим
         устройствам IdentityResetRequested; иначе — сразу READY. Повторный запрос возвращает
         действующий. После отмены «Это не я» новый запрос — не раньше чем через 24 ч и не больше 3 за
-        7 сут, иначе IDENTITY_RESET_LIMITED с retry_after_ms (FLOWS/02 ш. 6, SCREENS/07 §4); письмо
-        уходит и на отклонённый запрос.
+        7 сут, иначе IDENTITY_RESET_LIMITED с retry_after_ms (FLOWS/02 ш. 6, SCREENS/07 §4); о запросах,
+        отклонённых лимитом, письмо — не чаще раза в сутки на аккаунт.
       operationId: requestIdentityReset
       responses:
         '201':
