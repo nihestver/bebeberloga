@@ -98,7 +98,8 @@ message Group {
   uint64 review_seq = 16;
   // При GROUP_STATE_FROZEN и GROUP_STATE_SUPERSEDED: почему группа пересоздаётся.
   RecreationReason recreation_reason = 17;
-  // Подтверждённая жалоба отложена до этого момента: лимит пересозданий исчерпан (CRYPTO.md §2.9.4).
+  // Подтверждённая жалоба отложена до этого момента: лимит пересозданий исчерпан, а перевеса жалоб
+  // против commit-а нет — ничья или одиночная жалоба (CRYPTO.md §2.9.4).
   google.protobuf.Timestamp recreation_deferred_until = 18;
   // Текущее поколение ключа истории канала (CRYPTO.md §6.3); сообщения обязаны быть обёрнуты им.
   uint32 history_key_generation = 19;

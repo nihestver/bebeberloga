@@ -2750,7 +2750,7 @@ paths:
         если commit последний (GROUP_STATE_REVIEW), иначе без паузы (GROUP_STATE_ACTIVE с review_seq);
         событие MlsGroupStateChanged. По итогам DS либо возвращает пожаловавшихся (как `POST …/resync`),
         либо замораживает и пересоздаёт группу от базовой эпохи commit-а (§2.10), либо откладывает
-        пересоздание сверх лимита. Не чаще раза в час на устройство и группу (RATE_LIMITED). Ошибки
+        пересоздание сверх лимита, если пожаловавшихся не больше, чем подтвердивших (§2.9.4). Не чаще раза в час на устройство и группу (RATE_LIMITED). Ошибки
         NOT_GROUP_MEMBER, REMOVAL_PENDING, NOT_FOUND.
       operationId: disputeHandshake
       requestBody:
@@ -4192,7 +4192,7 @@ components:
         recreation_reason: { $ref: '#/components/schemas/RecreationReason' }
         recreation_deferred_until:
           allOf: [{ $ref: '#/components/schemas/Timestamp' }]
-          description: Подтверждённая жалоба отложена до этого момента — лимит пересозданий исчерпан (CRYPTO.md §2.9.4).
+          description: Подтверждённая жалоба отложена до этого момента — лимит пересозданий исчерпан, а перевеса жалоб против commit-а нет (ничья или одиночная жалоба, CRYPTO.md §2.9.4).
         history_key_generation: { type: integer, description: Текущее поколение ключа истории канала (CRYPTO.md §6.3). }
     Handshake:
       type: object
