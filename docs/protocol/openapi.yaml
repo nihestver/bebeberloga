@@ -575,7 +575,8 @@ paths:
         бывшее в сети за последние 30 дней, запрос PENDING на 24 ч и сервер рассылает этим
         устройствам IdentityResetRequested; иначе — сразу READY. Повторный запрос возвращает
         действующий. После отмены «Это не я» новый запрос — не раньше чем через 24 ч и не больше 3 за
-        7 сут, иначе IDENTITY_RESET_LIMITED с retry_after_ms (FLOWS/02 ш. 6, SCREENS/07 §4).
+        7 сут, иначе IDENTITY_RESET_LIMITED с retry_after_ms (FLOWS/02 ш. 6, SCREENS/07 §4); письмо
+        уходит и на отклонённый запрос.
       operationId: requestIdentityReset
       responses:
         '201':
@@ -2826,7 +2827,8 @@ paths:
       tags: [mls]
       summary: Зарезервировать KeyPackage для новой группы
       description: |
-        По одному KeyPackage на каждое устройство целевого состава, кроме вызывающего. Пакеты
+        По одному KeyPackage на каждое устройство начального состава R₀ (`RecreationPlan.target_device_ids`,
+        CRYPTO.md §2.10.3), кроме вызывающего. Пакеты
         закрепляются за этим пересозданием и вызывающим устройством: DS сверяет с ними адресатов
         Welcome начального commit-а (CRYPTO.md §2.10.5). У кого пакетов нет — в `exhausted_device_ids`;
         они станут заявками на вход в новую группу. Ошибки — как у плана пересоздания.

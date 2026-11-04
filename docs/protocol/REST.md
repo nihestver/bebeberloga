@@ -58,16 +58,16 @@
 | `VOICE_CHANNEL_FULL` | 409 | Голосовой канал полон | `limit` |
 | `NOT_IN_VOICE` | 409 | Пользователь не в этом голосовом канале | |
 | `RELATIONSHIP_EXISTS` | 409 | Запрос уже отправлен или уже друзья | |
-| `EPOCH_MISMATCH` | 409 | Шифртекст или handshake для устаревшей эпохи | `current_epoch`; клиент догоняет commit-ы и повторяет (до 3 раз для сообщений) |
+| `EPOCH_MISMATCH` | 409 | Handshake для устаревшей эпохи | `current_epoch`; клиент догоняет commit-ы и собирает commit заново (CRYPTO.md §2.13). Сообщения эпохой не проверяются: для них — `HISTORY_GENERATION_MISMATCH` |
 | `MESSAGE_EXISTS` | 409 | Повтор id сообщения с другим телом | |
 | `PROPOSALS_MISSING` | 409 | В commit не вошли все опубликованные сервером Remove | |
 | `REMOVAL_PENDING` | 409 | Commit от устройства, для которого опубликован Remove | |
 | `ALREADY_MEMBER` | 409 | Заявка на вход устройства, которое уже в группе | |
 | `GROUP_FROZEN` | 409 | MLS-группа заморожена или заменена новой при пересоздании (CRYPTO.md §2.10) | `successor_group_id`, если замена уже есть |
 | `IDENTITY_RESET_PENDING` | 409 | Сброс ключа идентичности ещё не применим — идёт задержка 24 ч (CRYPTO.md §6.3.9) | `retry_after_ms` |
-| `IDENTITY_RESET_LIMITED` | 429 | Запрос сброса сейчас ограничен: после «Это не я» — не раньше чем через 24 ч и не больше 3 за 7 сут (CRYPTO.md §6.3.9) | `retry_after_ms`; новое устройство показывает «Сброс ключей сейчас недоступен…» (SCREENS/07 §4) |
+| `IDENTITY_RESET_LIMITED` | 429 | Запрос сброса сейчас ограничен: после «Это не я» — не раньше чем через 24 ч и не больше 3 за 7 сут (CRYPTO.md §6.3.9) | `retry_after_ms`; новое устройство показывает «Сброс ключей сейчас недоступен…» (SCREENS/07 §4); письмо на email аккаунта уходит и на отклонённый запрос |
 | `HISTORY_GENERATION_MISMATCH` | 409 | Сообщение обёрнуто не текущим поколением ключа истории канала (CRYPTO.md §6.2.8) | `current_generation`; клиент догоняет commit-ы и повторяет (до 3 раз) |
-| `NOT_DESIGNATED` | 409 | Commit не от устройства, назначенного DS на эту эпоху (CRYPTO.md §2.6) | |
+| `NOT_DESIGNATED` | 409 | Commit не от устройства, назначенного DS на эту эпоху (CRYPTO.md §2.6), или `GET …/recreation`, `POST …/recreation/key-packages` и `POST /mls/groups` при пересоздании не от назначенного создателя (§2.10.5) | |
 | `GROUP_UNDER_REVIEW` | 409 | Идёт проверка спорного commit-а: commit-ы приостановлены, сообщения принимаются (CRYPTO.md §2.9.3) | |
 | `SOUND_SLOTS_FULL` | 409 | Слоты звуков заняты | `limit` |
 | `INVITE_EXPIRED` | 410 | Срок приглашения истёк | |
