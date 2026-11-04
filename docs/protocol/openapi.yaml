@@ -2760,7 +2760,7 @@ paths:
         если commit последний (GROUP_STATE_REVIEW), иначе без паузы (GROUP_STATE_ACTIVE с review_seq);
         событие MlsGroupStateChanged. По итогам DS либо возвращает пожаловавшихся (как `POST …/resync`),
         либо замораживает и пересоздаёт группу от базовой эпохи commit-а (§2.10), либо откладывает
-        пересоздание сверх лимита, если пожаловавшихся не больше, чем подтвердивших (§2.9.4). Не чаще раза в час на устройство и группу (RATE_LIMITED). Ошибки
+        пересоздание сверх лимита при ничьей или одиночной жалобе (§2.9.4, §2.14.5). Не чаще раза в час на устройство и группу (RATE_LIMITED). Ошибки
         NOT_GROUP_MEMBER, REMOVAL_PENDING, NOT_FOUND.
       operationId: disputeHandshake
       requestBody:
