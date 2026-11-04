@@ -196,9 +196,8 @@
 
 Автор (контур B, сессии Claude Code 2026-11-03 и 2026-11-04) подтверждает: при работе над B02 сторонние продукты, их клиенты, документация, тексты и схемы API не открывались; сеть в этих сессиях не использовалась.
 
-- **Открывались:** `docs/spec/`, `docs/adr/`, `docs/protocol/`, отчёты спайков `spikes/01-openmls-ffi/REPORT.md` и `spikes/04-mls-ds/REPORT.md`; исходники выбранной зависимости `openmls` 0.9.2 из реестра cargo (политика срока листьев при входе по Welcome, external commit).
-- **Названы по имени, тексты не открывались** — открытые стандарты и работы, на которые ссылается `CRYPTO.md`: RFC 9420 (MLS), RFC 9180 (HPKE), RFC 9106 (Argon2), RFC 9605 (SFrame), RFC 6189 (ZRTP, приём обязательства перед обменом ключами), RFC 5869 (HKDF), RFC 8032 (Ed25519), RFC 9562 (UUID); S. Vaudenay, «Secure Communications over Insecure Channels Based on Short Authenticated Strings» (CRYPTO 2005); Hoang, Reyhanitabar, Rogaway, Vizár (2015, конструкция STREAM); алфавит Crockford Base32 (ключ восстановления, §3.5.1).
-- **Документация LiveKit не открывалась.** Сведения о KeyProvider, simulcast и dynacast в §5.4 взяты из ARCHITECTURE §4.6, §6.5 и промптов S2, S6; пп. 1–5 §5.4 — требования к проверке в спайке S2, а не утверждения о продукте.
+- **Открывал:** `docs/spec/`, `docs/adr/`, `docs/protocol/`, отчёты спайков `spikes/01-openmls-ffi/REPORT.md` и `spikes/04-mls-ds/REPORT.md`; исходники выбранной зависимости `openmls` 0.9.2 из реестра cargo (политика срока листьев при входе по Welcome, external commit).
+- **Ссылается по имени, не открывал** — открытые стандарты, работы и документация, на которые ссылается `CRYPTO.md`: RFC 9420 (MLS), RFC 9180 (HPKE), RFC 9106 (Argon2), RFC 9605 (SFrame), RFC 6189 (ZRTP, приём обязательства перед обменом ключами), RFC 5869 (HKDF), RFC 8032 (Ed25519), RFC 9562 (UUID); S. Vaudenay, «Secure Communications over Insecure Channels Based on Short Authenticated Strings» (CRYPTO 2005); Hoang, Reyhanitabar, Rogaway, Vizár (2015, конструкция STREAM); алфавит Crockford Base32 (ключ восстановления, §3.5.1); документация LiveKit — сведения о KeyProvider, simulcast и dynacast в §5.4 взяты из ARCHITECTURE §4.6, §6.5 и промптов S2, S6, а сами пункты §5.4 — требования, которые S2 проверяет по документации и коду LiveKit.
 
 Журнал `docs/cleanroom/LOG.md` записей контура B не ведёт по своему правилу.
 
