@@ -117,4 +117,17 @@ message InstanceInfo {
   // Версия протокола gateway и REST (1).
   uint32 protocol_version = 6;
   InstanceLimits limits = 7;
+  // Действующий открытый ключ подписи DS как external sender (Ed25519, 32 байта). Клиент
+  // закрепляет его при первом входе на инстанс (CRYPTO.md §2.12).
+  bytes external_sender_key = 8;
+  // Цепочка замен ключа от первого ключа инстанса до действующего, по порядку.
+  repeated ExternalSenderKeyRotation external_sender_rotations = 9;
+}
+
+// Замена ключа external sender инстанса: новый ключ, подписанный старым (CRYPTO.md §2.12).
+message ExternalSenderKeyRotation {
+  bytes old_key = 1;
+  bytes new_key = 2;
+  // AppSign(old_sk, "external sender rotation", {old_key, new_key}), 64 байта.
+  bytes signature = 3;
 }

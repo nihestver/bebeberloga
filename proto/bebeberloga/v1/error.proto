@@ -62,6 +62,14 @@ enum ErrorCode {
   ERROR_CODE_VERIFICATION_EXPIRED = 203;
   // Подпись ключа устройства не проходит проверку ключом идентичности. HTTP 400.
   ERROR_CODE_SIGNATURE_INVALID = 204;
+  // KeyPackage не прошёл проверки DS: подписи, capabilities, срок, расширения листа, уникальность
+  // HPKE-ключей, credential устройства (CRYPTO.md §1.4). HTTP 400.
+  ERROR_CODE_INVALID_KEY_PACKAGE = 205;
+  // Сброс ключа идентичности ещё не применим: идёт задержка 24 ч (CRYPTO.md §6.3.9). HTTP 409.
+  ERROR_CODE_IDENTITY_RESET_PENDING = 206;
+  // Запрос сброса ключа идентичности сейчас ограничен: после отмены «Это не я» — не раньше чем через
+  // 24 ч и не больше 3 запросов за 7 сут (CRYPTO.md §6.3.9). Пауза — в `retry_after_ms`. HTTP 429.
+  ERROR_CODE_IDENTITY_RESET_LIMITED = 207;
 
   // --- сообщества и каналы -----------------------------------------------
   // Достигнут лимит участников канала (ADR-0005). HTTP 409.
@@ -97,7 +105,8 @@ enum ErrorCode {
   ERROR_CODE_RELATIONSHIP_EXISTS = 401;
 
   // --- сообщения и MLS ---------------------------------------------------
-  // Шифртекст или handshake отправлены для устаревшей эпохи MLS-группы. HTTP 409.
+  // Handshake отправлен для устаревшей эпохи MLS-группы. HTTP 409. Сообщения эпохой не проверяются:
+  // для них HISTORY_GENERATION_MISMATCH (CRYPTO.md §6.2.8).
   ERROR_CODE_EPOCH_MISMATCH = 500;
   // Устройство отправителя не состоит в MLS-группе. HTTP 403.
   ERROR_CODE_NOT_GROUP_MEMBER = 501;
@@ -107,6 +116,36 @@ enum ErrorCode {
   ERROR_CODE_ATTACHMENT_INVALID = 503;
   // Слишком много вложений в одном сообщении (лимит 10). HTTP 400.
   ERROR_CODE_TOO_MANY_ATTACHMENTS = 504;
+  // External commit в 1.0 не используется (ADR-0019, CRYPTO.md §2.2). HTTP 400.
+  ERROR_CODE_EXTERNAL_COMMIT_UNSUPPORTED = 505;
+  // В commit не вошли все опубликованные сервером Remove (CRYPTO.md §2.4). HTTP 409.
+  ERROR_CODE_PROPOSALS_MISSING = 506;
+  // У устройства-отправителя опубликован Remove; его commit не принимается. HTTP 409.
+  ERROR_CODE_REMOVAL_PENDING = 507;
+  // RosterDelta в authenticated_data commit-а не разбирается или не сходится с ожидаемым. HTTP 400.
+  ERROR_CODE_BAD_DELTA = 508;
+  // Адресаты Welcome не совпадают с добавленными устройствами или пакет на исходе. HTTP 400.
+  ERROR_CODE_BAD_WELCOME = 509;
+  // Вид MLS-сообщения не соответствует запросу (`kind`, wire format, content_type). HTTP 400.
+  ERROR_CODE_BAD_MESSAGE = 510;
+  // Изменение состава без предложения сервера или предложение участника. HTTP 403.
+  ERROR_CODE_UNAUTHORIZED_CHANGE = 511;
+  // Заявка на вход устройства, которое уже в группе. HTTP 409.
+  ERROR_CODE_ALREADY_MEMBER = 512;
+  // Группа заморожена или заменена новой (`successor_group_id`, CRYPTO.md §2.10). HTTP 409.
+  ERROR_CODE_GROUP_FROZEN = 513;
+  // 514 — бывшее GROUP_UNDER_REVIEW: проверки спорного commit-а нет (ADR-0021 п. 17).
+  reserved 514;
+  reserved "ERROR_CODE_GROUP_UNDER_REVIEW";
+  // Сообщение обёрнуто не текущим поколением ключа истории канала (CRYPTO.md §6.2.8). HTTP 409.
+  ERROR_CODE_HISTORY_GENERATION_MISMATCH = 515;
+  // Устройство не назначено DS: commit не от назначенного на текущую эпоху (CRYPTO.md §2.6) или
+  // план, пакеты и создание новой группы при пересоздании не от назначенного создателя (§2.10.5).
+  // HTTP 409.
+  ERROR_CODE_NOT_DESIGNATED = 516;
+  // Время в UUIDv7 сообщения старше 30 сут или опережает время приёма больше чем на 5 мин
+  // (CRYPTO.md §6.2.8). HTTP 400.
+  ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW = 517;
 
   // --- саундборд ---------------------------------------------------------
   // Звук не в формате Opus/ogg (клиент перекодирует перед загрузкой, FLOWS/09 ш. 2)
@@ -142,4 +181,8 @@ message Error {
   // Дополнительные данные по коду (например, список сообществ владельца для CONFLICT
   // при удалении аккаунта: `{"owned_community_ids": [...]}`).
   google.protobuf.Struct details = 8;
+  // Для GROUP_FROZEN: группа, которая заменила эту; пусто, пока пересоздание не завершено.
+  string successor_group_id = 9;
+  // Для HISTORY_GENERATION_MISMATCH: текущее поколение ключа истории канала.
+  uint32 current_generation = 10;
 }

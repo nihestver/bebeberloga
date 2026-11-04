@@ -64,7 +64,7 @@ tags:
   - name: files
     description: Зашифрованные вложения через presigned URL
   - name: mls
-    description: Delivery Service MLS — группы, handshake, Welcome, GroupInfo, связки ключей истории
+    description: Delivery Service MLS — группы, handshake, Welcome, связки ключей истории, карта состава, журнал оператора и пересоздание группы (GroupInfo и external commit в 1.0 не используются, ADR-0019)
   - name: voice
     description: Вход в голос, токен SFU, серверный mute/deafen
   - name: sounds
@@ -483,9 +483,14 @@ paths:
       tags: [users]
       summary: Опубликовать ключ идентичности
       description: |
-        Первое устройство публикует открытый ключ идентичности и его копию, зашифрованную ключом
-        восстановления (FLOWS/01 ш. 5–6). Повторный вызов разрешён только при «начать заново»
-        с `reset: true` — тогда все прочие устройства удаляются (FLOWS/02 ш. 6).
+        Первое устройство публикует открытый ключ идентичности, его копию, зашифрованную ключом
+        восстановления, и открытый ключ HPKE восстановления (FLOWS/01 ш. 5–6; CRYPTO.md §3.5, §6.5).
+        Повторный вызов — только при «Начать заново»: `reset: true` и `reset_request_id` запроса в
+        состоянии READY (`POST /users/me/identity-reset`), и только с устройства, запросившего сброс
+        (`requested_by_device_id`, иначе PERMISSION_DENIED); раньше срока — IDENTITY_RESET_PENDING.
+        Сервер удаляет все прочие устройства, их KeyPackage и прежний блоб восстановления, записывает
+        прежний ключ идентичности в историю ключей (`GET /users/{id}/identity-keys`) и рассылает
+        UserUpdated (FLOWS/02 ш. 6; CRYPTO.md §6.3.9).
       operationId: putIdentityKey
       requestBody:
         required: true
@@ -502,6 +507,10 @@ paths:
                 reset:
                   type: boolean
                   description: Заменить существующий ключ («начать заново»).
+                reset_request_id:
+                  allOf: [{ $ref: '#/components/schemas/Id' }]
+                  description: Запрос сброса в состоянии READY; обязателен при `reset`.
+                recovery_public_key: { $ref: '#/components/schemas/RecoveryPublicKey' }
       responses:
         '204': { description: Ключ опубликован }
         default:
@@ -513,19 +522,20 @@ paths:
       operationId: getRecoveryKeyInfo
       responses:
         '200':
-          description: Дата создания
+          description: Дата создания и открытый ключ HPKE восстановления (для резервной копии личной группы, CRYPTO.md §6.5)
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   created_at: { $ref: '#/components/schemas/Timestamp' }
+                  recovery_public_key: { $ref: '#/components/schemas/RecoveryPublicKey' }
         default:
           $ref: '#/components/responses/Error'
     put:
       tags: [devices]
       summary: Создать новый ключ восстановления
-      description: Клиент перешифровывает приватный ключ идентичности новым ключом восстановления; старый ключ перестаёт работать.
+      description: Клиент перешифровывает приватный ключ идентичности новым ключом восстановления и шифрует текущее поколение личной группы на новый открытый ключ восстановления; старый ключ перестаёт работать, прежние копии сервер удаляет (CRYPTO.md §3.5.4, §6.5).
       operationId: rotateRecoveryKey
       requestBody:
         required: true
@@ -533,11 +543,106 @@ paths:
           application/json:
             schema:
               type: object
-              required: [encrypted_identity_key]
+              required: [encrypted_identity_key, recovery_public_key]
               properties:
                 encrypted_identity_key: { $ref: '#/components/schemas/Bytes' }
+                recovery_public_key: { $ref: '#/components/schemas/RecoveryPublicKey' }
+                personal_backup: { $ref: '#/components/schemas/PersonalBackup' }
       responses:
         '204': { description: Ключ заменён }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/identity-reset:
+    get:
+      tags: [devices]
+      summary: Действующий запрос сброса ключа идентичности
+      operationId: getIdentityReset
+      responses:
+        '200':
+          description: Запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityResetRequest'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [devices]
+      summary: Запросить сброс ключа идентичности («Начать заново»)
+      description: |
+        С неподтверждённого нового устройства (FLOWS/02 ш. 6; CRYPTO.md §6.3.9). Сервер всегда
+        отправляет письмо на email аккаунта. Если у пользователя есть подтверждённое устройство,
+        бывшее в сети за последние 30 дней, запрос PENDING на 24 ч и сервер рассылает этим
+        устройствам IdentityResetRequested; иначе — сразу READY. Повторный запрос возвращает
+        действующий. После отмены «Это не я» новый запрос — не раньше чем через 24 ч и не больше 3 за
+        7 сут, иначе IDENTITY_RESET_LIMITED с retry_after_ms (FLOWS/02 ш. 6, SCREENS/07 §4); о запросах,
+        отклонённых лимитом, письмо — не чаще раза в сутки на аккаунт.
+      operationId: requestIdentityReset
+      responses:
+        '201':
+          description: Запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityResetRequest'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [devices]
+      summary: Отменить сброс ключа идентичности
+      description: 'Запрос — CANCELLED, событие IdentityResetCancelled. С подтверждённого устройства пользователя («Это не я», SCREENS/07 §8) — сессия запросившего устройства отзывается. С самого запросившего устройства («Отменить сброс», SCREENS/07 §4) — его сессия остаётся, оно возвращается к выбору способа подтверждения (CRYPTO.md §6.3.9).'
+      operationId: cancelIdentityReset
+      responses:
+        '204': { description: Отменено }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/personal-backup:
+    get:
+      tags: [devices]
+      summary: Последняя резервная копия ключа истории личной группы
+      description: Для восстановления без старых устройств (CRYPTO.md §6.5). Доступно устройству, подтверждённому ключом восстановления. Частота ограничена.
+      operationId: getPersonalBackup
+      responses:
+        '200':
+          description: Копия
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalBackup'
+        default:
+          $ref: '#/components/responses/Error'
+  /users/me/mention-hints:
+    put:
+      tags: [messages]
+      summary: Зарегистрировать свои mention-hint во всех каналах одним запросом
+      description: |
+        Хинт своего `user_id` и своих ролей для каждого канала и поколения ключа истории (CRYPTO.md
+        §6.4). Клиент шлёт после нового поколения в любом канале, смены ролей, входа и возвращения.
+        Хинт, пришедший позже сообщения, сервер сопоставляет задним числом и пересчитывает бейджи.
+      operationId: putMyMentionHints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entries]
+              properties:
+                entries:
+                  type: array
+                  maxItems: 1000
+                  items:
+                    type: object
+                    required: [channel_id, generation, hints]
+                    properties:
+                      channel_id: { $ref: '#/components/schemas/Id' }
+                      generation: { type: integer, minimum: 1 }
+                      hints:
+                        type: array
+                        maxItems: 64
+                        items: { $ref: '#/components/schemas/Bytes' }
+      responses:
+        '204': { description: Сохранено }
         default:
           $ref: '#/components/responses/Error'
   /users/me/recovery-key/identity:
@@ -579,9 +684,13 @@ paths:
       - $ref: '#/components/parameters/UserId'
     get:
       tags: [devices]
-      summary: Устройства пользователя (для вкладки «Безопасность»)
-      description: Только тип, дата добавления, статус проверки и открытые ключи; город и время входа видит лишь владелец.
+      summary: Устройства пользователя (для вкладки «Безопасность» и проверки подписей истории)
+      description: 'Только тип, дата добавления, статус проверки и открытые ключи; город и время входа видит лишь владелец. С `include_removed=true` — и удалённые устройства с `removed_at`: их записи сервер хранит навсегда, по ним проверяются подписи сообщений в истории (CRYPTO.md §6.2.8).'
       operationId: listUserDevices
+      parameters:
+        - name: include_removed
+          in: query
+          schema: { type: boolean, default: false }
       responses:
         '200':
           description: Устройства с открытыми ключами
@@ -594,6 +703,28 @@ paths:
                   devices:
                     type: array
                     items: { $ref: '#/components/schemas/PublicDevice' }
+        default:
+          $ref: '#/components/responses/Error'
+  /users/{user_id}/identity-keys:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      tags: [users]
+      summary: История ключей идентичности пользователя
+      description: Все ключи идентичности с периодами действия, включая прежние после «Начать заново»; сервер хранит навсегда (CRYPTO.md §6.2.6, §6.3.9).
+      operationId: listIdentityKeys
+      responses:
+        '200':
+          description: Ключи по возрастанию `valid_from`
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [keys]
+                properties:
+                  keys:
+                    type: array
+                    items: { $ref: '#/components/schemas/IdentityKeyRecord' }
         default:
           $ref: '#/components/responses/Error'
   /users/{user_id}/key-packages/claim:
@@ -668,12 +799,18 @@ paths:
           application/json:
             schema:
               type: object
-              required: [signature_pubkey]
+              required: [signature_pubkey, history_hpke_key, history_hpke_key_signature]
               properties:
                 signature_pubkey: { $ref: '#/components/schemas/Bytes' }
                 identity_signature:
                   allOf: [{ $ref: '#/components/schemas/Bytes' }]
                   description: Подпись ключом идентичности, если устройство само его знает (первое устройство, восстановление ключом).
+                history_hpke_key:
+                  allOf: [{ $ref: '#/components/schemas/Bytes' }]
+                  description: Ключ HPKE истории устройства (X25519) для мостов ключей истории (CRYPTO.md §6.3.6).
+                history_hpke_key_signature:
+                  allOf: [{ $ref: '#/components/schemas/Bytes' }]
+                  description: Подпись `history_hpke_key` ключом подписи устройства.
       responses:
         '200':
           description: Устройство
@@ -687,6 +824,10 @@ paths:
     post:
       tags: [devices]
       summary: Загрузить пачку KeyPackage текущего устройства
+      description: |
+        Только подтверждённое устройство (иначе DEVICE_UNVERIFIED): credential пакета несёт подпись
+        ключа устройства ключом идентичности. DS проверяет пакет по CRYPTO.md §1.4, ошибка —
+        INVALID_KEY_PACKAGE. Клиент держит на складе 100 пакетов и пополняет, когда их меньше 50.
       operationId: uploadKeyPackages
       requestBody:
         required: true
@@ -817,7 +958,8 @@ paths:
         Старое устройство (или новое после ввода ключа восстановления) присылает подпись ключа
         устройства ключом идентичности. Сервер помечает устройство подтверждённым, рассылает
         DeviceVerified и как external sender отправляет Add-proposals во все группы пользователя
-        (FLOWS/02 ш. 4.4). Ошибка SIGNATURE_INVALID.
+        (FLOWS/02 ш. 4.4). Коммитером в этих группах DS назначает в первую очередь устройство,
+        приславшее подпись (CRYPTO.md §2.6). Ошибка SIGNATURE_INVALID.
       operationId: verifyDevice
       requestBody:
         required: true
@@ -1452,7 +1594,7 @@ paths:
     post:
       tags: [channels]
       summary: Обновить ключи канала
-      description: Право `channel.edit`. Сервер шлёт MlsUpdateRequested онлайн-участникам; commit делает первый откликнувшийся.
+      description: Право `channel.edit`. Сервер шлёт MlsUpdateRequested{REASON_MANUAL} с назначенным устройством; commit делает оно (CRYPTO.md §1.9, §2.6).
       operationId: requestChannelKeyRotation
       responses:
         '202': { description: Запрошено }
@@ -1865,8 +2007,11 @@ paths:
       description: |
         Сервер проверяет `chat.post`, при вложениях — `chat.upload`, при `broadcast_mention` или
         хинтах ролей — `chat.ping_all` (без права упоминание сохраняется, но без уведомлений),
-        членство устройства в группе, эпоху и размер шифртекста (≤ 128 КиБ). Ошибки: PERMISSION_DENIED, EPOCH_MISMATCH (клиент
-        догоняет commit-ы и повторяет до 3 раз), MESSAGE_EXISTS, ATTACHMENT_INVALID,
+        членство устройства в группе, поколение ключа истории (текущее поколение канала) и размер
+        шифртекста (≤ 128 КиБ). Ошибки: PERMISSION_DENIED, HISTORY_GENERATION_MISMATCH (клиент
+        догоняет commit-ы и повторяет до 3 раз; смена эпохи без нового поколения отправку не
+        прерывает, CRYPTO.md §6.2.8), MESSAGE_ID_OUT_OF_WINDOW (время в `id` старше 30 сут или
+        больше чем на 5 мин впереди), GROUP_FROZEN, MESSAGE_EXISTS, ATTACHMENT_INVALID,
         TOO_MANY_ATTACHMENTS, PAYLOAD_TOO_LARGE, BLOCKED (ЛС). Рассылает MessageCreated и push без текста.
       operationId: createMessage
       requestBody:
@@ -1957,7 +2102,8 @@ paths:
       - $ref: '#/components/parameters/ChannelId'
     put:
       tags: [messages]
-      summary: Зарегистрировать свои mention-hint в канале
+      deprecated: true
+      summary: Зарегистрировать свои mention-hint в канале (заменено `PUT /users/me/mention-hints`)
       description: |
         Участник присылает HMAC своего id и id своих ролей с секретом канала из MLS exporter
         (ARCHITECTURE.md §4.4). Сервер сравнивает их с хинтами входящих сообщений для бейджей и
@@ -2208,8 +2354,22 @@ paths:
       summary: Зарегистрировать новую MLS-группу
       description: |
         Создатель группы (клиент) привязывает её к каналу: чат (DM, текстовый канал, чат голосового)
-        или звонок. Передаёт зашифрованный GroupInfo для external commit и начальную связку ключей
-        истории (ADR-0015). Ошибка CONFLICT, если у канала уже есть группа этой роли.
+        или звонок, и передаёт начальную связку ключей истории (ADR-0015). Ошибка CONFLICT, если у
+        канала уже есть действующая группа этой роли.
+
+        Пересоздание группы по команде оператора или восстановление личной группы (CRYPTO.md §2.10):
+        `predecessor_group_id` задан, и тем же запросом идут начальный commit, добавляющий начальный
+        состав (устройства группы P в эпохе E без удалённых; заявки входят следующим Add, §2.10.3), и
+        Welcome — DS применяет всё атомарно, переключает канал на новую группу и ставит
+        GROUP_STATE_SUPERSEDED и P, и текущей группе канала. На одно пересоздание DS принимает ровно
+        одну новую группу; второй создатель получает GROUP_FROZEN с `successor_group_id`. Начальный
+        состав сверяется с R₀ на момент запроса — Remove, опубликованные после выдачи плана, из него
+        исключены. Так же создаётся новая группа звонка при сбое (CRYPTO.md §5.1): без тега
+        непрерывности, создателя назначает DS. Создавать новую группу вправе только устройство,
+        назначенное создателем этого пересоздания (CRYPTO.md §2.10.5). Ошибки BAD_DELTA, BAD_WELCOME,
+        UNAUTHORIZED_CHANGE, CHANNEL_MEMBER_LIMIT, GROUP_FROZEN, NOT_DESIGNATED, REMOVAL_PENDING.
+
+        GroupInfo не передаётся: external commit в 1.0 не используется (ADR-0019).
       operationId: createGroup
       requestBody:
         required: true
@@ -2225,8 +2385,31 @@ paths:
                   allOf: [{ $ref: '#/components/schemas/Id' }]
                   description: Id группы (MLS group_id), сгенерирован клиентом.
                 ciphersuite: { type: integer, enum: [1] }
-                encrypted_group_info: { $ref: '#/components/schemas/Bytes' }
+                encrypted_group_info:
+                  allOf: [{ $ref: '#/components/schemas/Bytes' }]
+                  deprecated: true
+                  description: Не используется в 1.0 (ADR-0019); DS поле игнорирует.
                 history_key_bundle: { $ref: '#/components/schemas/Bytes' }
+                history_key_generation:
+                  type: integer
+                  minimum: 1
+                  description: Головное поколение связки — открыто, DS сверяет его с поколением после commit-а (CRYPTO.md §6.3.5).
+                personal_backup: { $ref: '#/components/schemas/PersonalBackup' }
+                predecessor_group_id:
+                  allOf: [{ $ref: '#/components/schemas/Id' }]
+                  description: Замороженная группа, которую заменяет эта (пересоздание, CRYPTO.md §2.10).
+                initial_commit:
+                  allOf: [{ $ref: '#/components/schemas/Bytes' }]
+                  description: При пересоздании — начальный commit новой группы (PrivateMessage эпохи 0 от листа создателя с RosterDelta); до 4 МиБ.
+                welcomes:
+                  type: array
+                  description: При пересоздании — Welcome адресатам начального commit-а.
+                  items:
+                    type: object
+                    required: [device_id, blob]
+                    properties:
+                      device_id: { $ref: '#/components/schemas/Id' }
+                      blob: { $ref: '#/components/schemas/Bytes' }
       responses:
         '201':
           description: Группа
@@ -2282,14 +2465,20 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       tags: [mls]
-      summary: Отправить Proposal или Commit
+      summary: Отправить Commit
       description: |
-        Сервер принимает commit только для текущей эпохи (EPOCH_MISMATCH с `current_epoch`), иначе
-        присваивает `seq` и рассылает MlsHandshake участникам. Вместе с commit в одном запросе идут
-        Welcome для новых устройств, новый зашифрованный GroupInfo и связка ключей истории для новой
-        эпохи — так состояние группы на сервере меняется атомарно (ADR-0015). Для external commit
-        `kind = HANDSHAKE_KIND_EXTERNAL_COMMIT`; связку тогда обновит первый участник по
-        MlsUpdateRequested. Ошибка NOT_GROUP_MEMBER, если устройство не в группе (кроме external commit).
+        Сервер принимает commit участника только для текущей эпохи (EPOCH_MISMATCH с `current_epoch`),
+        проверяет RosterDelta в authenticated_data (CRYPTO.md §2.3–§2.4), присваивает `seq` и
+        рассылает MlsHandshake с `roster_hash` участникам. Вместе с commit в одном запросе идут Welcome
+        для новых устройств и связка ключей истории для новой эпохи — так состояние группы на сервере
+        меняется атомарно (ADR-0015). Повтор уже принятого commit-а получает тот же ответ.
+
+        Commit принимается только от устройства, назначенного на эту эпоху (`MlsUpdateRequested.designated_device_id`), иначе
+        NOT_DESIGNATED. Ошибки: NOT_GROUP_MEMBER, REMOVAL_PENDING, PROPOSALS_MISSING, UNAUTHORIZED_CHANGE (в том числе
+        `kind = HANDSHAKE_KIND_PROPOSAL`: предложения публикует только сервер), BAD_DELTA,
+        BAD_WELCOME, BAD_MESSAGE, CHANNEL_MEMBER_LIMIT, GROUP_FROZEN. External commit в 1.0 не
+        используется: на `kind = HANDSHAKE_KIND_EXTERNAL_COMMIT` — EXTERNAL_COMMIT_UNSUPPORTED
+        (ADR-0019). Реакция клиента на каждый код — CRYPTO.md §2.13.
       operationId: createHandshake
       requestBody:
         required: true
@@ -2303,7 +2492,7 @@ paths:
                 kind: { $ref: '#/components/schemas/HandshakeKind' }
                 blob:
                   allOf: [{ $ref: '#/components/schemas/Bytes' }]
-                  description: PrivateMessage для PROPOSAL и COMMIT участника (handshake участников всегда зашифрованы, ADR-0016 п. 2); PublicMessage для EXTERNAL_COMMIT (RFC 9420 §6.2, отправитель new_member_commit); до 4 МиБ.
+                  description: PrivateMessage commit-а участника (handshake участников всегда зашифрованы, ADR-0016 п. 2) с RosterDelta в authenticated_data (CRYPTO.md §2.3); до 4 МиБ.
                 welcomes:
                   type: array
                   items:
@@ -2312,8 +2501,21 @@ paths:
                     properties:
                       device_id: { $ref: '#/components/schemas/Id' }
                       blob: { $ref: '#/components/schemas/Bytes' }
-                encrypted_group_info: { $ref: '#/components/schemas/Bytes' }
+                encrypted_group_info:
+                  allOf: [{ $ref: '#/components/schemas/Bytes' }]
+                  deprecated: true
+                  description: Не используется в 1.0 (ADR-0019); DS поле игнорирует.
                 history_key_bundle: { $ref: '#/components/schemas/Bytes' }
+                history_key_generation:
+                  type: integer
+                  minimum: 1
+                  description: Головное поколение связки — открыто, DS сверяет его с поколением после commit-а (CRYPTO.md §6.3.5).
+                history_key_link: { $ref: '#/components/schemas/HistoryKeyLink' }
+                history_bridges:
+                  type: array
+                  description: Мосты ключей истории устройствам, которые добавляет этот commit (CRYPTO.md §6.3.6).
+                  items: { $ref: '#/components/schemas/HistoryBridge' }
+                personal_backup: { $ref: '#/components/schemas/PersonalBackup' }
       responses:
         '201':
           description: Принято и упорядочено
@@ -2348,8 +2550,9 @@ paths:
       - $ref: '#/components/parameters/GroupId'
     get:
       tags: [mls]
-      summary: Зашифрованный GroupInfo текущей эпохи
-      description: Для external commit (ARCHITECTURE.md §4.3). Ключ к нему раздаётся участникам канала (CRYPTO.md).
+      summary: Зашифрованный GroupInfo текущей эпохи (не используется в 1.0)
+      description: Не используется в 1.0 — GroupInfo сервер не хранит, external commit нет (ADR-0019). DS отвечает NOT_FOUND.
+      deprecated: true
       operationId: getGroupInfo
       responses:
         '200':
@@ -2391,8 +2594,9 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       tags: [mls]
-      summary: Обновить связку для эпохи
-      description: Используется после external commit, когда связку обновляет первый вышедший в сеть участник (ADR-0015, MlsUpdateRequested REASON_HISTORY_BUNDLE).
+      summary: Обновить связку для эпохи (не используется в 1.0)
+      description: Не используется в 1.0 — связку всегда обновляет автор commit-а тем же запросом, что и commit; external commit нет (ADR-0019).
+      deprecated: true
       operationId: putHistoryKeyBundle
       requestBody:
         required: true
@@ -2402,6 +2606,62 @@ paths:
               $ref: '#/components/schemas/HistoryKeyBundle'
       responses:
         '204': { description: Сохранена }
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/history-key-links:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    get:
+      tags: [mls]
+      summary: Ссылки цепочки ключей истории канала
+      description: Ссылки поколений ниже `below_generation` по убыванию (CRYPTO.md §6.3.4, §6.3.8). Доступно участникам канала; сервер хранит ссылки, пока хранит сообщения канала.
+      operationId: listHistoryKeyLinks
+      parameters:
+        - name: below_generation
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Ссылки
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [links, page]
+                properties:
+                  links:
+                    type: array
+                    items: { $ref: '#/components/schemas/HistoryKeyLink' }
+                  page: { $ref: '#/components/schemas/PageInfo' }
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/history-generations:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    get:
+      tags: [mls]
+      summary: Поколения ключа истории канала
+      description: Номер, время начала (время приёма DS commit-а) и тип изменения каждого поколения — для перевода `valid_until` истории ключей идентичности в поколения (CRYPTO.md §6.3.7 п. 2). Доступно участникам канала.
+      operationId: listHistoryGenerations
+      parameters:
+        - name: below_generation
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Поколения по убыванию
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [generations, page]
+                properties:
+                  generations:
+                    type: array
+                    items: { $ref: '#/components/schemas/HistoryGenerationInfo' }
+                  page: { $ref: '#/components/schemas/PageInfo' }
         default:
           $ref: '#/components/responses/Error'
   /mls/welcomes:
@@ -2429,9 +2689,150 @@ paths:
     delete:
       tags: [mls]
       summary: Подтвердить получение Welcome
+      description: |
+        Клиент вошёл в группу по Welcome и прошёл проверки (CRYPTO.md §1.8). В группе-преемнике DS
+        назначает коммитером только создателя и устройства, вызвавшие этот запрос (§2.6); голосом это
+        не является (§2.9.2).
       operationId: ackWelcome
       responses:
         '204': { description: Подтверждено }
+        default:
+          $ref: '#/components/responses/Error'
+  /mls/groups/{group_id}/roster:
+    parameters:
+      - $ref: '#/components/parameters/GroupId'
+    get:
+      tags: [mls]
+      summary: Состав группы по карте DS
+      description: |
+        Лист → устройство в эпохе `epoch` (без параметра — в текущей) и хэш состава (CRYPTO.md §2.5).
+        Клиент сверяет с ним дерево после входа по Welcome и при несовпадении `roster_hash`. DS хранит
+        карту по эпохам не меньше 31 суток. Доступно членам группы и адресатам её Welcome.
+      operationId: getGroupRoster
+      parameters:
+        - name: epoch
+          in: query
+          schema: { type: integer, format: int64, minimum: 0 }
+      responses:
+        '200':
+          description: Состав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Roster'
+        default:
+          $ref: '#/components/responses/Error'
+  /mls/groups/{group_id}/disputes:
+    parameters:
+      - $ref: '#/components/parameters/GroupId'
+    post:
+      tags: [mls]
+      summary: Записать в журнал оператора отказ от commit-а или Welcome
+      description: |
+        Клиент не смог применить commit номер `seq` (или Welcome, созданный этим commit-ом) по причине
+        `reason` (CRYPTO.md §2.9): член группы шлёт запись, если дефект остался после возврата своего
+        устройства (`POST …/resync`); адресат Welcome — сразу при отказе от Welcome, в том числе
+        RECREATION_INVALID для начального commit-а новой группы. DS принимает запись от устройства из
+        карты группы в базовой эпохе commit-а или адресата его Welcome и пишет в журнал оператора;
+        голосования нет, на состояние группы запись не влияет, возврата не даёт. В группе звонка та же
+        запись — сигнал DS завести новую группу звонка (CRYPTO.md §5.1). Не чаще раза в час на
+        устройство и группу (RATE_LIMITED). Ошибки NOT_GROUP_MEMBER, NOT_FOUND.
+      operationId: disputeHandshake
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [seq, reason]
+              properties:
+                seq: { $ref: '#/components/schemas/Int64' }
+                reason: { $ref: '#/components/schemas/DisputeReason' }
+      responses:
+        '202': { description: Запись принята }
+        default:
+          $ref: '#/components/responses/Error'
+  /mls/groups/{group_id}/resync:
+    parameters:
+      - $ref: '#/components/parameters/GroupId'
+    post:
+      tags: [mls]
+      summary: Вернуть текущее устройство в группу заново
+      description: |
+        Клиенту не хватает состояния, чтобы обработать поток группы: журнал обрезан, срок KeyPackage в
+        commit-е старше горизонта офлайна истёк, локальная база потеряна (CRYPTO.md §2.11.2). DS
+        публикует пару: Remove старого листа устройства и Add со свежим KeyPackage; клиент старые
+        handshake не обрабатывает и ждёт Welcome. То же — когда клиент не смог применить чужой commit
+        (CRYPTO.md §2.9.1). Не чаще раза в час на устройство и группу (RATE_LIMITED). Ошибки
+        NOT_GROUP_MEMBER, GROUP_FROZEN; если свежих KeyPackage нет, пара публикуется после их загрузки.
+      operationId: requestGroupResync
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                local_epoch:
+                  allOf: [{ $ref: '#/components/schemas/Int64' }]
+                  description: Последняя эпоха группы у клиента. Если она больше эпохи DS (потеря журнала после восстановления из копии), DS возвращает устройство как обычно и пишет это в журнал оператора; пересоздание — только командой оператора (CRYPTO.md §2.10.9). В группе звонка такое заявление одного пользователя заводит новую группу звонка в пределах его CALL_RESTART_RATE (§2.14.5).
+      responses:
+        '202': { description: Возврат запрошен }
+        default:
+          $ref: '#/components/responses/Error'
+  /mls/groups/{group_id}/recreation:
+    parameters:
+      - $ref: '#/components/parameters/GroupId'
+    get:
+      tags: [mls]
+      summary: План пересоздания замороженной группы
+      description: |
+        Для устройства, которое команда оператора назначила создателем новой группы
+        (MlsUpdateRequested REASON_RECREATE, CRYPTO.md §2.10.1, §2.10.4): точка согласия E, поколение
+        ключа истории для тега непрерывности, начальный состав. Ошибки: CONFLICT — группа не
+        заморожена; GROUP_FROZEN с `successor_group_id` — её уже заменили; NOT_DESIGNATED — устройство
+        не назначено создателем (CRYPTO.md §2.10.5; исключение — PERSONAL_RESTORE: устройство,
+        восстановленное ключом восстановления); REMOVAL_PENDING — у устройства опубликован Remove:
+        создателем оно не бывает ни при какой причине. План выдаётся от группы P, заданной командой,
+        даже если P уже SUPERSEDED.
+      operationId: getRecreationPlan
+      responses:
+        '200':
+          description: План
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecreationPlan'
+        default:
+          $ref: '#/components/responses/Error'
+  /mls/groups/{group_id}/recreation/key-packages:
+    parameters:
+      - $ref: '#/components/parameters/GroupId'
+    post:
+      tags: [mls]
+      summary: Зарезервировать KeyPackage для новой группы
+      description: |
+        По одному KeyPackage на каждое устройство начального состава R₀ (`RecreationPlan.target_device_ids`,
+        CRYPTO.md §2.10.3), кроме вызывающего. Пакеты
+        закрепляются за этим пересозданием и вызывающим устройством: DS сверяет с ними адресатов
+        Welcome начального commit-а (CRYPTO.md §2.10.5). У кого пакетов нет — в `exhausted_device_ids`;
+        они станут заявками на вход в новую группу. Ошибки — как у плана пересоздания.
+      operationId: reserveRecreationKeyPackages
+      responses:
+        '200':
+          description: Пакеты
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [key_packages, exhausted_device_ids]
+                properties:
+                  key_packages:
+                    type: array
+                    items: { $ref: '#/components/schemas/KeyPackage' }
+                  exhausted_device_ids:
+                    type: array
+                    items: { $ref: '#/components/schemas/Id' }
         default:
           $ref: '#/components/responses/Error'
 
@@ -2447,10 +2848,14 @@ paths:
       description: |
         Проверяет `channel.see` и `voice.join`, лимит участников голоса (VOICE_CHANNEL_FULL) и
         лимит канала. Права `voice.talk` и `voice.share` попадают в токен SFU как разрешения
-        публикации треков (FLOWS/07 ш. 3). Если звонок уже идёт — возвращает id его MLS-группы;
-        иначе `call_group_exists: false`, и вошедший создаёт группу (`POST /mls/groups`, kind CALL).
-        До подтверждения от медиасервера присутствие помечено `connecting`. В ЛС первый вход
-        рассылает CallStarted. Ошибка UNAVAILABLE, если медиасервер недоступен.
+        публикации треков (FLOWS/07 ш. 3). Если звонок уже идёт — возвращает id его MLS-группы и
+        сразу, не дожидаясь подключения клиента к SFU, резервирует KeyPackage устройства и
+        публикует его Add в группу звонка (commit — назначенный участник, таймаут 1 с; CRYPTO.md
+        §5.1); иначе `call_group_exists: false`, и вошедший создаёт группу (`POST /mls/groups`,
+        kind CALL). Клиент параллельно подключается к SFU и ждёт Welcome. До подтверждения от
+        медиасервера присутствие помечено `connecting`. В ЛС первый вход рассылает CallStarted.
+        Ошибка UNAVAILABLE, если медиасервер недоступен. Не чаще раза в 2 с на устройство
+        (RATE_LIMITED с retry_after_ms; CRYPTO.md §5.1).
       operationId: joinVoice
       responses:
         '200':
@@ -2866,6 +3271,8 @@ components:
         retry_after_ms: { type: integer, minimum: 0, description: Для RATE_LIMITED. }
         limit: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Значение лимита, который превышен.' }
         current_epoch: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: Для EPOCH_MISMATCH. }
+        successor_group_id: { allOf: [{ $ref: '#/components/schemas/Id' }], description: 'Для GROUP_FROZEN: группа, которая заменила эту; пусто, пока пересоздание не завершено.' }
+        current_generation: { type: integer, description: 'Для HISTORY_GENERATION_MISMATCH: текущее поколение ключа истории канала.' }
         field_errors:
           type: array
           items:
@@ -2906,6 +3313,9 @@ components:
         - ERROR_CODE_NO_KEY_PACKAGES
         - ERROR_CODE_VERIFICATION_EXPIRED
         - ERROR_CODE_SIGNATURE_INVALID
+        - ERROR_CODE_INVALID_KEY_PACKAGE
+        - ERROR_CODE_IDENTITY_RESET_PENDING
+        - ERROR_CODE_IDENTITY_RESET_LIMITED
         - ERROR_CODE_CHANNEL_MEMBER_LIMIT
         - ERROR_CODE_COMMUNITY_LIMIT
         - ERROR_CODE_BANNED
@@ -2925,6 +3335,18 @@ components:
         - ERROR_CODE_MESSAGE_EXISTS
         - ERROR_CODE_ATTACHMENT_INVALID
         - ERROR_CODE_TOO_MANY_ATTACHMENTS
+        - ERROR_CODE_EXTERNAL_COMMIT_UNSUPPORTED
+        - ERROR_CODE_PROPOSALS_MISSING
+        - ERROR_CODE_REMOVAL_PENDING
+        - ERROR_CODE_BAD_DELTA
+        - ERROR_CODE_BAD_WELCOME
+        - ERROR_CODE_BAD_MESSAGE
+        - ERROR_CODE_UNAUTHORIZED_CHANGE
+        - ERROR_CODE_ALREADY_MEMBER
+        - ERROR_CODE_GROUP_FROZEN
+        - ERROR_CODE_HISTORY_GENERATION_MISMATCH
+        - ERROR_CODE_NOT_DESIGNATED
+        - ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW
         - ERROR_CODE_SOUND_INVALID
         - ERROR_CODE_SOUND_SLOTS_FULL
 
@@ -2948,6 +3370,25 @@ components:
         server_version: { type: string }
         protocol_version: { type: integer, description: Версия протокола gateway и REST (1). }
         limits: { $ref: '#/components/schemas/InstanceLimits' }
+        external_sender_key:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: Действующий ключ подписи DS как external sender (Ed25519, 32 байта); клиент закрепляет его при первом входе (CRYPTO.md §2.12).
+        external_sender_rotations:
+          type: array
+          description: Цепочка замен ключа от первого ключа инстанса до действующего, по порядку.
+          items: { $ref: '#/components/schemas/ExternalSenderKeyRotation' }
+    ExternalSenderKeyRotation:
+      type: object
+      x-proto-message: bebeberloga.v1.ExternalSenderKeyRotation
+      x-go-type: bebeberlogav1.ExternalSenderKeyRotation
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [old_key, new_key, signature]
+      properties:
+        old_key: { $ref: '#/components/schemas/Bytes' }
+        new_key: { $ref: '#/components/schemas/Bytes' }
+        signature:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: AppSign старым ключом с меткой «external sender rotation» (CRYPTO.md §2.12), 64 байта.
     InstanceLimits:
       type: object
       x-proto-message: bebeberloga.v1.InstanceLimits
@@ -3059,6 +3500,8 @@ components:
         last_seen_at: { $ref: '#/components/schemas/Timestamp' }
         last_seen_location: { type: string }
         current: { type: boolean }
+        history_hpke_key: { $ref: '#/components/schemas/Bytes' }
+        history_hpke_key_signature: { $ref: '#/components/schemas/Bytes' }
     DeviceVerificationRequest:
       type: object
       x-proto-message: bebeberloga.v1.DeviceVerificationRequest
@@ -3083,6 +3526,64 @@ components:
         identity_signature: { $ref: '#/components/schemas/Bytes' }
         verification: { $ref: '#/components/schemas/DeviceVerification' }
         created_at: { $ref: '#/components/schemas/Timestamp' }
+        history_hpke_key: { $ref: '#/components/schemas/Bytes' }
+        history_hpke_key_signature: { $ref: '#/components/schemas/Bytes' }
+        removed_at:
+          allOf: [{ $ref: '#/components/schemas/Timestamp' }]
+          description: Время удаления; запись удалённого устройства хранится навсегда (CRYPTO.md §6.2.8).
+    IdentityKeyRecord:
+      type: object
+      x-proto-message: bebeberloga.v1.IdentityKeyRecord
+      x-go-type: bebeberlogav1.IdentityKeyRecord
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [identity_pubkey, valid_from]
+      properties:
+        identity_pubkey: { $ref: '#/components/schemas/Bytes' }
+        valid_from: { $ref: '#/components/schemas/Timestamp' }
+        valid_until:
+          allOf: [{ $ref: '#/components/schemas/Timestamp' }]
+          description: Пусто у действующего ключа.
+    RecoveryPublicKey:
+      type: object
+      x-proto-message: bebeberloga.v1.RecoveryPublicKey
+      x-go-type: bebeberlogav1.RecoveryPublicKey
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [key, created_at, signature]
+      properties:
+        key: { $ref: '#/components/schemas/Bytes' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        signature:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: AppSign ключом идентичности с меткой «recovery hpke key» (CRYPTO.md §6.5).
+    PersonalBackup:
+      type: object
+      x-proto-message: bebeberloga.v1.PersonalBackup
+      x-go-type: bebeberlogav1.PersonalBackup
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [generation, blob]
+      properties:
+        generation: { type: integer, minimum: 1 }
+        blob:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: HPKE на открытый ключ восстановления (CRYPTO.md §6.5).
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+    IdentityResetRequest:
+      type: object
+      x-proto-message: bebeberloga.v1.IdentityResetRequest
+      x-go-type: bebeberlogav1.IdentityResetRequest
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [id, state, requested_by_device_id, created_at, applies_at]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        state:
+          type: string
+          x-proto-enum: bebeberloga.v1.IdentityResetState
+          x-go-type: bebeberlogav1.IdentityResetState
+          x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+          enum: [IDENTITY_RESET_STATE_UNSPECIFIED, IDENTITY_RESET_STATE_PENDING, IDENTITY_RESET_STATE_READY, IDENTITY_RESET_STATE_CANCELLED, IDENTITY_RESET_STATE_APPLIED]
+        requested_by_device_id: { $ref: '#/components/schemas/Id' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        applies_at: { $ref: '#/components/schemas/Timestamp' }
     Session:
       type: object
       x-proto-message: bebeberloga.v1.Session
@@ -3164,7 +3665,7 @@ components:
       x-proto-enum: bebeberloga.v1.ChannelType
       x-go-type: bebeberlogav1.ChannelType
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [CHANNEL_TYPE_UNSPECIFIED, CHANNEL_TYPE_TEXT, CHANNEL_TYPE_VOICE, CHANNEL_TYPE_DM, CHANNEL_TYPE_GROUP_DM, CHANNEL_TYPE_THREAD]
+      enum: [CHANNEL_TYPE_UNSPECIFIED, CHANNEL_TYPE_TEXT, CHANNEL_TYPE_VOICE, CHANNEL_TYPE_DM, CHANNEL_TYPE_GROUP_DM, CHANNEL_TYPE_THREAD, CHANNEL_TYPE_PERSONAL]
     HistoryVisibility:
       type: string
       x-proto-enum: bebeberloga.v1.HistoryVisibility
@@ -3562,12 +4063,16 @@ components:
           allOf: [{ $ref: '#/components/schemas/Id' }]
           description: UUIDv7, сгенерирован клиентом; повтор с тем же id идемпотентен (MESSAGE_EXISTS, если тело отличается).
         group_id: { $ref: '#/components/schemas/Id' }
-        epoch: { $ref: '#/components/schemas/Int64' }
+        epoch:
+          allOf: [{ $ref: '#/components/schemas/Int64' }]
+          description: Эпоха группы у отправителя — для диагностики; сервер проверяет поколение ключа истории.
         ciphertext:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
-          description: MLS PrivateMessage с MessageEnvelope внутри; до 128 КиБ (MESSAGES.md §3).
-        wrapped_message_key: { $ref: '#/components/schemas/Bytes' }
-        history_key_generation: { type: integer }
+          description: SealedMessage — конверт и подпись устройства под ключом сообщения, длина кратна 256 байтам; не MLS (CRYPTO.md §6.2.3); до 128 КиБ (MESSAGES.md §3).
+        wrapped_message_key:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: Ключ сообщения под подключом текущего поколения ключа истории (CRYPTO.md §6.2.4).
+        history_key_generation: { type: integer, minimum: 1 }
         mention_hints:
           type: array
           maxItems: 50
@@ -3609,13 +4114,35 @@ components:
       x-proto-enum: bebeberloga.v1.GroupKind
       x-go-type: bebeberlogav1.GroupKind
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      enum: [GROUP_KIND_UNSPECIFIED, GROUP_KIND_CHAT, GROUP_KIND_CALL]
+      enum: [GROUP_KIND_UNSPECIFIED, GROUP_KIND_CHAT, GROUP_KIND_CALL, GROUP_KIND_PERSONAL]
+    HistoryChange:
+      type: string
+      x-proto-enum: bebeberloga.v1.HistoryChange
+      x-go-type: bebeberlogav1.HistoryChange
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      description: Изменение ключа истории в commit-е (CRYPTO.md §6.3.3).
+      enum: [HISTORY_CHANGE_UNSPECIFIED, HISTORY_CHANGE_NONE, HISTORY_CHANGE_ROTATE, HISTORY_CHANGE_BREAK_NEW_MEMBER, HISTORY_CHANGE_BREAK_ENABLE, HISTORY_CHANGE_BREAK_RESET, HISTORY_CHANGE_BREAK_RECREATE, HISTORY_CHANGE_BREAK_DISABLE]
     HandshakeKind:
       type: string
       x-proto-enum: bebeberloga.v1.HandshakeKind
       x-go-type: bebeberlogav1.HandshakeKind
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      description: HANDSHAKE_KIND_EXTERNAL_COMMIT не используется в 1.0 (ADR-0019, `deprecated` в proto); HANDSHAKE_KIND_PROPOSAL от клиентов не принимается — предложения публикует только сервер.
       enum: [HANDSHAKE_KIND_UNSPECIFIED, HANDSHAKE_KIND_PROPOSAL, HANDSHAKE_KIND_COMMIT, HANDSHAKE_KIND_EXTERNAL_COMMIT]
+    GroupState:
+      type: string
+      x-proto-enum: bebeberloga.v1.GroupState
+      x-go-type: bebeberlogav1.GroupState
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      description: Состояние группы на DS (CRYPTO.md §2.10).
+      enum: [GROUP_STATE_UNSPECIFIED, GROUP_STATE_ACTIVE, GROUP_STATE_FROZEN, GROUP_STATE_SUPERSEDED]
+    RecreationReason:
+      type: string
+      x-proto-enum: bebeberloga.v1.RecreationReason
+      x-go-type: bebeberlogav1.RecreationReason
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      description: Почему группа заморожена и пересоздаётся (CRYPTO.md §2.10.1).
+      enum: [RECREATION_REASON_UNSPECIFIED, RECREATION_REASON_DISPUTE, RECREATION_REASON_JOURNAL_LOSS, RECREATION_REASON_PERSONAL_RESTORE]
     Group:
       type: object
       x-proto-message: bebeberloga.v1.Group
@@ -3632,8 +4159,23 @@ components:
         last_seq: { $ref: '#/components/schemas/Int64' }
         created_at: { $ref: '#/components/schemas/Timestamp' }
         last_rotation_at: { $ref: '#/components/schemas/Timestamp' }
-        has_group_info: { type: boolean }
+        has_group_info:
+          type: boolean
+          deprecated: true
+          description: Не используется в 1.0 (ADR-0019); всегда false.
         has_history_key_bundle: { type: boolean }
+        state: { $ref: '#/components/schemas/GroupState' }
+        predecessor_group_id:
+          allOf: [{ $ref: '#/components/schemas/Id' }]
+          description: Группа, которую эта заменила при пересоздании.
+        successor_group_id:
+          allOf: [{ $ref: '#/components/schemas/Id' }]
+          description: Группа, которая заменила эту (при GROUP_STATE_SUPERSEDED).
+        roster_hash:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: Хэш состава текущей эпохи по карте DS (CRYPTO.md §2.5), 32 байта.
+        recreation_reason: { $ref: '#/components/schemas/RecreationReason' }
+        history_key_generation: { type: integer, description: Текущее поколение ключа истории канала (CRYPTO.md §6.3). }
     Handshake:
       type: object
       x-proto-message: bebeberloga.v1.Handshake
@@ -3649,6 +4191,11 @@ components:
         from_external_sender: { type: boolean }
         blob: { $ref: '#/components/schemas/Bytes' }
         created_at: { $ref: '#/components/schemas/Timestamp' }
+        roster_hash:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: Для commit — хэш состава после него по карте DS (CRYPTO.md §2.5).
+        history_change: { $ref: '#/components/schemas/HistoryChange' }
+        history_key_generation: { type: integer, description: Для commit — поколение ключа истории после него. }
     Welcome:
       type: object
       x-proto-message: bebeberloga.v1.Welcome
@@ -3661,6 +4208,11 @@ components:
         kind: { $ref: '#/components/schemas/GroupKind' }
         blob: { $ref: '#/components/schemas/Bytes' }
         created_at: { $ref: '#/components/schemas/Timestamp' }
+        epoch: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Эпоха, в которую вводит Welcome.' }
+        seq: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Номер commit-а, создавшего Welcome (для записи в журнал оператора).' }
+        history_bridge:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: Мост ключей истории через разрывы цепочки (CRYPTO.md §6.3.6); пусто, если не нужен.
     HistoryKeyBundle:
       type: object
       x-proto-message: bebeberloga.v1.HistoryKeyBundle
@@ -3672,8 +4224,113 @@ components:
         epoch: { $ref: '#/components/schemas/Int64' }
         blob:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
-          description: Связка, зашифрованная для эпохи (формат — CRYPTO.md).
+          description: Связка — головной ключ, зашифрованный для эпохи (CRYPTO.md §6.3.5).
         updated_at: { $ref: '#/components/schemas/Timestamp' }
+        generation: { type: integer, description: 'Головное поколение — открыто, DS сверяет с текущим.' }
+    HistoryKeyLink:
+      type: object
+      x-proto-message: bebeberloga.v1.HistoryKeyLink
+      x-go-type: bebeberlogav1.HistoryKeyLink
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [channel_id, generation, previous_generation, blob]
+      properties:
+        channel_id: { $ref: '#/components/schemas/Id' }
+        generation: { type: integer, minimum: 2 }
+        previous_generation: { type: integer, minimum: 1 }
+        blob:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: Ключ поколения `previous_generation` под подключом поколения `generation` (CRYPTO.md §6.3.4).
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+    HistoryGenerationInfo:
+      type: object
+      x-proto-message: bebeberloga.v1.HistoryGenerationInfo
+      x-go-type: bebeberlogav1.HistoryGenerationInfo
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [channel_id, generation, started_at, change]
+      properties:
+        channel_id: { $ref: '#/components/schemas/Id' }
+        generation: { type: integer, minimum: 1 }
+        started_at: { $ref: '#/components/schemas/Timestamp' }
+        change: { $ref: '#/components/schemas/HistoryChange' }
+        group_id: { $ref: '#/components/schemas/Id' }
+        epoch: { $ref: '#/components/schemas/Int64' }
+    HistoryBridge:
+      type: object
+      x-proto-message: bebeberloga.v1.HistoryBridge
+      x-go-type: bebeberlogav1.HistoryBridge
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [device_id, blob]
+      properties:
+        device_id: { $ref: '#/components/schemas/Id' }
+        blob:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: HPKE на ключ истории устройства (CRYPTO.md §6.3.6).
+    RosterEntry:
+      type: object
+      x-proto-message: bebeberloga.v1.RosterEntry
+      x-go-type: bebeberlogav1.RosterEntry
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [leaf, device_id]
+      properties:
+        leaf: { type: integer, minimum: 0 }
+        device_id: { $ref: '#/components/schemas/Id' }
+    Roster:
+      type: object
+      x-proto-message: bebeberloga.v1.Roster
+      x-go-type: bebeberlogav1.Roster
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [group_id, epoch, entries, roster_hash]
+      properties:
+        group_id: { $ref: '#/components/schemas/Id' }
+        epoch: { $ref: '#/components/schemas/Int64' }
+        entries:
+          type: array
+          description: Непустые листья по возрастанию `leaf`.
+          items: { $ref: '#/components/schemas/RosterEntry' }
+        roster_hash:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: SHA-256 от RosterHashInput (CRYPTO.md §2.5), 32 байта.
+    DisputeReason:
+      type: string
+      x-proto-enum: bebeberloga.v1.DisputeReason
+      x-go-type: bebeberlogav1.DisputeReason
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      description: Причина записи в журнал оператора о commit-е или Welcome, который клиент не смог применить (CRYPTO.md §2.9.2).
+      enum:
+        - DISPUTE_REASON_UNSPECIFIED
+        - DISPUTE_REASON_DELTA_MISMATCH
+        - DISPUTE_REASON_MISSING_REMOVE
+        - DISPUTE_REASON_UNAUTHORIZED_ADD
+        - DISPUTE_REASON_LEAF_CREDENTIAL_CHANGED
+        - DISPUTE_REASON_FORBIDDEN_PROPOSAL
+        - DISPUTE_REASON_UNDECRYPTABLE
+        - DISPUTE_REASON_ROSTER_MISMATCH
+        - DISPUTE_REASON_BINDING_MISMATCH
+        - DISPUTE_REASON_KEY_PACKAGE_EXPIRED
+        - DISPUTE_REASON_RECREATION_INVALID
+        - DISPUTE_REASON_HISTORY_ROTATION_MISSING
+        - DISPUTE_REASON_HISTORY_LINK_INVALID
+    RecreationPlan:
+      type: object
+      x-proto-message: bebeberloga.v1.RecreationPlan
+      x-go-type: bebeberlogav1.RecreationPlan
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [old_group_id, channel_id, kind, last_agreed_epoch, target_device_ids]
+      properties:
+        old_group_id: { $ref: '#/components/schemas/Id' }
+        channel_id: { $ref: '#/components/schemas/Id' }
+        kind: { $ref: '#/components/schemas/GroupKind' }
+        last_agreed_epoch: { $ref: '#/components/schemas/Int64' }
+        history_key_generation:
+          type: integer
+          minimum: 0
+          description: Поколение ключа истории в `last_agreed_epoch` (для тега непрерывности); 0 у групп звонков.
+        target_device_ids:
+          type: array
+          description: Начальный состав новой группы — устройства старой группы в `last_agreed_epoch` без удалённых (CRYPTO.md §2.10.3); остальные входят следующим Add.
+          items: { $ref: '#/components/schemas/Id' }
+        reason: { $ref: '#/components/schemas/RecreationReason' }
+        next_generation: { type: integer, description: 'Поколение ключа истории, которое начнёт новая группа (CRYPTO.md §6.3.10): при DISPUTE и PERSONAL_RESTORE — ровно оно, при JOURNAL_LOSS — не больше next_generation + 65 536, иначе BAD_DELTA.' }
 
     # --- голос и звуки -------------------------------------------------------
     VoiceJoin:

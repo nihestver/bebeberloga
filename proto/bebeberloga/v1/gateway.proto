@@ -57,6 +57,7 @@ message ServerFrame {
     MlsHandshake mls_handshake = 110;
     MlsWelcome mls_welcome = 111;
     MlsUpdateRequested mls_update_requested = 112;
+    MlsGroupStateChanged mls_group_state_changed = 113;
 
     // --- присутствие и голос -------------------------------------------
     PresenceUpdated presence_updated = 120;
@@ -100,6 +101,8 @@ message ServerFrame {
     RelationshipUpdated relationship_updated = 165;
     RelationshipRemoved relationship_removed = 166;
     NotificationSettingsUpdated notification_settings_updated = 167;
+    IdentityResetRequested identity_reset_requested = 168;
+    IdentityResetCancelled identity_reset_cancelled = 169;
   }
 }
 
@@ -151,6 +154,13 @@ message Ready {
   // Сообщества, из которых пользователя удалили, пока устройство не было в сети, и показ
   // которых оно ещё не подтвердило (`DELETE /users/me/community-removals/{community_id}`).
   repeated CommunityRemoval community_removals = 15;
+  // Устройство не подключалось дольше горизонта офлайна (30 сут): старые handshake групп с
+  // `MlsPending.returning` не обрабатываются, устройство загружает свежие KeyPackage и входит
+  // заново по Welcome (CRYPTO.md §2.11, FLOWS/02 «Возвращение после долгого перерыва»).
+  bool device_returning = 16;
+  // Действующий запрос сброса ключа идентичности пользователя (CRYPTO.md §6.3.9): на старых
+  // устройствах — предупреждение с отменой (SCREENS/07 §8), на новом — обратный отсчёт (§4).
+  IdentityResetRequest identity_reset = 17;
 }
 
 // Сообщество целиком, кроме списка участников.
@@ -178,6 +188,12 @@ message MlsPending {
   bool welcome_pending = 3;
   // Число handshake-сообщений после последнего подтверждённого `seq` устройства.
   uint32 handshake_count = 4;
+  // Устройство возвращается в группу парой Remove + Add (CRYPTO.md §2.11): старые handshake не
+  // обрабатывать, ждать Welcome.
+  bool returning = 5;
+  // 6 — бывшее review_seq: снято вместе с голосованием по жалобам (ADR-0021 п. 17).
+  reserved 6;
+  reserved "review_seq";
 }
 
 // Возобновление сессии после разрыва.
@@ -212,8 +228,13 @@ message SessionInvalid {
     REASON_DEVICE_REMOVED = 3;
     // Несовместимая версия протокола.
     REASON_PROTOCOL_MISMATCH = 4;
+    // Устройство удалено сбросом ключа идентичности («Начать заново»): клиент не стирает базу
+    // молча, а спрашивает «Это был ты?» (CRYPTO.md §3.7, SCREENS/07 §8).
+    REASON_DEVICE_REMOVED_BY_RESET = 5;
   }
   Reason reason = 1;
+  // Для REASON_DEVICE_REMOVED_BY_RESET: запрос сброса (с какого устройства и когда).
+  IdentityResetRequest identity_reset = 2;
 }
 
 // Heartbeat: клиент шлёт каждые heartbeat_interval_ms с последним seq, сервер отвечает HeartbeatAck.
@@ -305,8 +326,11 @@ message MlsWelcome {
   Welcome welcome = 1;
 }
 
-// Сервер просит онлайн-устройство сделать commit (ротация по сроку, «Обновить ключи канала»,
-// незакоммиченные proposals external sender). Обрабатывает первое устройство, которое успеет.
+// Сервер назначает устройство, которое должно сделать commit (незакоммиченные предложения
+// external sender, ротация по сроку, «Обновить ключи канала», пересоздание группы, замена ключа
+// инстанса). Событие получают все онлайн-устройства группы, коммитит только
+// `designated_device_id`; если commit эпохи не пришёл за 3 с, сервер назначает следующее
+// устройство новым событием (CRYPTO.md §2.6).
 message MlsUpdateRequested {
   string group_id = 1;
   enum Reason {
@@ -317,10 +341,40 @@ message MlsUpdateRequested {
     REASON_SCHEDULED_ROTATION = 2;
     // Запрос участника с правом `channel.edit`.
     REASON_MANUAL = 3;
-    // После external commit нужно обновить связку ключей истории (ADR-0015).
-    REASON_HISTORY_BUNDLE = 4;
+    // Не используется в 1.0: связку ключей истории всегда обновляет автор commit-а, external
+    // commit-а нет (ADR-0019).
+    REASON_HISTORY_BUNDLE = 4 [deprecated = true];
+    // Группа заморожена; назначенное устройство создаёт новую группу канала (CRYPTO.md §2.10).
+    REASON_RECREATE = 5;
+    // Перевести группу на новый ключ external sender инстанса (CRYPTO.md §2.12).
+    REASON_EXTERNAL_SENDER_ROTATION = 6;
+    // Настройку «Новые участники видят историю» выключили или снова включили — нужен разрыв цепочки
+    // ключей истории `break_disable` или `break_enable` (CRYPTO.md §6.3.3).
+    REASON_HISTORY_SETTING = 7;
   }
   Reason reason = 2;
+  // Устройство, которое должно сделать commit (или создать новую группу при REASON_RECREATE).
+  string designated_device_id = 3;
+  // Эпоха группы, на которой ожидается commit.
+  uint64 epoch = 4;
+}
+
+// Состояние группы на DS изменилось (CRYPTO.md §2.10, §2.14):
+// - FROZEN — группа заморожена и будет пересоздана (`recreation_reason`): по команде оператора,
+//   для восстановления личной группы или, у группы звонка, по сбою (CRYPTO.md §5.1); в группе канала клиент показывает «ошибку ключей»
+//   (SCREENS/08 §8); в группе звонка заморожен только handshake на время создания новой группы
+//   (около 1 с), медиа идут, а при ожидающем Remove действует пауза своих медиа (CRYPTO.md §5.3 п. 7);
+// - SUPERSEDED — группа заменена (`successor_group_id`); клиент ждёт Welcome в новую;
+// - ACTIVE — не используется: автоматических переходов из заморозки назад нет.
+message MlsGroupStateChanged {
+  string group_id = 1;
+  string channel_id = 2;
+  string successor_group_id = 3;
+  GroupState state = 4;
+  // 5 — бывшее review_seq, 7 — бывшее recreation_deferred_until (ADR-0021 п. 17).
+  reserved 5, 7;
+  reserved "review_seq", "recreation_deferred_until";
+  RecreationReason recreation_reason = 6;
 }
 
 message PresenceUpdated {
@@ -485,6 +539,20 @@ message DeviceVerified {
 message DeviceRemoved {
   string user_id = 1;
   string device_id = 2;
+  // Удалено сбросом ключа идентичности (CRYPTO.md §3.7).
+  bool by_identity_reset = 3;
+}
+
+// Запрошен сброс ключа идентичности пользователя (CRYPTO.md §6.3.9). Своим подтверждённым
+// устройствам; они показывают предупреждение с отменой (SCREENS/07 §8).
+message IdentityResetRequested {
+  IdentityResetRequest request = 1;
+}
+
+// Сброс отменён: с подтверждённого устройства («Это не я»), с самого запросившего устройства или
+// потому, что новое устройство подтвердили иначе (CRYPTO.md §6.3.9).
+message IdentityResetCancelled {
+  string request_id = 1;
 }
 
 // Обмен коммитментами между старым и новым устройством при подтверждении (FLOWS/02 ш. 4.2).

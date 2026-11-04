@@ -1,6 +1,6 @@
 # ADR-0016: Результаты спайка S1 — OpenMLS через FFI
 
-- Статус: Принято 2026-11-03 (с правкой: external commit в п. 2–3)
+- Статус: Принято 2026-11-03 (с правкой: external commit в п. 2–3); частично изменено ADR-0019
 - Дата: 2026-11-02
 - Связано: [ADR-0004](0004-e2ee-mls-sframe.md); `docs/spec/ARCHITECTURE.md` §4, §6.1, §6.4; отчёт [`spikes/01-openmls-ffi/REPORT.md`](../../spikes/01-openmls-ffi/REPORT.md); промпты B02, B03
 

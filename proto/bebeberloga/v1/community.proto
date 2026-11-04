@@ -58,6 +58,8 @@ enum ChannelType {
   CHANNEL_TYPE_GROUP_DM = 4;
   // Ветка (S); `parent_id` — канал, `root_message_id` — исходное сообщение.
   CHANNEL_TYPE_THREAD = 5;
+  // Личный канал пользователя: все его устройства, скрыт в интерфейсе (CRYPTO.md §6.5).
+  CHANNEL_TYPE_PERSONAL = 6;
 }
 
 // Наследование настройки «Новые участники видят историю».
