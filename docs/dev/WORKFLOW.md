@@ -25,7 +25,7 @@
 
 ```bash
 brew install git gh jq just lefthook mise colima docker docker-compose hurl buf \
-             protobuf reuse lychee
+             protobuf reuse lychee shellcheck
 brew install --cask vscodium
 brew install --cask bruno            # ручная отладка API; коллекция хранится в git
 mise install                         # версии Go, Rust, Node, pnpm, golangci-lint v2 из mise.toml
@@ -160,9 +160,10 @@ Postgres, Valkey, NATS и MinIO наружу не публикуются ни в
 
 ## CI/CD (GitHub Actions)
 
-- [`ci.yml`](../../.github/workflows/ci.yml) — на каждый PR и push в `main`: `cleanroom` (фильтр + `reuse lint`), `docs` (внутренние ссылки в markdown), `go`, `rust` (три ОС), `web`, `proto` — по затронутым каталогам.
+- [`ci.yml`](../../.github/workflows/ci.yml) — на каждый PR, push в `main` и вручную (`workflow_dispatch`): `cleanroom` (фильтр, `reuse lint`, реестр ассетов `ATTRIBUTION.md`, shellcheck), `docs` (внутренние ссылки в markdown), `go`, `rust` (три ОС), `web`, `proto` — по затронутым каталогам. Новый push в ветку PR отменяет её прошлый прогон; прогоны `main` не отменяются, чтобы `deploy-test.yml` получил результат каждого коммита.
 - [`deploy-test.yml`](../../.github/workflows/deploy-test.yml) — после зелёного CI на `main`: образ сервера в GHCR → выкатка на тест-сервер → smoke-тесты. Заработает после B17 часть 1 (`server/Dockerfile`).
-- `release.yml` — на тег `v*` (B17 часть 2).
+- [`dependabot.yml`](../../.github/dependabot.yml) — раз в неделю одна сводная PR на экосистему с сообщением `ci(deps): …` / `chore(deps): …`. Сейчас только GitHub Actions; блоки `gomod`, `cargo` и `npm` раскомментируются вместе с B4, B3 и B8/B9. В Dependabot-коммитах нет `Signed-off-by`: DCO проверяет только локальный lefthook.
+- `release.yml` — на тег `v*` (B17 часть 2). Практики, которые туда закладываются: один источник версии; черновик GitHub Release с `SHA256SUMS`, SBOM и подписями cosign, который человек проверяет и публикует сам; секреты подписи — в environment `release`, доступном только тегам `v*`; без секретов сборка проходит неподписанной с предупреждением, чтобы собирались и форки.
 - Claude в PR (по желанию): `/install-github-app` в Claude Code, токен подписки — секрет `CLAUDE_CODE_OAUTH_TOKEN`; ограничь `--max-turns 15` и `timeout-minutes: 20`.
 - Защита `main` (Settings → Branches): обязательный PR, одна обязательная проверка `ci-ok` (она ждёт все остальные jobs и считает пропущенные по фильтру путей успешными), squash-merge, линейная история.
 
