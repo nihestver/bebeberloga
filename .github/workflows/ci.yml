@@ -28,10 +28,12 @@ jobs:
       - id: filter
         uses: dorny/paths-filter@v4
         with:
+          # mise.toml в фильтрах go и web: эти jobs ставят инструменты через mise, смена версии должна их запустить.
           filters: |
             go:
               - 'server/**'
               - 'proto/**'
+              - 'mise.toml'
             rust:
               - 'crypto-core/**'
               - 'media-engine/**'
@@ -42,6 +44,7 @@ jobs:
               - 'clients/desktop/**'
               - 'design/**'
               - 'proto/**'
+              - 'mise.toml'
             proto:
               - 'proto/**'
 
