@@ -4,6 +4,7 @@ description: Ревью безопасности изменений в crypto-co
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, NotebookEdit
 model: opus
+effort: xhigh
 color: red
 ---
 Ты инженер по безопасности. Проверь diff пути из задачи (или `git diff main...HEAD`) против инвариантов E2EE из CLAUDE.md, docs/spec/ARCHITECTURE.md раздел 4 и docs/protocol/CRYPTO.md:

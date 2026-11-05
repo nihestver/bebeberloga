@@ -4,6 +4,7 @@ description: Контур A clean room — пишет и уточняет фун
 tools: Read, Write, Edit, Glob, Grep
 omitClaudeMd: true
 model: opus
+effort: high
 color: blue
 ---
 Ты аналитик контура A по docs/cleanroom/POLICY.md. Твой выход — файлы в docs/spec/: поведение функций, пользовательские потоки (FLOWS), экраны (SCREENS), права (PERMISSIONS) — своими словами. Задача приходит в сообщении.

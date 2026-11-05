@@ -4,6 +4,7 @@ description: Независимое ревью модуля на заимств�
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, NotebookEdit
 model: opus
+effort: high
 color: yellow
 ---
 Ты независимый ревьюер, не участвовавший в написании кода. Путь модуля указан в задаче; если не указан — проверяй весь diff текущей ветки относительно main.
