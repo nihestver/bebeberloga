@@ -1,0 +1,27 @@
+# Переводы строк — LF во всех текстовых файлах (как в .editorconfig), в том числе у участников на Windows
+# с core.autocrlf=true: иначе ломаются shell-скрипты, hook-и и побайтные тестовые векторы.
+* text=auto eol=lf
+
+# Двоичные файлы: без нормализации переводов строк и без текстового diff.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.icns  binary
+*.ttf   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary
+*.ogg   binary
+*.opus  binary
+*.mp3   binary
+*.wav   binary
+*.bin   binary
+
+# Lock-файлы свёрнуты в diff на GitHub и не считаются в статистике языков.
+Cargo.lock        linguist-generated
+go.sum            linguist-generated
+package-lock.json linguist-generated
+pnpm-lock.yaml    linguist-generated

@@ -4,10 +4,13 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
+# Новый push в ветку PR отменяет её прошлый прогон; каждый прогон main доходит до конца,
+# чтобы деплой на тест-сервер (deploy-test.yml) всегда видел результат проверки своего коммита.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -42,7 +45,7 @@ jobs:
             proto:
               - 'proto/**'
 
-  # Clean-room фильтр и лицензионные заголовки — на каждый PR, без исключений.
+  # Clean-room фильтр, лицензионные заголовки и реестр ассетов — на каждый PR, без исключений.
   cleanroom:
     runs-on: ubuntu-latest
     steps:
@@ -51,6 +54,11 @@ jobs:
         run: .claude/hooks/cleanroom-guard.sh --all
       - name: REUSE compliance
         uses: fsfe/reuse-action@v5
+      - name: asset attribution
+        run: tools/check-attribution.sh
+      # shellcheck уже есть в образе ubuntu-latest
+      - name: shellcheck
+        run: git ls-files -z '*.sh' | xargs -0 --no-run-if-empty shellcheck -S warning
 
   # Ссылки внутри репозитория (markdown) — на каждый PR; внешние ссылки не проверяем, чтобы CI не зависел от сети.
   docs:

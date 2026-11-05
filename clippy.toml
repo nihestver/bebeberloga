@@ -1,0 +1,5 @@
+# Паники запрещены в production-коде crate-ов (CLAUDE.md, «Правила кода»: корень crate включает
+# #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, ...)]). В тестах они допустимы.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true

@@ -9,14 +9,21 @@ default: check
 
 check: lint test
 
-lint: cleanroom openapi lint-go lint-rust lint-web lint-proto
+lint: cleanroom openapi lint-sh lint-go lint-rust lint-web lint-proto
 
 test: test-go test-rust test-web
 
-# clean-room фильтр (запретный список) и лицензионные заголовки REUSE по всему репозиторию
-cleanroom:
+# clean-room фильтр (запретный список), лицензионные заголовки REUSE и реестр ассетов по всему репозиторию
+cleanroom: attribution
     .claude/hooks/cleanroom-guard.sh --all
     @if command -v reuse >/dev/null; then reuse lint -q && echo "reuse: ok"; else echo "skip: reuse не установлен (brew install reuse); в CI проверяется"; fi
+
+# каждый файл-ассет (изображение, иконка, шрифт, звук) — строка в ATTRIBUTION.md с автором, источником и лицензией
+attribution:
+    tools/check-attribution.sh
+
+lint-sh:
+    @if command -v shellcheck >/dev/null; then git ls-files -z '*.sh' | xargs -0 shellcheck -S warning && echo "shellcheck: ok"; else echo "skip: shellcheck не установлен (brew install shellcheck); в CI проверяется"; fi
 
 lint-go:
     @if [ -f server/go.mod ]; then cd server && golangci-lint run ./...; else echo "skip: server/go.mod ещё нет"; fi
