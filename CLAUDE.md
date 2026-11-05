@@ -18,6 +18,7 @@
 
 - Реализуй только по спецификации в `docs/`. Не открывай, не описывай и не воспроизводи сторонние продукты, их тексты, стили, иконки, звуки, звуки уведомлений, схемы API и имена полей.
 - Не используй код и ассеты сторонних мессенджеров и их SDK, даже под свободной лицензией. Разрешённые зависимости перечислены в ADR и `LICENSING.md`; каждая новая зависимость — с обоснованием и проверкой лицензии.
+- Каждый файл-ассет (изображение, иконка, шрифт, звук, видео) — строка в `ATTRIBUTION.md` с автором, источником и лицензией, в том же коммите, что и файл; проверяет `just attribution`. Ассет либо свой (лучше нарисованный в коде или SVG), либо под свободной лицензией.
 - Запретный список в `docs/spec/GLOSSARY.md` двухуровневый: **уровень 1** (товарные знаки и фирменные названия) — нигде; **уровень 2** (чужая номенклатура API: guild, snowflake, @everyone и т. п.) — нельзя в коде, идентификаторах, API, БД и коммитах, но можно в текстах интерфейса (файлы локализации). Обычные слова интерфейса («сервер», «канал», «пригласить») использовать можно.
 - Термины интерфейса — по `GLOSSARY.md` (в UI «сервер», «канал», «роль», «ветка»; в коде `community`, `channel`, `role`, `thread`).
 - Каждое изменение в `crypto-core/`, `server/internal/mls/` и `media-engine/` записывается в `SECURITY-CHANGELOG.md` соответствующего модуля.
@@ -34,6 +35,7 @@
 
 - **Go** (`server/`): Go 1.23+, `golangci-lint`, `go test -race`; интеграционные тесты через `testcontainers-go`. Пакеты `internal/{identity,community,messaging,mls,gateway,media,files,push,admin}` общаются через интерфейсы.
 - **Rust** (`crypto-core/`, `media-engine/`): `clippy -D warnings`, `cargo deny`, `cargo audit`; `proptest` для MLS-сценариев, `cargo fuzz` для парсеров; ключи в памяти — `zeroize`; FFI через `uniffi` (Kotlin/Swift), `napi-rs` (Electron), `wasm-bindgen` (web).
+- **Без паник вне тестов.** Паника в crypto-core или media-engine роняет клиент вместе с разговором, поэтому в production-crate нет `unwrap()`, `expect()`, `panic!`, `todo!`, `unimplemented!`: ошибки — `Result` через тип ошибки crate и `?`, недоделанная функция возвращает ошибку. Корень crate начинается с `#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::todo, clippy::unimplemented)]`; в тестах `unwrap` разрешён (`clippy.toml`). Данные из сети, файлов и FFI — враждебные: `get()` вместо индексов, checked-арифметика, лимиты размеров и глубины. `unsafe` — только в FFI-слое, с комментарием `// SAFETY:`. В Go то же: ошибки возвращаются, паника в обработчике запроса — баг. Исправление падения приходит с регрессионным тестом. Спайки (`spikes/`) — одноразовые, правило на них не распространяется.
 - **TypeScript** (`clients/web`, `clients/desktop`): strict, `eslint` + `typescript-eslint`, `vitest`, Playwright e2e с двумя пользователями, обменивающимися E2EE-сообщениями.
 - Protobuf-схемы в `proto/` — единственный источник моделей для Go/TS/Kotlin/Swift; не дублируй типы руками.
 - Лицензионный заголовок SPDX в каждом файле (см. `LICENSING.md`). Коммиты — Conventional Commits с `Signed-off-by` (DCO).

@@ -1,0 +1,35 @@
+# Обновления зависимостей: одна сводная PR на экосистему в неделю, сообщения — по Conventional Commits
+# (проходят commit-msg из lefthook.yml). Каталоги модулей добавляются сюда вместе с самими модулями:
+# на каталоге без манифеста Dependabot падает. Спайки (spikes/) одноразовые и не обновляются.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci(deps)"
+
+  # С B4 (появится server/go.mod):
+  # - package-ecosystem: "gomod"
+  #   directory: "/server"
+  #   schedule: { interval: "weekly" }
+  #   groups: { go: { patterns: ["*"] } }
+  #   commit-message: { prefix: "chore(deps)" }
+
+  # С B3 (появится Cargo.toml в корне):
+  # - package-ecosystem: "cargo"
+  #   directory: "/"
+  #   schedule: { interval: "weekly" }
+  #   groups: { cargo: { patterns: ["*"] } }
+  #   commit-message: { prefix: "chore(deps)" }
+
+  # С B8/B9 (появится clients/web/package.json):
+  # - package-ecosystem: "npm"
+  #   directory: "/clients/web"
+  #   schedule: { interval: "weekly" }
+  #   groups: { npm: { patterns: ["*"] } }
+  #   commit-message: { prefix: "chore(deps)" }

@@ -1,0 +1,36 @@
+Bebeberloga
+Copyright (c) 2026 Bebeberloga contributors.
+
+Bebeberloga is free software. Its components are released under different
+licenses, chosen in docs/adr/0003-licenses.md. Every file carries an SPDX
+license identifier, either in its header or through REUSE.toml, and the full
+license texts are in LICENSES/. The summary below does not replace them.
+
+  server/, deploy/, tests/                   AGPL-3.0-or-later
+  clients/                                   GPL-3.0-or-later WITH
+                                             LicenseRef-Bebeberloga-AppStore-exception
+  crypto-core/, media-engine/, proto/,
+  sdk/, design/, tools/, spikes/,
+  docs/protocol/openapi.yaml                 Apache-2.0
+  docs/ and Markdown files in the root       CC-BY-SA-4.0
+  configuration files listed in REUSE.toml   CC0-1.0
+  brand/                                     LicenseRef-Bebeberloga-Brand
+
+Contributions are accepted under the Developer Certificate of Origin
+(Signed-off-by); there is no CLA, and contributors keep their copyright.
+
+Brand marks
+
+The Bebeberloga name, logo, symbol, app icon and wordmark (brand/) identify
+this project. They are not covered by the licenses above, and nothing in this
+file or in any other file of the repository grants rights to them beyond the
+terms in LICENSES/LicenseRef-Bebeberloga-Brand.txt. Modified versions and
+forks must use their own name and marks.
+
+Third-party material
+
+This repository does not bundle third-party icons, images, fonts or sounds.
+Every asset file is listed with its author, source and license in
+ATTRIBUTION.md. Dependencies are fetched by package managers and keep their
+own licenses; the licenses allowed for dependencies are listed in
+LICENSING.md.

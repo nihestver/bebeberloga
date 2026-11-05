@@ -94,6 +94,8 @@
 | `favicon.svg`, `favicon.ico` | Вкладка браузера и мелкие размеры |
 | `tokens.css` | Цвета, шрифты, скругления и отступы для кода |
 
+Знаки бренда не входят в свободные лицензии проекта: условия использования — в [`LICENSES/LicenseRef-Bebeberloga-Brand.txt`](LICENSES/LicenseRef-Bebeberloga-Brand.txt), авторы и источники файлов — в [`ATTRIBUTION.md`](ATTRIBUTION.md). Форки и изменённые версии заменяют знаки своими.
+
 ## Что ещё не сделано
 
 - [ ] Проверить Bebeberloga в TMview и знаки «Берлога» в Роспатенте по классам 9, 38, 42.

@@ -1,6 +1,52 @@
-Bebeberloga brand assets (name, logo, symbol, icon, wordmark)
+Bebeberloga brand marks: terms of use
 
-All rights reserved. The Bebeberloga name and logo identify this project
-and may be used only to refer to it, for example in a description of the
-software or a link to it. Modified versions and forks must use their own
-name and logo.
+The Bebeberloga name, logo, symbol, app icon and wordmark, including every
+file in the brand/ directory in every color, size and format (the "Marks"),
+identify the Bebeberloga project. They are not free software or free culture
+works. The AGPL, GPL, Apache, CC BY-SA and CC0 licenses used elsewhere in this
+repository do not cover them, and nothing in NOTICE or in any other file of
+the repository grants any right to them beyond these terms. All rights not
+granted here are reserved.
+
+Permission
+
+You may use the Marks, without asking, only:
+
+  1. as part of copies of this repository;
+  2. in Bebeberloga itself, its official builds and its documentation, as
+     the software and the documentation present them;
+  3. to refer to the project truthfully, for example in an article, a
+     review, a package description, a list of software or a link to the
+     project.
+
+Conditions
+
+This permission holds only while all of the following are true:
+
+  - The Marks are used exactly as supplied in brand/. Do not redraw,
+    recolor, crop, stretch, rotate or animate them, add outlines, shadows
+    or other effects, extract parts of them or combine them with any other
+    name, mark or artwork. BRAND.md lists the versions for light and dark
+    backgrounds.
+  - The use does not suggest that the Bebeberloga project made, endorses,
+    certifies or supports anything else: another product, a fork, a
+    modified build, a hosted service, a plug-in, an organization or a
+    person.
+  - Neither the Marks nor the Bebeberloga name are used in the name, logo,
+    icon, domain, social media handle, app store listing or advertising of
+    anything other than the Bebeberloga project.
+
+Forks and modified versions
+
+If you distribute or publish a modified version of Bebeberloga, or a work
+derived from it, you must remove the Marks from it (or replace them with your
+own) and must not call it Bebeberloga or present it as the Bebeberloga
+project. You may say in plain text that your work is based on Bebeberloga. A
+fork kept only to propose changes back to this repository may keep the Marks
+unchanged.
+
+Everything else
+
+Any other use needs prior written permission from the project maintainers
+(https://github.com/nihestver/bebeberloga). This permission ends
+automatically for anyone who breaks these terms.
