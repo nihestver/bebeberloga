@@ -24,9 +24,9 @@ jobs:
       web: ${{ steps.filter.outputs.web }}
       proto: ${{ steps.filter.outputs.proto }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             go:
@@ -49,11 +49,11 @@ jobs:
   cleanroom:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: forbidden words
         run: .claude/hooks/cleanroom-guard.sh --all
       - name: REUSE compliance
-        uses: fsfe/reuse-action@v5
+        uses: fsfe/reuse-action@v6
       - name: asset attribution
         run: tools/check-attribution.sh
       # shellcheck уже есть в образе ubuntu-latest
@@ -64,13 +64,13 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: internal links
         uses: lycheeverse/lychee-action@v2
         with:
           args: --offline --no-progress --exclude-path LICENSES './**/*.md'
           fail: true
-      - uses: extractions/setup-just@v2
+      - uses: extractions/setup-just@v4
       - name: OpenAPI contract
         run: just openapi
 
@@ -91,9 +91,9 @@ jobs:
         image: nats:2
         ports: ['4222:4222']
     steps:
-      - uses: actions/checkout@v5
-      - uses: jdx/mise-action@v2
-      - uses: extractions/setup-just@v2
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+      - uses: extractions/setup-just@v4
       - run: just lint-go test-go
         env:
           DATABASE_URL: postgres://postgres:test@localhost:5432/bebeberloga?sslmode=disable
@@ -109,7 +109,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -125,9 +125,9 @@ jobs:
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: jdx/mise-action@v2
-      - uses: extractions/setup-just@v2
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+      - uses: extractions/setup-just@v4
       - if: hashFiles('clients/web/package.json') != ''
         run: cd clients/web && pnpm install --frozen-lockfile
       # рецепты пропускают проверку, пока clients/web ещё нет
@@ -138,7 +138,7 @@ jobs:
     if: needs.changes.outputs.proto == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       # buf breaking падает, если в базовой ветке ещё нет .proto; проверяем это заранее.
       - id: base
         if: github.event_name == 'pull_request'
