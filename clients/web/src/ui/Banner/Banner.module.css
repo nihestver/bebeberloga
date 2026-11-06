@@ -1,0 +1,105 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.banner {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  width: 100%;
+  min-height: var(--size-control-m);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-panel);
+  color: var(--color-text);
+  font-size: var(--font-size-caption);
+}
+
+/* На заливках Инеем, Морошкой и Брусникой текст цвета Хвои */
+.banner[data-tone="info"] {
+  background: var(--color-accent-2);
+  color: var(--color-on-accent);
+}
+
+.banner[data-tone="warning"] {
+  background: var(--color-warning);
+  color: var(--color-on-accent);
+}
+
+.banner[data-tone="danger"] {
+  background: var(--color-danger);
+  color: var(--color-on-accent);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+}
+
+.action {
+  flex: none;
+  padding: var(--space-1) var(--space-2);
+  border: var(--size-border) solid currentcolor;
+  border-radius: var(--radius-s);
+  background: none;
+  color: inherit;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+}
+
+.action[data-hovered] {
+  text-decoration: underline;
+}
+
+.action[data-pressed] {
+  opacity: var(--opacity-disabled);
+}
+
+/* На светлой заливке кольцо фокуса Инеем не видно — рисуем его цветом текста */
+.banner:not([data-tone="neutral"]) .action[data-focus-visible] {
+  outline-color: currentcolor;
+}
+
+/* SaveBar */
+.saveBar {
+  display: inline-flex;
+  gap: var(--space-4);
+  align-items: center;
+  max-width: 100%;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-m);
+  background: var(--color-bg-deep);
+  color: var(--color-text);
+  font-size: var(--font-size-caption);
+  box-shadow: var(--shadow-popover);
+  animation: rise var(--duration-base) ease-out;
+  transition: border-color var(--duration-fast);
+}
+
+/* Попытка уйти: плашка вздрагивает и краснеет на 1 с */
+.saveBar[data-alert] {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  animation: shake calc(2 * var(--duration-base)) ease-in-out;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-3));
+  }
+}
+
+@keyframes shake {
+  20%,
+  60% {
+    transform: translateX(calc(-1 * var(--space-2)));
+  }
+
+  40%,
+  80% {
+    transform: translateX(var(--space-2));
+  }
+}

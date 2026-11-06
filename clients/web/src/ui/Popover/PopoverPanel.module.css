@@ -1,0 +1,71 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.panel {
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  max-width: calc(100vw - var(--space-6));
+  overflow: hidden;
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-l);
+  background: var(--color-panel);
+  box-shadow: var(--shadow-popover);
+  transition: opacity var(--duration-fast);
+}
+
+.panel[data-entering],
+.panel[data-exiting] {
+  opacity: 0;
+}
+
+.dialog {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  outline: none;
+}
+
+.header {
+  display: flex;
+  flex: none;
+  gap: var(--space-2);
+  align-items: center;
+  min-height: 48px;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: var(--size-border) solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.icon {
+  color: var(--color-muted);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-bold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  flex: none;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-4);
+  overflow-y: auto;
+}

@@ -5,7 +5,10 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { icons } from "../icons/icons";
 import { InteractionStates, Stack, State, States } from "../stories/States";
+import { LevelMeter, Slider } from "../Slider/Slider";
+import { MenuItem, MenuSection, MenuSeparator } from "../Menu/Menu";
 import { Button, HangupButton, IconButton, IconToggleButton, type ButtonVariant } from "./Button";
+import { SplitButton } from "./SplitButton";
 
 const meta: Meta = { title: "Button" };
 export default meta;
@@ -131,4 +134,61 @@ export const IconToggle: Story = {
 
 export const Hangup: Story = {
   render: () => <InteractionStates render={(extra) => <HangupButton {...extra} />} />,
+};
+
+function SplitDemo({ isDisabled }: { isDisabled?: boolean }) {
+  const [isMuted, setMuted] = useState(false);
+  return (
+    <SplitButton
+      icon={icons.mic}
+      selectedIcon={icons.micOff}
+      label={isMuted ? "Включить микрофон" : "Выключить микрофон"}
+      tone="danger"
+      isSelected={isMuted}
+      onChange={setMuted}
+      isDisabled={isDisabled}
+      menuLabel="Устройство ввода"
+      menuHeader={
+        <Stack gap={12}>
+          <Slider label="Громкость микрофона" defaultValue={80} />
+          <LevelMeter level={0.4} bars={32} />
+        </Stack>
+      }
+      menu={
+        <>
+          <MenuSection title="Микрофон" selectionMode="single" defaultSelectedKeys={["built-in"]}>
+            <MenuItem id="built-in">Встроенный микрофон</MenuItem>
+            <MenuItem id="headset">Гарнитура</MenuItem>
+          </MenuSection>
+          <MenuSeparator />
+          <MenuItem icon={icons.settings}>Настройки голоса</MenuItem>
+        </>
+      }
+    />
+  );
+}
+
+/** Микрофон ˅, камера ˅, стрим ˅ в панели управления звонком: стрелка открывает `Menu/Popover`. */
+export const Split: Story = {
+  render: () => (
+    <div style={{ paddingTop: 220 }}>
+      <States>
+        <State label="Живой пример">
+          <SplitDemo />
+        </State>
+        <State label="Включено, «позитивное»">
+          <SplitButton
+            icon={icons.streamStart}
+            label="Остановить стрим"
+            tone="positive"
+            isSelected
+            menu={<MenuItem>Сменить источник</MenuItem>}
+          />
+        </State>
+        <State label="Неактивное">
+          <SplitDemo isDisabled />
+        </State>
+      </States>
+    </div>
+  ),
 };
