@@ -18,12 +18,8 @@ import type { Message } from "@bufbuild/protobuf";
 /**
  * Describes the file bebeberloga/v1/message.proto.
  */
-export const file_bebeberloga_v1_message: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    "ChxiZWJlYmVybG9nYS92MS9tZXNzYWdlLnByb3RvEg5iZWJlYmVybG9nYS52MSJRCgpBdHRhY2htZW50EgoKAmlkGAEgASgJEgwKBHNpemUYAiABKAQSFwoPY2lwaGVydGV4dF9oYXNoGAMgASgMEhAKCHVwbG9hZGVkGAQgASgIIpQECgtNZXNzYWdlTWV0YRIKCgJpZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJEhAKCGdyb3VwX2lkGAMgASgJEg0KBWVwb2NoGAQgASgEEhYKDmF1dGhvcl91c2VyX2lkGAUgASgJEhgKEGF1dGhvcl9kZXZpY2VfaWQYBiABKAkSLgoKY3JlYXRlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKY2lwaGVydGV4dBgIIAEoDBIMCgRzaXplGAkgASgNEhsKE3dyYXBwZWRfbWVzc2FnZV9rZXkYCiABKAwSHgoWaGlzdG9yeV9rZXlfZ2VuZXJhdGlvbhgLIAEoDRIVCg1tZW50aW9uX2hpbnRzGAwgAygMEjsKEWJyb2FkY2FzdF9tZW50aW9uGA0gASgOMiAuYmViZWJlcmxvZ2EudjEuQnJvYWRjYXN0TWVudGlvbhIvCgthdHRhY2htZW50cxgOIAMoCzIaLmJlYmViZXJsb2dhLnYxLkF0dGFjaG1lbnQSDgoGcGlubmVkGA8gASgIEg8KB2RlbGV0ZWQYECABKAgSLgoKZGVsZXRlZF9hdBgRIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLQoGc3lzdGVtGBIgASgLMh0uYmViZWJlcmxvZ2EudjEuU3lzdGVtTWVzc2FnZSKUAgoNU3lzdGVtTWVzc2FnZRIwCgRraW5kGAEgASgOMiIuYmViZWJlcmxvZ2EudjEuU3lzdGVtTWVzc2FnZS5LaW5kEhAKCGFjdG9yX2lkGAIgASgJEhYKDnRhcmdldF91c2VyX2lkGAMgASgJEhkKEXRhcmdldF9tZXNzYWdlX2lkGAQgASgJIosBCgRLaW5kEhQKEEtJTkRfVU5TUEVDSUZJRUQQABIWChJLSU5EX01FTUJFUl9KT0lORUQQARIXChNLSU5EX01FU1NBR0VfUElOTkVEEAISHgoaS0lORF9PV05FUlNISVBfVFJBTlNGRVJSRUQQAxIcChhLSU5EX0NIQU5ORUxfU0VMRl9KT0lORUQQBCJvCgNQaW4SEgoKY2hhbm5lbF9pZBgBIAEoCRISCgptZXNzYWdlX2lkGAIgASgJEhEKCXBpbm5lZF9ieRgDIAEoCRItCglwaW5uZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wKooBChBCcm9hZGNhc3RNZW50aW9uEiEKHUJST0FEQ0FTVF9NRU5USU9OX1VOU1BFQ0lGSUVEEAASGgoWQlJPQURDQVNUX01FTlRJT05fTk9ORRABEhwKGEJST0FEQ0FTVF9NRU5USU9OX09OTElORRACEhkKFUJST0FEQ0FTVF9NRU5USU9OX0FMTBADQsUBChJjb20uYmViZWJlcmxvZ2EudjFCDE1lc3NhZ2VQcm90b1ABWkhnaXRodWIuY29tL25paGVzdHZlci9iZWJlYmVybG9nYS9zZXJ2ZXIvZ2VuL2JlYmViZXJsb2dhL3YxO2JlYmViZXJsb2dhdjGiAgNCWFiqAg5CZWJlYmVybG9nYS5WMcoCDkJlYmViZXJsb2dhXFYx4gIaQmViZWJlcmxvZ2FcVjFcR1BCTWV0YWRhdGHqAg9CZWJlYmVybG9nYTo6VjFiBnByb3RvMw",
-    [file_google_protobuf_timestamp],
-  );
+export const file_bebeberloga_v1_message: GenFile = /*@__PURE__*/
+  fileDesc("ChxiZWJlYmVybG9nYS92MS9tZXNzYWdlLnByb3RvEg5iZWJlYmVybG9nYS52MSJRCgpBdHRhY2htZW50EgoKAmlkGAEgASgJEgwKBHNpemUYAiABKAQSFwoPY2lwaGVydGV4dF9oYXNoGAMgASgMEhAKCHVwbG9hZGVkGAQgASgIIpQECgtNZXNzYWdlTWV0YRIKCgJpZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJEhAKCGdyb3VwX2lkGAMgASgJEg0KBWVwb2NoGAQgASgEEhYKDmF1dGhvcl91c2VyX2lkGAUgASgJEhgKEGF1dGhvcl9kZXZpY2VfaWQYBiABKAkSLgoKY3JlYXRlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKY2lwaGVydGV4dBgIIAEoDBIMCgRzaXplGAkgASgNEhsKE3dyYXBwZWRfbWVzc2FnZV9rZXkYCiABKAwSHgoWaGlzdG9yeV9rZXlfZ2VuZXJhdGlvbhgLIAEoDRIVCg1tZW50aW9uX2hpbnRzGAwgAygMEjsKEWJyb2FkY2FzdF9tZW50aW9uGA0gASgOMiAuYmViZWJlcmxvZ2EudjEuQnJvYWRjYXN0TWVudGlvbhIvCgthdHRhY2htZW50cxgOIAMoCzIaLmJlYmViZXJsb2dhLnYxLkF0dGFjaG1lbnQSDgoGcGlubmVkGA8gASgIEg8KB2RlbGV0ZWQYECABKAgSLgoKZGVsZXRlZF9hdBgRIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLQoGc3lzdGVtGBIgASgLMh0uYmViZWJlcmxvZ2EudjEuU3lzdGVtTWVzc2FnZSKUAgoNU3lzdGVtTWVzc2FnZRIwCgRraW5kGAEgASgOMiIuYmViZWJlcmxvZ2EudjEuU3lzdGVtTWVzc2FnZS5LaW5kEhAKCGFjdG9yX2lkGAIgASgJEhYKDnRhcmdldF91c2VyX2lkGAMgASgJEhkKEXRhcmdldF9tZXNzYWdlX2lkGAQgASgJIosBCgRLaW5kEhQKEEtJTkRfVU5TUEVDSUZJRUQQABIWChJLSU5EX01FTUJFUl9KT0lORUQQARIXChNLSU5EX01FU1NBR0VfUElOTkVEEAISHgoaS0lORF9PV05FUlNISVBfVFJBTlNGRVJSRUQQAxIcChhLSU5EX0NIQU5ORUxfU0VMRl9KT0lORUQQBCJvCgNQaW4SEgoKY2hhbm5lbF9pZBgBIAEoCRISCgptZXNzYWdlX2lkGAIgASgJEhEKCXBpbm5lZF9ieRgDIAEoCRItCglwaW5uZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wKooBChBCcm9hZGNhc3RNZW50aW9uEiEKHUJST0FEQ0FTVF9NRU5USU9OX1VOU1BFQ0lGSUVEEAASGgoWQlJPQURDQVNUX01FTlRJT05fTk9ORRABEhwKGEJST0FEQ0FTVF9NRU5USU9OX09OTElORRACEhkKFUJST0FEQ0FTVF9NRU5USU9OX0FMTBADQsUBChJjb20uYmViZWJlcmxvZ2EudjFCDE1lc3NhZ2VQcm90b1ABWkhnaXRodWIuY29tL25paGVzdHZlci9iZWJlYmVybG9nYS9zZXJ2ZXIvZ2VuL2JlYmViZXJsb2dhL3YxO2JlYmViZXJsb2dhdjGiAgNCWFiqAg5CZWJlYmVybG9nYS5WMcoCDkJlYmViZXJsb2dhXFYx4gIaQmViZWJlcmxvZ2FcVjFcR1BCTWV0YWRhdGHqAg9CZWJlYmVybG9nYTo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * Метаданные вложения на сервере. Ключ, имя и тип файла — только в зашифрованном конверте.
@@ -62,8 +58,7 @@ export type Attachment = Message<"bebeberloga.v1.Attachment"> & {
  * Describes the message bebeberloga.v1.Attachment.
  * Use `create(AttachmentSchema)` to create a new message.
  */
-export const AttachmentSchema: GenMessage<Attachment> =
-  /*@__PURE__*/
+export const AttachmentSchema: GenMessage<Attachment> = /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_message, 0);
 
 /**
@@ -195,8 +190,7 @@ export type MessageMeta = Message<"bebeberloga.v1.MessageMeta"> & {
  * Describes the message bebeberloga.v1.MessageMeta.
  * Use `create(MessageMetaSchema)` to create a new message.
  */
-export const MessageMetaSchema: GenMessage<MessageMeta> =
-  /*@__PURE__*/
+export const MessageMetaSchema: GenMessage<MessageMeta> = /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_message, 1);
 
 /**
@@ -232,8 +226,7 @@ export type SystemMessage = Message<"bebeberloga.v1.SystemMessage"> & {
  * Describes the message bebeberloga.v1.SystemMessage.
  * Use `create(SystemMessageSchema)` to create a new message.
  */
-export const SystemMessageSchema: GenMessage<SystemMessage> =
-  /*@__PURE__*/
+export const SystemMessageSchema: GenMessage<SystemMessage> = /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_message, 2);
 
 /**
@@ -278,8 +271,7 @@ export enum SystemMessage_Kind {
 /**
  * Describes the enum bebeberloga.v1.SystemMessage.Kind.
  */
-export const SystemMessage_KindSchema: GenEnum<SystemMessage_Kind> =
-  /*@__PURE__*/
+export const SystemMessage_KindSchema: GenEnum<SystemMessage_Kind> = /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_message, 2, 0);
 
 /**
@@ -313,7 +305,8 @@ export type Pin = Message<"bebeberloga.v1.Pin"> & {
  * Describes the message bebeberloga.v1.Pin.
  * Use `create(PinSchema)` to create a new message.
  */
-export const PinSchema: GenMessage<Pin> = /*@__PURE__*/ messageDesc(file_bebeberloga_v1_message, 3);
+export const PinSchema: GenMessage<Pin> = /*@__PURE__*/
+  messageDesc(file_bebeberloga_v1_message, 3);
 
 /**
  * Упоминание, которое сервер должен доставить всем или присутствующим.
@@ -351,6 +344,6 @@ export enum BroadcastMention {
 /**
  * Describes the enum bebeberloga.v1.BroadcastMention.
  */
-export const BroadcastMentionSchema: GenEnum<BroadcastMention> =
-  /*@__PURE__*/
+export const BroadcastMentionSchema: GenEnum<BroadcastMention> = /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_message, 0);
+

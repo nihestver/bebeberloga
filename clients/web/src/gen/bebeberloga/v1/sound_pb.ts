@@ -17,12 +17,8 @@ import type { Message } from "@bufbuild/protobuf";
 /**
  * Describes the file bebeberloga/v1/sound.proto.
  */
-export const file_bebeberloga_v1_sound: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    "ChpiZWJlYmVybG9nYS92MS9zb3VuZC5wcm90bxIOYmViZWJlcmxvZ2EudjEi9AEKBVNvdW5kEgoKAmlkGAEgASgJEhYKDGNvbW11bml0eV9pZBgCIAEoCUgAEhEKB3VzZXJfaWQYAyABKAlIABIRCgdidWlsdGluGAQgASgISAASDAoEbmFtZRgFIAEoCRINCgVlbW9qaRgGIAEoCRIOCgZ2b2x1bWUYByABKA0SEwoLZHVyYXRpb25fbXMYCCABKA0SEQoJYXVkaW9fdXJsGAkgASgJEhMKC3VwbG9hZGVkX2J5GAogASgJEi4KCmNyZWF0ZWRfYXQYCyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgcKBW93bmVyQsMBChJjb20uYmViZWJlcmxvZ2EudjFCClNvdW5kUHJvdG9QAVpIZ2l0aHViLmNvbS9uaWhlc3R2ZXIvYmViZWJlcmxvZ2Evc2VydmVyL2dlbi9iZWJlYmVybG9nYS92MTtiZWJlYmVybG9nYXYxogIDQlhYqgIOQmViZWJlcmxvZ2EuVjHKAg5CZWJlYmVybG9nYVxWMeICGkJlYmViZXJsb2dhXFYxXEdQQk1ldGFkYXRh6gIPQmViZWJlcmxvZ2E6OlYxYgZwcm90bzM",
-    [file_google_protobuf_timestamp],
-  );
+export const file_bebeberloga_v1_sound: GenFile = /*@__PURE__*/
+  fileDesc("ChpiZWJlYmVybG9nYS92MS9zb3VuZC5wcm90bxIOYmViZWJlcmxvZ2EudjEi9AEKBVNvdW5kEgoKAmlkGAEgASgJEhYKDGNvbW11bml0eV9pZBgCIAEoCUgAEhEKB3VzZXJfaWQYAyABKAlIABIRCgdidWlsdGluGAQgASgISAASDAoEbmFtZRgFIAEoCRINCgVlbW9qaRgGIAEoCRIOCgZ2b2x1bWUYByABKA0SEwoLZHVyYXRpb25fbXMYCCABKA0SEQoJYXVkaW9fdXJsGAkgASgJEhMKC3VwbG9hZGVkX2J5GAogASgJEi4KCmNyZWF0ZWRfYXQYCyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgcKBW93bmVyQsMBChJjb20uYmViZWJlcmxvZ2EudjFCClNvdW5kUHJvdG9QAVpIZ2l0aHViLmNvbS9uaWhlc3R2ZXIvYmViZWJlcmxvZ2Evc2VydmVyL2dlbi9iZWJlYmVybG9nYS92MTtiZWJlYmVybG9nYXYxogIDQlhYqgIOQmViZWJlcmxvZ2EuVjHKAg5CZWJlYmVybG9nYVxWMeICGkJlYmViZXJsb2dhXFYxXEdQQk1ldGFkYXRh6gIPQmViZWJlcmxvZ2E6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message bebeberloga.v1.Sound
@@ -38,31 +34,27 @@ export type Sound = Message<"bebeberloga.v1.Sound"> & {
    *
    * @generated from oneof bebeberloga.v1.Sound.owner
    */
-  owner:
-    | {
-        /**
-         * @generated from field: string community_id = 2;
-         */
-        value: string;
-        case: "communityId";
-      }
-    | {
-        /**
-         * @generated from field: string user_id = 3;
-         */
-        value: string;
-        case: "userId";
-      }
-    | {
-        /**
-         * Стандартный звук, поставляется инстансом.
-         *
-         * @generated from field: bool builtin = 4;
-         */
-        value: boolean;
-        case: "builtin";
-      }
-    | { case: undefined; value?: undefined };
+  owner: {
+    /**
+     * @generated from field: string community_id = 2;
+     */
+    value: string;
+    case: "communityId";
+  } | {
+    /**
+     * @generated from field: string user_id = 3;
+     */
+    value: string;
+    case: "userId";
+  } | {
+    /**
+     * Стандартный звук, поставляется инстансом.
+     *
+     * @generated from field: bool builtin = 4;
+     */
+    value: boolean;
+    case: "builtin";
+  } | { case: undefined; value?: undefined };
 
   /**
    * 1–32 символа.
@@ -114,6 +106,6 @@ export type Sound = Message<"bebeberloga.v1.Sound"> & {
  * Describes the message bebeberloga.v1.Sound.
  * Use `create(SoundSchema)` to create a new message.
  */
-export const SoundSchema: GenMessage<Sound> =
-  /*@__PURE__*/
+export const SoundSchema: GenMessage<Sound> = /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_sound, 0);
+
