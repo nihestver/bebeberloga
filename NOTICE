@@ -1,5 +1,5 @@
 Bebeberloga
-Copyright (c) 2026 Bebeberloga contributors.
+Copyright (c) 2026 nihestver and the Bebeberloga contributors.
 
 Bebeberloga is free software. Its components are released under different
 licenses, chosen in docs/adr/0003-licenses.md. Every file carries an SPDX
@@ -12,6 +12,7 @@ license texts are in LICENSES/. The summary below does not replace them.
   crypto-core/, media-engine/, proto/,
   sdk/, design/, tools/, spikes/,
   docs/protocol/openapi.yaml                 Apache-2.0
+  design/avatars/, design/icons/             CC-BY-SA-4.0
   docs/ and Markdown files in the root       CC-BY-SA-4.0
   configuration files listed in REUSE.toml   CC0-1.0
   brand/                                     LicenseRef-Bebeberloga-Brand
@@ -26,6 +27,17 @@ this project. They are not covered by the licenses above, and nothing in this
 file or in any other file of the repository grants rights to them beyond the
 terms in LICENSES/LicenseRef-Bebeberloga-Brand.txt. Modified versions and
 forks must use their own name and marks.
+
+Built-in avatars and icons
+
+The built-in avatars and the project's own icons (design/avatars/,
+design/icons/) are Copyright (c) 2026 nihestver
+(https://github.com/nihestver) and licensed under CC-BY-SA-4.0. When you
+share them or adapted material, credit the author as follows (section
+3(a)(1) of the license):
+
+  Avatars and icons (c) 2026 nihestver (https://github.com/nihestver),
+  CC BY-SA 4.0
 
 Third-party material
 
