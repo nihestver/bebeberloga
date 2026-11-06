@@ -15,8 +15,9 @@ CC0 или общественное достояние, Creative Commons с пр
 
 - шрифты Unbounded, Nunito и JetBrains Mono — подключаются пакетами `@fontsource/*` (SIL OFL 1.1,
   [`BRAND.md`](BRAND.md));
-- иконки интерфейса — open-source набор (Lucide, Tabler или Phosphor), подключаемый пакетом; набор и
-  его лицензия фиксируются при выборе в B8;
+- иконки интерфейса — набор Lucide, пакет `lucide-react` (ISC; иконки из проекта Feather — MIT),
+  [ADR-0023](docs/adr/0023-ui-primitives-and-icons.md). Это npm-зависимость, а не ассет репозитория.
+  Иконки, которых в наборе нет, — собственные, лежат в `design/icons/` и записаны в таблице;
 - звуки soundboard, которые загружают администраторы и участники инстанса. Встроенные звуки, если
   они появятся, записываются сюда.
 
@@ -32,3 +33,5 @@ CC0 или общественное достояние, Creative Commons с пр
 | `brand/bebeberloga-wordmark-for-light.svg` | Участники Bebeberloga | Оригинальная работа для проекта | LicenseRef-Bebeberloga-Brand | Надпись для светлого фона |
 | `brand/favicon.svg` | Участники Bebeberloga | Оригинальная работа для проекта | LicenseRef-Bebeberloga-Brand | Вкладка браузера |
 | `brand/favicon.ico` | Участники Bebeberloga | Растровая версия `favicon.svg` | LicenseRef-Bebeberloga-Brand | Вкладка браузера, мелкие размеры |
+| `design/icons/bold.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Иконка «жирный» панели форматирования |
+| `design/icons/soundboard.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Иконка soundboard: динамик со звёздочкой |
