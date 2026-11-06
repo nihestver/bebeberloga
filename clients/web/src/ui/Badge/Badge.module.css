@@ -1,0 +1,122 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+/* Badge/Count: высота 16, минимальная ширина 16 */
+.count {
+  /* Цвет поверхности под бейджем — для выреза на иконке. */
+  --badge-surface: var(--color-bg);
+
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  box-sizing: content-box;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--color-danger);
+  color: var(--color-on-accent);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* Число из одной цифры — круг 16 */
+.count:not([data-cutout]) {
+  box-sizing: border-box;
+}
+
+.count[data-cutout] {
+  min-width: 8px;
+  border: var(--size-focus-ring) solid var(--badge-surface);
+}
+
+/* Badge/Pill и Badge/Live: заглавные 10–12 px */
+.pill,
+.live {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 16px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pill {
+  background: var(--color-panel-active);
+  color: var(--color-text);
+}
+
+.pill[data-tone="accent"] {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.pill[data-tone="danger"] {
+  background: var(--color-danger);
+  color: var(--color-on-accent);
+}
+
+.live {
+  background: var(--color-live);
+  color: var(--color-on-accent);
+}
+
+/* UnreadPip: точка 8 → полоса 20 → полоса 40 */
+.pip {
+  display: block;
+  flex: none;
+  width: 4px;
+  height: 0;
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+  background: var(--color-text);
+  transition: height var(--duration-fast);
+}
+
+.pip[data-state="unread"] {
+  height: 8px;
+}
+
+.pip[data-state="hover"] {
+  height: 20px;
+}
+
+.pip[data-state="selected"] {
+  height: 40px;
+}
+
+/* E2EEBadge */
+.e2ee {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+  white-space: nowrap;
+}
+
+.e2ee[data-state="verified"] {
+  color: var(--color-success);
+}
+
+.e2ee[data-state="warning"] {
+  color: var(--color-danger);
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

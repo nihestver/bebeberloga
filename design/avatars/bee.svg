@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="currentColor">
+  <ellipse cx="19" cy="15" rx="6.5" ry="4" fill-opacity=".6" transform="rotate(-20 19 15)"/>
+  <ellipse cx="30" cy="14.5" rx="6.5" ry="4" fill-opacity=".6" transform="rotate(20 30 14.5)"/>
+  <path fill-rule="evenodd" d="M13 28a12 9 0 1 0 24 0a12 9 0 1 0 -24 0zM19.4 28a1.6 6.8 0 1 0 3.2 0a1.6 6.8 0 1 0 -3.2 0zM25.4 28a1.6 8 0 1 0 3.2 0a1.6 8 0 1 0 -3.2 0z"/>
+  <circle cx="12" cy="28" r="4.5"/>
+  <path d="M36.5 26l5.5 2-5.5 2z"/>
+</svg>
