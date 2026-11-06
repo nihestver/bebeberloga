@@ -1,0 +1,168 @@
+{
+  "color": {
+    "bg": { "$type": "color", "$value": "{palette.pine}", "$description": "Основной фон" },
+    "panel": { "$type": "color", "$value": "{palette.panel}", "$description": "Панели и карточки" },
+    "accent": {
+      "$type": "color",
+      "$value": "{palette.sage}",
+      "$description": "Главные кнопки, индикатор говорящего"
+    },
+    "accent-2": {
+      "$type": "color",
+      "$value": "{palette.frost}",
+      "$description": "Ссылки, второй акцент, кольцо фокуса"
+    },
+    "text": { "$type": "color", "$value": "{palette.mist}", "$description": "Основной текст" },
+    "muted": {
+      "$type": "color",
+      "$value": "{palette.lichen}",
+      "$description": "Второстепенный текст"
+    },
+    "danger": {
+      "$type": "color",
+      "$value": "{palette.lingonberry}",
+      "$description": "Ошибки и удаление"
+    },
+    "warning": {
+      "$type": "color",
+      "$value": "{palette.cloudberry}",
+      "$description": "«Подключение…», «отошёл», устройство не подтверждено"
+    },
+    "on-accent": {
+      "$type": "color",
+      "$value": "{palette.pine}",
+      "$description": "Текст на заливках Шалфеем, Инеем, Брусникой, Морошкой"
+    },
+
+    "bg-deep": {
+      "$type": "color",
+      "$value": "{palette.pine}",
+      "$extensions": { "org.bebeberloga.color": { "mix": "black", "amount": 0.25 } },
+      "$description": "Фон рейла сообществ, сцены звонка, просмотра изображений, подсказок"
+    },
+    "panel-hover": {
+      "$type": "color",
+      "$value": "{palette.panel}",
+      "$extensions": { "org.bebeberloga.color": { "mix": "white", "amount": 0.06 } },
+      "$description": "Наведение на строку списка"
+    },
+    "panel-active": {
+      "$type": "color",
+      "$value": "{palette.panel}",
+      "$extensions": { "org.bebeberloga.color": { "mix": "white", "amount": 0.12 } },
+      "$description": "Выбранная строка, активная вкладка"
+    },
+    "panel-pressed": {
+      "$type": "color",
+      "$value": "{palette.panel}",
+      "$extensions": { "org.bebeberloga.color": { "mix": "black", "amount": 0.06 } },
+      "$description": "Нажатие на кнопку с заливкой Панелью"
+    },
+    "border": {
+      "$type": "color",
+      "$value": "{palette.lichen}",
+      "$extensions": { "org.bebeberloga.color": { "alpha": 0.16 } },
+      "$description": "Разделители и рамки полей"
+    },
+    "overlay": {
+      "$type": "color",
+      "$value": "{palette.pine}",
+      "$extensions": { "org.bebeberloga.color": { "alpha": 0.7 } },
+      "$description": "Затемнение под модальными окнами"
+    },
+    "mention-bg": {
+      "$type": "color",
+      "$value": "{palette.frost}",
+      "$extensions": { "org.bebeberloga.color": { "alpha": 0.12 } },
+      "$description": "Фон сообщения, где упомянули меня; мягкая подсветка Инеем"
+    },
+    "mention-bar": {
+      "$type": "color",
+      "$value": "{palette.frost}",
+      "$description": "Полоса слева у такого сообщения"
+    },
+    "success": {
+      "$type": "color",
+      "$value": "{palette.sage}",
+      "$description": "Статус «в сети», «подключено», говорящий"
+    },
+    "live": {
+      "$type": "color",
+      "$value": "{palette.lingonberry}",
+      "$description": "Метка «В ЭФИРЕ»"
+    },
+
+    "accent-hover": {
+      "$type": "color",
+      "$value": "{palette.sage}",
+      "$extensions": { "org.bebeberloga.color": { "mix": "white", "amount": 0.06 } },
+      "$description": "Наведение на заливку Шалфеем (+6 % светлоты)"
+    },
+    "accent-pressed": {
+      "$type": "color",
+      "$value": "{palette.sage}",
+      "$extensions": { "org.bebeberloga.color": { "mix": "black", "amount": 0.06 } },
+      "$description": "Нажатие на заливку Шалфеем (−6 % светлоты)"
+    },
+    "accent-2-hover": {
+      "$type": "color",
+      "$value": "{palette.frost}",
+      "$extensions": { "org.bebeberloga.color": { "mix": "white", "amount": 0.06 } },
+      "$description": "Наведение на ссылку"
+    },
+    "accent-2-pressed": {
+      "$type": "color",
+      "$value": "{palette.frost}",
+      "$extensions": { "org.bebeberloga.color": { "mix": "black", "amount": 0.06 } },
+      "$description": "Нажатие на ссылку"
+    },
+    "danger-hover": {
+      "$type": "color",
+      "$value": "{palette.lingonberry}",
+      "$extensions": { "org.bebeberloga.color": { "mix": "white", "amount": 0.06 } },
+      "$description": "Наведение на заливку Брусникой"
+    },
+    "danger-pressed": {
+      "$type": "color",
+      "$value": "{palette.lingonberry}",
+      "$extensions": { "org.bebeberloga.color": { "mix": "black", "amount": 0.06 } },
+      "$description": "Нажатие на заливку Брусникой"
+    },
+    "success-soft": {
+      "$type": "color",
+      "$value": "{palette.sage}",
+      "$extensions": { "org.bebeberloga.color": { "alpha": 0.2 } },
+      "$description": "Шалфей 20 %: включённый «позитивный» переключатель, сегмент «разрешить»"
+    },
+    "danger-soft": {
+      "$type": "color",
+      "$value": "{palette.lingonberry}",
+      "$extensions": { "org.bebeberloga.color": { "alpha": 0.2 } },
+      "$description": "Брусника 20 %: включённый «опасный» переключатель, сегмент «запретить»"
+    },
+    "warning-soft": {
+      "$type": "color",
+      "$value": "{palette.cloudberry}",
+      "$extensions": { "org.bebeberloga.color": { "alpha": 0.2 } },
+      "$description": "Морошка 20 %: фон предупреждающей полосы"
+    },
+    "success-zone": {
+      "$type": "color",
+      "$value": "{palette.sage}",
+      "$extensions": { "org.bebeberloga.color": { "alpha": 0.3 } },
+      "$description": "Шалфей 30 %: зона выше порога активации голоса"
+    },
+    "danger-zone": {
+      "$type": "color",
+      "$value": "{palette.lingonberry}",
+      "$extensions": { "org.bebeberloga.color": { "alpha": 0.3 } },
+      "$description": "Брусника 30 %: зона ниже порога активации голоса"
+    },
+    "qr-bg": {
+      "$type": "color",
+      "$value": "{palette.mist}",
+      "$description": "Подложка QR-кода: самый светлый цвет палитры (OPEN-QUESTIONS: «белая подложка»)"
+    },
+    "qr-fg": { "$type": "color", "$value": "{palette.pine}", "$description": "Модули QR-кода" }
+  }
+}

@@ -1,0 +1,70 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.list {
+  display: flex;
+  gap: var(--space-5);
+  border-bottom: var(--size-border) solid var(--color-border);
+}
+
+.tab {
+  position: relative;
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-radius: var(--radius-xs);
+  color: var(--color-muted);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--duration-fast);
+}
+
+/* Подчёркивание 2 px Шалфеем поверх линии списка */
+.tab::after {
+  position: absolute;
+  right: 0;
+  bottom: calc(-1 * var(--size-border));
+  left: 0;
+  height: var(--size-focus-ring);
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  content: "";
+  opacity: 0;
+  transition: opacity var(--duration-fast);
+}
+
+.tab[data-hovered] {
+  color: var(--color-text);
+}
+
+.tab[data-selected] {
+  color: var(--color-text);
+}
+
+.tab[data-selected]::after {
+  opacity: 1;
+}
+
+.tab[data-disabled] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.panel {
+  padding-top: var(--space-4);
+  border-radius: var(--radius-s);
+}
+
+.panel:empty {
+  display: none;
+}

@@ -1,0 +1,135 @@
+{
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "reset": "Reset",
+    "clear": "Clear",
+    "loading": "Loading…",
+    "search": "Search",
+    "nothingFound": "Nothing found",
+    "required": "required"
+  },
+  "button": {
+    "splitMenu": "More options",
+    "hangup": "Leave call"
+  },
+  "input": {
+    "charsLeft": "Characters left: {count}"
+  },
+  "richText": {
+    "toolbar": "Formatting",
+    "bold": "Bold",
+    "italic": "Italic",
+    "underline": "Underline",
+    "strikethrough": "Strikethrough",
+    "spoiler": "Spoiler",
+    "emoji": "Emoji"
+  },
+  "select": {
+    "placeholder": "Pick an option",
+    "searchPlaceholder": "Find an option"
+  },
+  "triState": {
+    "deny": "Deny",
+    "inherit": "Inherit",
+    "allow": "Allow"
+  },
+  "levelMeter": {
+    "label": "Sound level"
+  },
+  "keyRecorder": {
+    "record": "Record",
+    "stop": "Done",
+    "recording": "Press a key combination",
+    "empty": "Not set"
+  },
+  "keys": {
+    "space": "Space"
+  },
+  "colorSwatches": {
+    "current": "Current color",
+    "custom": "Custom color",
+    "samples": "Color samples",
+    "area": "Saturation and brightness",
+    "hue": "Hue",
+    "hex": "Color code"
+  },
+  "chip": {
+    "remove": "Remove"
+  },
+  "menu": {
+    "quickReactions": "Quick reactions"
+  },
+  "modal": {
+    "irreversible": "This can't be undone.",
+    "shiftHint": "Hold Shift to skip this confirmation."
+  },
+  "settings": {
+    "close": "Close settings",
+    "navigation": "Settings sections"
+  },
+  "callToast": {
+    "calling": "{name} is calling",
+    "accept": "Answer",
+    "decline": "Decline"
+  },
+  "miniPlayer": {
+    "label": "Mini player",
+    "move": "Move the mini player to another corner with arrow keys"
+  },
+  "toast": {
+    "region": "Notifications",
+    "dismiss": "Dismiss notification"
+  },
+  "saveBar": {
+    "message": "You have unsaved changes"
+  },
+  "status": {
+    "online": "Online",
+    "away": "Away",
+    "dnd": "Do not disturb",
+    "offline": "Offline",
+    "typing": "Typing",
+    "speaking": "Speaking"
+  },
+  "badge": {
+    "live": "On air",
+    "new": "New",
+    "thousands": "{count}K+"
+  },
+  "e2ee": {
+    "label": "Encrypted",
+    "verified": "Everyone here is verified",
+    "unverified": "Not everyone is verified yet",
+    "warning": "Their keys have changed, or a message couldn't be decrypted"
+  },
+  "progress": {
+    "percent": "{value}%"
+  },
+  "qr": {
+    "code": "QR code",
+    "video": "Camera view",
+    "scannerHint": "Point the camera at the QR code",
+    "starting": "Starting the camera…",
+    "denied": "No camera access. Allow it in your system settings.",
+    "unavailable": "No camera found."
+  },
+  "password": {
+    "label": "Password strength",
+    "weak": "Weak",
+    "soso": "So-so",
+    "good": "Good",
+    "great": "Great"
+  },
+  "codeInput": {
+    "cell": "Digit {index} of {total}"
+  },
+  "waveform": {
+    "label": "Sound clip",
+    "start": "Clip start",
+    "end": "Clip end",
+    "play": "Play the clip",
+    "stop": "Stop"
+  }
+}

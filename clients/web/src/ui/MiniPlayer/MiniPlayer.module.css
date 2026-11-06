@@ -1,0 +1,127 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+/* Плавающая карточка 320×180; отступ от углов области — 16 (--space-4) */
+.player {
+  position: absolute;
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  height: 180px;
+  overflow: hidden;
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-m);
+  background: var(--color-bg-deep);
+  box-shadow: var(--shadow-popover);
+  transition: transform var(--duration-base);
+}
+
+.player[data-corner="top-left"] {
+  top: var(--space-4);
+  left: var(--space-4);
+}
+
+.player[data-corner="top-right"] {
+  top: var(--space-4);
+  right: var(--space-4);
+}
+
+.player[data-corner="bottom-left"] {
+  bottom: var(--space-4);
+  left: var(--space-4);
+}
+
+.player[data-corner="bottom-right"] {
+  right: var(--space-4);
+  bottom: var(--space-4);
+}
+
+/* Пока карточку тащат, она следует за указателем без задержки */
+.player[data-dragging] {
+  transition: none;
+  cursor: grabbing;
+}
+
+.header {
+  display: flex;
+  flex: none;
+  gap: var(--space-2);
+  align-items: center;
+  height: var(--size-control-s);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  background: var(--color-panel);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.back {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  min-width: 0;
+  padding: var(--space-1);
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--color-text);
+  font-size: var(--font-size-caption);
+  cursor: pointer;
+}
+
+.back[data-hovered] {
+  background: var(--color-panel-hover);
+}
+
+.title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ручка переноса: тянется на свободное место шапки */
+.grip {
+  flex: 1;
+  align-self: stretch;
+  min-width: var(--size-control-xs);
+  border-radius: var(--radius-s);
+  cursor: grab;
+}
+
+.frame {
+  position: relative;
+  display: grid;
+  flex: 1;
+  place-items: center;
+  min-height: 0;
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+}
+
+.footer {
+  display: flex;
+  flex: none;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+  height: var(--size-control-s);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  background: var(--color-panel);
+}
+
+.caption {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: inline-flex;
+  flex: none;
+  gap: var(--space-1);
+}

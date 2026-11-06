@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--space-1);
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-xs);
+  background: var(--color-bg);
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-regular);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.combo {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+}

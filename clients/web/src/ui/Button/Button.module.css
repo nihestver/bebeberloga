@@ -1,0 +1,278 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--size-control-m);
+  padding: 0 var(--space-4);
+  border: var(--size-border) solid transparent;
+  border-radius: var(--radius-m);
+  background: none;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--font-leading-tight);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color var(--duration-fast),
+    border-color var(--duration-fast),
+    color var(--duration-fast);
+}
+
+.button[data-size="s"] {
+  height: var(--size-control-s);
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-caption);
+}
+
+.button[data-full-width] {
+  display: flex;
+  width: 100%;
+}
+
+.content {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Загрузка: текст остаётся в потоке (ширина кнопки не меняется), поверх него — спиннер. */
+.button[data-pending] .content {
+  visibility: hidden;
+}
+
+.pending {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* Button/Primary */
+.button[data-variant="primary"] {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.button[data-variant="primary"][data-hovered] {
+  background: var(--color-accent-hover);
+}
+
+.button[data-variant="primary"][data-pressed] {
+  background: var(--color-accent-pressed);
+}
+
+/* Button/Secondary и Button/Pill */
+.button[data-variant="secondary"],
+.button[data-variant="pill"] {
+  border-color: var(--color-border);
+  background: var(--color-panel);
+}
+
+.button[data-variant="secondary"][data-hovered],
+.button[data-variant="pill"][data-hovered] {
+  background: var(--color-panel-hover);
+}
+
+.button[data-variant="secondary"][data-pressed],
+.button[data-variant="pill"][data-pressed] {
+  background: var(--color-panel-pressed);
+}
+
+.button[data-variant="pill"] {
+  height: var(--size-control-s);
+  padding: 0 var(--space-3);
+  border-color: transparent;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-caption);
+}
+
+/* Button/Danger */
+.button[data-variant="danger"] {
+  background: var(--color-danger);
+  color: var(--color-on-accent);
+}
+
+.button[data-variant="danger"][data-hovered] {
+  background: var(--color-danger-hover);
+}
+
+.button[data-variant="danger"][data-pressed] {
+  background: var(--color-danger-pressed);
+}
+
+/* Button/DangerOutline */
+.button[data-variant="dangerOutline"] {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.button[data-variant="dangerOutline"][data-hovered] {
+  border-color: var(--color-danger-hover);
+  background: var(--color-danger-soft);
+  color: var(--color-danger-hover);
+}
+
+.button[data-variant="dangerOutline"][data-pressed] {
+  border-color: var(--color-danger-pressed);
+  color: var(--color-danger-pressed);
+}
+
+/* Button/Link */
+.button[data-variant="link"] {
+  height: auto;
+  padding: 0;
+  border-radius: var(--radius-xs);
+  color: var(--color-accent-2);
+  font-weight: var(--font-weight-regular);
+}
+
+.button[data-variant="link"][data-hovered] {
+  color: var(--color-accent-2-hover);
+  text-decoration: underline;
+}
+
+.button[data-variant="link"][data-pressed] {
+  color: var(--color-accent-2-pressed);
+}
+
+/* Button/Icon и Button/IconToggle */
+.iconButton {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--size-control-s);
+  height: var(--size-control-s);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast),
+    color var(--duration-fast);
+}
+
+.iconButton[data-size="s"] {
+  width: var(--size-control-xs);
+  height: var(--size-control-xs);
+}
+
+.iconButton[data-hovered] {
+  background: var(--color-panel-hover);
+  color: var(--color-text);
+}
+
+.iconButton[data-pressed] {
+  background: var(--color-panel-pressed);
+}
+
+.iconButton[data-selected][data-tone="danger"] {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.iconButton[data-selected][data-tone="positive"] {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+/* Button/Hangup */
+.hangup {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 64px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-danger);
+  color: var(--color-on-accent);
+  cursor: pointer;
+  transition: background-color var(--duration-fast);
+}
+
+.hangup[data-hovered] {
+  background: var(--color-danger-hover);
+}
+
+.hangup[data-pressed] {
+  background: var(--color-danger-pressed);
+}
+
+/* Button/Split: переключатель и узкая стрелка в общей капсуле */
+.split {
+  display: inline-flex;
+  flex: none;
+  align-items: stretch;
+  border-radius: var(--radius-full);
+  background: var(--color-panel);
+}
+
+.split .iconButton {
+  width: var(--size-control-m);
+  height: var(--size-control-m);
+  border-radius: var(--radius-full) 0 0 var(--radius-full);
+}
+
+.splitArrow {
+  display: inline-grid;
+  place-items: center;
+  width: var(--size-control-xs);
+  padding: 0;
+  border: 0;
+  border-left: var(--size-border) solid var(--color-border);
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast),
+    color var(--duration-fast);
+}
+
+.splitArrow[data-hovered],
+.splitArrow[data-pressed] {
+  background: var(--color-panel-hover);
+  color: var(--color-text);
+}
+
+/* Общее: неактивное состояние — прозрачность 50 %, курсор «запрещено» */
+.button[data-disabled],
+.iconButton[data-disabled],
+.hangup[data-disabled],
+.splitArrow[data-disabled] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.button[data-pending],
+.button[data-pending][data-hovered] {
+  cursor: progress;
+}
+
+/* Спиннер: кольцо цветом текста с вырезанной четвертью */
+.spinner {
+  display: inline-block;
+  flex: none;
+  border: var(--size-focus-ring) solid currentcolor;
+  border-top-color: transparent;
+  border-radius: var(--radius-full);
+  animation: spin var(--duration-loop) linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

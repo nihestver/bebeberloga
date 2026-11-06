@@ -1,0 +1,66 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ *
+ * Базовые стили дизайн-системы: сброс, типографика по BRAND.md, кольцо фокуса и отключение
+ * анимаций. Значения — только из токенов (tokens.css).
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--font-leading-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/*
+ * Фокус с клавиатуры: кольцо 2 px Инеем с отступом 2 px (COMPONENTS §2). Примитивы доступности
+ * помечают элемент атрибутом data-focus-visible; :where() оставляет компонентам право заменить
+ * кольцо (у полей ввода вместо него рамка Инеем).
+ */
+:where([data-focus-visible]),
+:where(:focus-visible) {
+  outline: var(--size-focus-ring) solid var(--color-accent-2);
+  outline-offset: var(--size-focus-offset);
+}
+
+:where(:focus:not(:focus-visible)) {
+  outline: none;
+}
+
+/*
+ * prefers-reduced-motion отключает анимации (COMPONENTS §8): длительности-токены уже равны нулю
+ * (tokens.css), а это правило страхует бесконечные анимации и сторонние стили.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}

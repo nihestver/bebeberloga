@@ -1,0 +1,187 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+/* Поле выбора выглядит как Input/Text */
+.trigger {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: var(--size-control-m);
+  padding: 0 var(--space-3);
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-m);
+  outline: none;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+  text-align: start;
+  cursor: pointer;
+  transition: border-color var(--duration-fast);
+}
+
+.trigger[data-size="s"] {
+  height: var(--size-control-s);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-s);
+  font-size: var(--font-size-caption);
+}
+
+.trigger[data-hovered] {
+  border-color: var(--color-muted);
+}
+
+.trigger[data-focus-visible],
+.trigger[data-pressed],
+.trigger[aria-expanded="true"] {
+  border-color: var(--color-accent-2);
+}
+
+[data-invalid] > .trigger {
+  border-color: var(--color-danger);
+}
+
+.trigger[data-disabled] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value[data-placeholder] {
+  color: var(--color-muted);
+}
+
+/* В поле показываем только название варианта, без пояснения */
+.value [slot="description"] {
+  display: none;
+}
+
+.chevron {
+  color: var(--color-muted);
+}
+
+.popover {
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  min-width: var(--trigger-width);
+  padding: var(--space-1);
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-m);
+  background: var(--color-panel);
+  box-shadow: var(--shadow-popover);
+  transition: opacity var(--duration-fast);
+}
+
+.popover[data-entering],
+.popover[data-exiting] {
+  opacity: 0;
+}
+
+.search {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  height: var(--size-control-s);
+  margin-bottom: var(--space-1);
+  padding: 0 var(--space-2);
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-s);
+  background: var(--color-bg);
+}
+
+.search:focus-within {
+  border-color: var(--color-accent-2);
+}
+
+.searchIcon {
+  color: var(--color-muted);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: var(--color-text);
+  font-size: var(--font-size-caption);
+}
+
+.searchInput::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
+.searchInput::-webkit-search-cancel-button {
+  display: none;
+}
+
+/* До 8 строк по 32 px, дальше прокрутка */
+.list {
+  max-height: calc(8 * var(--size-control-s));
+  overflow-y: auto;
+  outline: none;
+}
+
+.option {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--size-control-s);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-s);
+  outline: none;
+  color: var(--color-text);
+  font-size: var(--font-size-caption);
+  cursor: pointer;
+}
+
+.option[data-hovered],
+.option[data-focused] {
+  background: var(--color-panel-hover);
+}
+
+.option[data-selected] {
+  background: var(--color-panel-active);
+}
+
+.option[data-disabled] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.optionText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.optionDescription {
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+.option[data-selected] .optionDescription {
+  color: var(--color-text);
+}
+
+.check {
+  color: var(--color-accent);
+}
+
+.empty {
+  padding: var(--space-2);
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+}

@@ -1,0 +1,13 @@
+{
+  "palette": {
+    "$description": "Палитра BRAND.md. В CSS не выводится: компоненты пользуются только смысловыми токенами темы.",
+    "pine": { "$type": "color", "$value": "#1E2B2A", "$description": "Хвоя" },
+    "sage": { "$type": "color", "$value": "#9CC5AE", "$description": "Шалфей" },
+    "frost": { "$type": "color", "$value": "#86BEDD", "$description": "Иней" },
+    "mist": { "$type": "color", "$value": "#EEF2EE", "$description": "Туман" },
+    "panel": { "$type": "color", "$value": "#2B3B39", "$description": "Панель" },
+    "lichen": { "$type": "color", "$value": "#A9B8B2", "$description": "Лишайник" },
+    "lingonberry": { "$type": "color", "$value": "#E8A0A0", "$description": "Брусника" },
+    "cloudberry": { "$type": "color", "$value": "#E8C987", "$description": "Морошка" }
+  }
+}

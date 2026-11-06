@@ -1,0 +1,80 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+  max-width: 360px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.illustration {
+  margin-bottom: var(--space-2);
+}
+
+.title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--font-leading-tight);
+}
+
+.text {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: var(--font-leading-body);
+}
+
+.action {
+  margin-top: var(--space-2);
+}
+
+/* Иллюстрации-заглушки: плоские формы из токенов */
+.svg {
+  display: block;
+}
+
+.body {
+  fill: var(--color-panel-active);
+}
+
+.detail {
+  fill: var(--color-muted);
+}
+
+.ink {
+  fill: var(--color-bg-deep);
+}
+
+.lens {
+  fill: var(--color-mention-bg);
+}
+
+.stroke {
+  fill: none;
+  stroke: var(--color-bg-deep);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.strokeAccent {
+  fill: none;
+  stroke: var(--color-accent-2);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.strokeAccentWide {
+  fill: none;
+  stroke: var(--color-accent-2);
+  stroke-width: 5;
+  stroke-linecap: round;
+}

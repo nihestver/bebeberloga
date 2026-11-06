@@ -1,0 +1,210 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.avatar,
+.community {
+  /* Цвет поверхности под аватаром: им вырезается контур точки статуса. */
+  --avatar-surface: var(--color-bg);
+
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  user-select: none;
+}
+
+.avatar {
+  border-radius: var(--radius-full);
+}
+
+.image,
+.glyph {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.image {
+  object-fit: cover;
+}
+
+/* Встроенный значок цвета Хвои на цветном фоне */
+.glyph {
+  background: var(--color-swatch-1);
+  color: var(--color-on-accent);
+}
+
+.glyph svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.glyph[data-tone="2"] {
+  background: var(--color-swatch-2);
+}
+
+.glyph[data-tone="3"] {
+  background: var(--color-swatch-3);
+}
+
+.glyph[data-tone="4"] {
+  background: var(--color-swatch-4);
+}
+
+.glyph[data-tone="5"] {
+  background: var(--color-swatch-5);
+}
+
+.glyph[data-tone="6"] {
+  background: var(--color-swatch-6);
+}
+
+.glyph[data-tone="7"] {
+  background: var(--color-swatch-7);
+}
+
+.glyph[data-tone="8"] {
+  background: var(--color-swatch-8);
+}
+
+.glyph[data-tone="9"] {
+  background: var(--color-swatch-9);
+}
+
+.glyph[data-tone="10"] {
+  background: var(--color-swatch-10);
+}
+
+/* Avatar/Speaking: кольцо 2 px Шалфеем */
+.avatar[data-speaking] {
+  outline: var(--size-focus-ring) solid var(--color-success);
+  outline-offset: var(--size-focus-offset);
+}
+
+/* Avatar/Status: точка = 30 % аватара, с вырезом цветом фона */
+.status,
+.typing {
+  position: absolute;
+  right: -4%;
+  bottom: -4%;
+  box-sizing: content-box;
+  border: max(2px, calc(var(--avatar-size) * 0.05)) solid var(--avatar-surface);
+  border-radius: var(--radius-full);
+  background: var(--avatar-surface);
+}
+
+.status {
+  width: 30%;
+  height: 30%;
+  overflow: hidden;
+}
+
+/* в сети — сплошной круг Шалфеем */
+.status[data-status="online"] {
+  background: var(--color-success);
+}
+
+/* отошёл — полумесяц */
+.status[data-status="away"] {
+  background: var(--color-warning);
+}
+
+.status[data-status="away"]::after {
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 75%;
+  height: 75%;
+  border-radius: var(--radius-full);
+  background: var(--avatar-surface);
+  content: "";
+}
+
+/* не беспокоить — круг Брусникой с полосой */
+.status[data-status="dnd"] {
+  background: var(--color-danger);
+}
+
+.status[data-status="dnd"]::after {
+  position: absolute;
+  top: 37.5%;
+  right: 18%;
+  left: 18%;
+  height: 25%;
+  border-radius: var(--radius-full);
+  background: var(--avatar-surface);
+  content: "";
+}
+
+/* не в сети, невидимый — серое кольцо */
+.status[data-status="offline"]::after {
+  position: absolute;
+  inset: 0;
+  border: max(1.5px, calc(var(--avatar-size) * 0.06)) solid var(--color-muted);
+  border-radius: var(--radius-full);
+  content: "";
+}
+
+/* Avatar/Typing: капсула с тремя точками */
+.typing {
+  display: inline-flex;
+  gap: 12%;
+  align-items: center;
+  justify-content: center;
+  width: 52%;
+  height: 30%;
+  background: var(--color-panel-active);
+}
+
+.typing i {
+  width: 16%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-full);
+  background: var(--color-text);
+  animation: typing var(--duration-loop) ease-in-out infinite;
+}
+
+.typing i:nth-child(2) {
+  animation-delay: calc(var(--duration-loop) / 6);
+}
+
+.typing i:nth-child(3) {
+  animation-delay: calc(var(--duration-loop) / 3);
+}
+
+@keyframes typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.4;
+    transform: none;
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(-25%);
+  }
+}
+
+/* CommunityIcon: радиус 30 % стороны */
+.community {
+  overflow: hidden;
+  border-radius: 30%;
+  background: var(--color-panel);
+}
+
+.initials {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--color-text);
+  font-size: calc(var(--avatar-size) * 0.38);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+}

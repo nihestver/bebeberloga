@@ -1,0 +1,124 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.row[data-disabled] {
+  opacity: var(--opacity-disabled);
+}
+
+/* Текущий цвет: 48×40 */
+.current {
+  flex: none;
+  width: 48px;
+  height: 40px;
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-s);
+}
+
+/* Сетка 2×10 круглых образцов по 20 px */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(10, 20px);
+  gap: var(--space-2);
+}
+
+.item {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+
+.dot {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+}
+
+.item[data-hovered] {
+  transform: scale(1.15);
+}
+
+/* Выбранный образец — кольцо цветом текста с вырезом цветом фона */
+.item[data-selected]::after {
+  position: absolute;
+  inset: -3px;
+  border: var(--size-focus-ring) solid var(--color-text);
+  border-radius: var(--radius-full);
+  content: "";
+}
+
+.item[data-disabled] {
+  cursor: not-allowed;
+}
+
+/* Свой цвет: всплывающая панель выбора */
+.popover {
+  z-index: var(--z-popover);
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-m);
+  background: var(--color-panel);
+  box-shadow: var(--shadow-popover);
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  outline: none;
+}
+
+.area {
+  width: 208px;
+  height: 136px;
+  border-radius: var(--radius-s);
+}
+
+.hue {
+  width: 208px;
+}
+
+.hueTrack {
+  height: 16px;
+  border-radius: var(--radius-full);
+}
+
+.thumb {
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border: var(--size-focus-ring) solid var(--color-text);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-popover);
+}
+
+.hexField {
+  display: flex;
+}
+
+.hexInput {
+  width: 100%;
+  height: var(--size-control-s);
+  padding: 0 var(--space-2);
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-s);
+  outline: none;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-caption);
+}
+
+.hexInput[data-focused] {
+  border-color: var(--color-accent-2);
+}

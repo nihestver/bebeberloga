@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: CC0-1.0
+#
+# Для запусков prettier из clients/web (pnpm lint читает ещё и корневой .prettierignore).
+# Сгенерированный код формирует buf generate, prettier его не трогает.
+src/gen/
+storybook-static/
+dist/

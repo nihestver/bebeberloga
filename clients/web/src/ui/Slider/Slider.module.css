@@ -1,0 +1,165 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 120px;
+}
+
+.header {
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.label {
+  color: var(--color-text);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-bold);
+}
+
+.output {
+  flex: none;
+  color: var(--color-muted);
+  white-space: nowrap;
+  font-size: var(--font-size-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Дорожка 4 px; область нажатия выше дорожки — 16 px (высота бегунка) */
+.track {
+  position: relative;
+  height: 16px;
+  cursor: pointer;
+}
+
+.track::before {
+  position: absolute;
+  top: 6px;
+  right: 0;
+  left: 0;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-panel-active);
+  content: "";
+}
+
+.fill {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+}
+
+.thumb {
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--color-text);
+  cursor: grab;
+  transition: background-color var(--duration-fast);
+}
+
+.thumb[data-hovered] {
+  background: var(--color-accent-hover);
+}
+
+.thumb[data-dragging] {
+  background: var(--color-accent);
+  cursor: grabbing;
+}
+
+.slider[data-disabled] {
+  opacity: var(--opacity-disabled);
+}
+
+.slider[data-disabled] .track,
+.slider[data-disabled] .thumb {
+  cursor: not-allowed;
+}
+
+/* Значение подсказкой над бегунком: при перетаскивании и при фокусе с клавиатуры */
+.bubble {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + var(--space-2));
+  left: 50%;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-deep);
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  box-shadow: var(--shadow-popover);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.thumb[data-dragging] .bubble,
+.thumb[data-focus-visible] .bubble {
+  display: block;
+}
+
+/* Slider/Threshold: дорожка — сам индикатор уровня */
+.threshold::before {
+  top: 2px;
+  height: 12px;
+  border-radius: var(--radius-xs);
+  background: var(--color-success-zone);
+}
+
+.zoneBelow {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  height: 12px;
+  border-radius: var(--radius-xs) 0 0 var(--radius-xs);
+  background: var(--color-danger-zone);
+}
+
+.level {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-danger);
+  transition: width var(--duration-fast);
+}
+
+.level[data-open] {
+  background: var(--color-success);
+}
+
+.thresholdThumb {
+  width: 8px;
+  height: 20px;
+  border-radius: var(--radius-xs);
+}
+
+/* LevelMeter: штрихи 3×16 */
+.meter {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.bar {
+  width: 3px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--color-panel-active);
+}
+
+.bar[data-lit] {
+  background: var(--color-accent);
+}

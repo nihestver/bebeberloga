@@ -15,8 +15,9 @@ CC0 или общественное достояние, Creative Commons с пр
 
 - шрифты Unbounded, Nunito и JetBrains Mono — подключаются пакетами `@fontsource/*` (SIL OFL 1.1,
   [`BRAND.md`](BRAND.md));
-- иконки интерфейса — open-source набор (Lucide, Tabler или Phosphor), подключаемый пакетом; набор и
-  его лицензия фиксируются при выборе в B8;
+- иконки интерфейса — набор Lucide, пакет `lucide-react` (ISC; иконки из проекта Feather — MIT),
+  [ADR-0023](docs/adr/0023-ui-primitives-and-icons.md). Это npm-зависимость, а не ассет репозитория.
+  Иконки, которых в наборе нет, — собственные, лежат в `design/icons/` и записаны в таблице;
 - звуки soundboard, которые загружают администраторы и участники инстанса. Встроенные звуки, если
   они появятся, записываются сюда.
 
@@ -32,3 +33,34 @@ CC0 или общественное достояние, Creative Commons с пр
 | `brand/bebeberloga-wordmark-for-light.svg` | Участники Bebeberloga | Оригинальная работа для проекта | LicenseRef-Bebeberloga-Brand | Надпись для светлого фона |
 | `brand/favicon.svg` | Участники Bebeberloga | Оригинальная работа для проекта | LicenseRef-Bebeberloga-Brand | Вкладка браузера |
 | `brand/favicon.ico` | Участники Bebeberloga | Растровая версия `favicon.svg` | LicenseRef-Bebeberloga-Brand | Вкладка браузера, мелкие размеры |
+| `design/icons/soundboard.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Иконка soundboard: динамик со звёздочкой |
+| `design/avatars/bear.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «медведь» (docs/protocol/AVATARS.md) |
+| `design/avatars/fox.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «лиса» (docs/protocol/AVATARS.md) |
+| `design/avatars/hare.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «заяц» (docs/protocol/AVATARS.md) |
+| `design/avatars/owl.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «сова» (docs/protocol/AVATARS.md) |
+| `design/avatars/hedgehog.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «ёж» (docs/protocol/AVATARS.md) |
+| `design/avatars/squirrel.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «белка» (docs/protocol/AVATARS.md) |
+| `design/avatars/wolf.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «волк» (docs/protocol/AVATARS.md) |
+| `design/avatars/moose.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «лось» (docs/protocol/AVATARS.md) |
+| `design/avatars/badger.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «барсук» (docs/protocol/AVATARS.md) |
+| `design/avatars/mouse.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «мышь» (docs/protocol/AVATARS.md) |
+| `design/avatars/beaver.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «бобёр» (docs/protocol/AVATARS.md) |
+| `design/avatars/lynx.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «рысь» (docs/protocol/AVATARS.md) |
+| `design/avatars/frog.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «лягушка» (docs/protocol/AVATARS.md) |
+| `design/avatars/bee.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «пчела» (docs/protocol/AVATARS.md) |
+| `design/avatars/snail.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «улитка» (docs/protocol/AVATARS.md) |
+| `design/avatars/bird.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «птица» (docs/protocol/AVATARS.md) |
+| `design/avatars/teapot.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «чайник» (docs/protocol/AVATARS.md) |
+| `design/avatars/mug.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «кружка» (docs/protocol/AVATARS.md) |
+| `design/avatars/honey.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «горшочек мёда» (docs/protocol/AVATARS.md) |
+| `design/avatars/lantern.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «фонарь» (docs/protocol/AVATARS.md) |
+| `design/avatars/cone.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «шишка» (docs/protocol/AVATARS.md) |
+| `design/avatars/mushroom.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «гриб» (docs/protocol/AVATARS.md) |
+| `design/avatars/acorn.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «жёлудь» (docs/protocol/AVATARS.md) |
+| `design/avatars/leaf.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «лист» (docs/protocol/AVATARS.md) |
+| `design/avatars/campfire.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «костёр» (docs/protocol/AVATARS.md) |
+| `design/avatars/berry.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «ягоды» (docs/protocol/AVATARS.md) |
+| `design/avatars/spruce.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «ель» (docs/protocol/AVATARS.md) |
+| `design/avatars/mitten.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «варежка» (docs/protocol/AVATARS.md) |
+| `design/avatars/pillow.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «подушка» (docs/protocol/AVATARS.md) |
+| `design/avatars/candle.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «свеча» (docs/protocol/AVATARS.md) |

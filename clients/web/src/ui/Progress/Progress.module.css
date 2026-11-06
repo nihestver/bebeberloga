@@ -1,0 +1,134 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+/* ProgressBar: полоса 4 px, подпись сверху справа */
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 120px;
+}
+
+.header {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: space-between;
+  font-size: var(--font-size-small);
+}
+
+.label {
+  color: var(--color-text);
+}
+
+.value {
+  margin-left: auto;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  position: relative;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--color-panel-active);
+}
+
+.fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  transition: width var(--duration-base);
+}
+
+/* Неопределённый вариант — бегущий отрезок */
+.fill[data-indeterminate] {
+  position: absolute;
+  width: 30%;
+  animation: run var(--duration-loop) ease-in-out infinite;
+}
+
+@keyframes run {
+  from {
+    left: -30%;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
+/* PasswordStrength: 4 сегмента */
+.strength {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.segments {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.segment {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-panel-active);
+  transition: background-color var(--duration-fast);
+}
+
+.strength[data-tone="weak"] .segment[data-filled] {
+  background: var(--color-danger);
+}
+
+.strength[data-tone="soso"] .segment[data-filled] {
+  background: var(--color-warning);
+}
+
+.strength[data-tone="good"] .segment[data-filled] {
+  background: var(--color-success);
+}
+
+.strengthLabel {
+  font-size: var(--font-size-small);
+}
+
+.strength[data-tone="weak"] .strengthLabel {
+  color: var(--color-danger);
+}
+
+.strength[data-tone="soso"] .strengthLabel {
+  color: var(--color-warning);
+}
+
+.strength[data-tone="good"] .strengthLabel {
+  color: var(--color-success);
+}
+
+/* Skeleton: мерцание */
+.skeleton {
+  display: block;
+  border-radius: var(--radius-xs);
+  background: var(--color-panel-active);
+  animation: shimmer var(--duration-loop) ease-in-out infinite;
+}
+
+.skeleton[data-round] {
+  border-radius: var(--radius-full);
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+@keyframes shimmer {
+  50% {
+    opacity: 0.55;
+  }
+}

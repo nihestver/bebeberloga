@@ -1,0 +1,27 @@
+{
+  "color": {
+    "swatch": {
+      "$description": "Образцы для ColorSwatches и фон встроенных аватаров. Новых цветов нет: ряд 1 — четыре акцента BRAND.md, их смеси в sRGB и Лишайник; ряд 2 — те же цвета, смешанные с Туманом на 40 %. Значения записаны явно, чтобы клиент мог читать их из JSON; правило проверяет тест clients/web/src/ui/tokens.test.ts.",
+      "1": { "$type": "color", "$value": "#E8A0A0", "$description": "Брусника" },
+      "2": { "$type": "color", "$value": "#E8B594", "$description": "Брусника + Морошка, 50 %" },
+      "3": { "$type": "color", "$value": "#E8C987", "$description": "Морошка" },
+      "4": { "$type": "color", "$value": "#C2C79B", "$description": "Морошка + Шалфей, 50 %" },
+      "5": { "$type": "color", "$value": "#9CC5AE", "$description": "Шалфей" },
+      "6": { "$type": "color", "$value": "#91C2C6", "$description": "Шалфей + Иней, 50 %" },
+      "7": { "$type": "color", "$value": "#86BEDD", "$description": "Иней" },
+      "8": { "$type": "color", "$value": "#A7B4C9", "$description": "Иней + Брусника, 1/3" },
+      "9": { "$type": "color", "$value": "#C7AAB4", "$description": "Иней + Брусника, 2/3" },
+      "10": { "$type": "color", "$value": "#A9B8B2", "$description": "Лишайник" },
+      "11": { "$type": "color", "$value": "#EAC1BF", "$description": "Образец 1 + Туман, 40 %" },
+      "12": { "$type": "color", "$value": "#EACDB8", "$description": "Образец 2 + Туман, 40 %" },
+      "13": { "$type": "color", "$value": "#EAD9B0", "$description": "Образец 3 + Туман, 40 %" },
+      "14": { "$type": "color", "$value": "#D4D8BC", "$description": "Образец 4 + Туман, 40 %" },
+      "15": { "$type": "color", "$value": "#BDD7C8", "$description": "Образец 5 + Туман, 40 %" },
+      "16": { "$type": "color", "$value": "#B6D5D6", "$description": "Образец 6 + Туман, 40 %" },
+      "17": { "$type": "color", "$value": "#B0D3E4", "$description": "Образец 7 + Туман, 40 %" },
+      "18": { "$type": "color", "$value": "#C3CDD8", "$description": "Образец 8 + Туман, 40 %" },
+      "19": { "$type": "color", "$value": "#D7C7CB", "$description": "Образец 9 + Туман, 40 %" },
+      "20": { "$type": "color", "$value": "#C5CFCA", "$description": "Образец 10 + Туман, 40 %" }
+    }
+  }
+}

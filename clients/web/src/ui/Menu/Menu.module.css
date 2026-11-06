@@ -1,0 +1,179 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+/* Область правого клика не меняет раскладку содержимого */
+.contextTarget {
+  display: contents;
+}
+
+/* Невидимая точка, от которой позиционируется контекстное меню */
+.anchor {
+  position: fixed;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Ширина 220–300, радиус --radius-m, тень --shadow-popover, внутренний отступ 8 */
+.popover {
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  max-width: 300px;
+  overflow: hidden;
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-m);
+  background: var(--color-panel);
+  box-shadow: var(--shadow-popover);
+  transition: opacity var(--duration-fast);
+}
+
+.popover[data-entering],
+.popover[data-exiting] {
+  opacity: 0;
+}
+
+/* Меню выше 70 % окна прокручивается */
+.menu {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 70vh;
+  padding: var(--space-2);
+  overflow-y: auto;
+  outline: none;
+}
+
+.extra {
+  flex: none;
+  padding: var(--space-3);
+  border-bottom: var(--size-border) solid var(--color-border);
+}
+
+.menu + .extra {
+  border-top: var(--size-border) solid var(--color-border);
+  border-bottom: 0;
+}
+
+.item {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  min-height: var(--size-control-s);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-s);
+  outline: none;
+  color: var(--color-text);
+  font-size: var(--font-size-caption);
+  cursor: pointer;
+}
+
+.item[data-hovered],
+.item[data-focused],
+.item[data-open] {
+  background: var(--color-panel-hover);
+}
+
+.item[data-pressed] {
+  background: var(--color-panel-pressed);
+}
+
+.item[data-focus-visible] {
+  background: var(--color-panel-active);
+}
+
+.item[data-disabled] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+/* Опасные пункты — цветом Брусники */
+.item[data-danger] {
+  color: var(--color-danger);
+}
+
+.itemIcon {
+  color: var(--color-muted);
+}
+
+.item[data-danger] .itemIcon {
+  color: inherit;
+}
+
+.itemText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.itemDescription {
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+.itemShortcut {
+  flex: none;
+  font: inherit;
+}
+
+.itemMark {
+  flex: none;
+  color: var(--color-muted);
+}
+
+.section + .section,
+.section + .item,
+.item + .section {
+  margin-top: var(--space-1);
+}
+
+.sectionTitle {
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+.separator {
+  height: var(--size-border);
+  margin: var(--space-2) calc(-1 * var(--space-2));
+  border: 0;
+  background: var(--color-border);
+}
+
+/* Быстрые реакции: четыре кнопки 44×44 первой строкой */
+.reactions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.reaction {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-s);
+  outline: none;
+  background: var(--color-bg);
+  font-size: var(--font-size-title);
+  cursor: pointer;
+}
+
+.reaction[data-hovered],
+.reaction[data-focused] {
+  background: var(--color-panel-hover);
+}
+
+.reaction[data-focus-visible] {
+  outline: var(--size-focus-ring) solid var(--color-accent-2);
+  outline-offset: var(--size-focus-offset);
+}
+
+.reaction[data-pressed] {
+  background: var(--color-panel-pressed);
+}
