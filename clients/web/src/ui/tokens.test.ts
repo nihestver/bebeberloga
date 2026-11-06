@@ -119,6 +119,12 @@ describe("дизайн-токены", () => {
     for (const name of durations) {
       expect(block, `--${name}`).toContain(`--${name}: 0ms;`);
     }
+    // base.css страхует зацикленные анимации и переходы, заданные не через токены.
+    const base = read(join(uiDir, "base.css"));
+    const guard = /@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/.exec(base)?.[1];
+    expect(guard).toContain("animation-duration: 0s !important");
+    expect(guard).toContain("animation-iteration-count: 1 !important");
+    expect(guard).toContain("transition-duration: 0s !important");
   });
 
   it("контраст текста на фонах, где он используется, не ниже 4.5:1", () => {
