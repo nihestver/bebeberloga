@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Генерация REST-обработчиков из docs/protocol/openapi.yaml (ADR-0017 п. 1): strict-server поверх chi,
+# модели с x-go-type берутся из server/gen/bebeberloga/v1 (buf generate), а не создаются заново.
+# Запуск — `just gen` (go generate ./... → go tool oapi-codegen). Часть 0 B04 генерирует только
+# getHealth; список операций расширяется вместе с реализацией в следующих частях.
+package: api
+output: gen/api/api.gen.go
+generate:
+  chi-server: true
+  strict-server: true
+  models: true
+output-options:
+  include-operation-ids:
+    - getHealth
