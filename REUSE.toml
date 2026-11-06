@@ -41,3 +41,9 @@ SPDX-License-Identifier = "CC-BY-SA-4.0"
 path = ["docs/protocol/openapi.yaml"]
 SPDX-FileCopyrightText = "2026 Bebeberloga contributors"
 SPDX-License-Identifier = "Apache-2.0"
+
+# Исключение из design/**: собственные аватары и иконки (ADR-0013 п. 8). Последняя подходящая таблица побеждает.
+[[annotations]]
+path = ["design/avatars/**", "design/icons/**"]
+SPDX-FileCopyrightText = "2026 nihestver <https://github.com/nihestver>"
+SPDX-License-Identifier = "CC-BY-SA-4.0"
