@@ -102,7 +102,9 @@ export function QRScanner({
       if (text) latest.current.onDecode(text);
     };
 
-    getStream()
+    // Синхронная ошибка (нет navigator.mediaDevices) превращается в отказ, как и NotFoundError.
+    Promise.resolve()
+      .then(getStream)
       .then((media) => {
         if (cancelled) {
           media.getTracks().forEach((track) => track.stop());

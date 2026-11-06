@@ -9,7 +9,7 @@ import styles from "./Tabs.module.css";
 export interface TabItem {
   id: string;
   label: ReactNode;
-  /** Содержимое вкладки; если не задано ни у одной, панели не рисуются (ими управляет экран). */
+  /** Содержимое вкладки. Панель рисуется всегда: вкладка ссылается на неё для экранного диктора. */
   content?: ReactNode;
   /** Бейдж справа от названия (число запросов в друзья). */
   badge?: ReactNode;
@@ -38,7 +38,6 @@ export function Tabs({
   className,
   "aria-label": ariaLabel,
 }: TabsProps) {
-  const hasPanels = items.some((item) => item.content !== undefined);
   // Примитив сообщает и о первой вкладке, выбранной при появлении; наружу идут только смены.
   const current = useRef(
     selectedId ?? defaultSelectedId ?? items.find((item) => !item.isDisabled)?.id,
@@ -63,12 +62,11 @@ export function Tabs({
           </Tab>
         ))}
       </TabList>
-      {hasPanels &&
-        items.map((item) => (
-          <TabPanel key={item.id} id={item.id} className={styles.panel}>
-            {item.content}
-          </TabPanel>
-        ))}
+      {items.map((item) => (
+        <TabPanel key={item.id} id={item.id} className={styles.panel}>
+          {item.content}
+        </TabPanel>
+      ))}
     </AriaTabs>
   );
 }
