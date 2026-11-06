@@ -49,6 +49,7 @@
       "Bash(docker compose down *)"
     ],
     "deny": [
+      "Bash(just deploy-test *)",
       "Bash(rm -rf *)",
       "Read(./.env)",
       "Read(./.env.local)",
