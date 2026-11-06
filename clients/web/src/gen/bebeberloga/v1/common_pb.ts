@@ -28,8 +28,11 @@ import type { Message } from "@bufbuild/protobuf";
 /**
  * Describes the file bebeberloga/v1/common.proto.
  */
-export const file_bebeberloga_v1_common: GenFile = /*@__PURE__*/
-  fileDesc("ChtiZWJlYmVybG9nYS92MS9jb21tb24ucHJvdG8SDmJlYmViZXJsb2dhLnYxIjsKC1BhZ2VSZXF1ZXN0Eg4KBmJlZm9yZRgBIAEoCRINCgVhZnRlchgCIAEoCRINCgVsaW1pdBgDIAEoDSIxCghQYWdlSW5mbxISCgpoYXNfYmVmb3JlGAEgASgIEhEKCWhhc19hZnRlchgCIAEoCCJLCghQcmVzZW5jZRIPCgd1c2VyX2lkGAEgASgJEi4KBnN0YXR1cxgCIAEoDjIeLmJlYmViZXJsb2dhLnYxLlByZXNlbmNlU3RhdHVzIqYCCg5JbnN0YW5jZUxpbWl0cxIXCg9tYXhfdGV4dF9sZW5ndGgYASABKA0SFwoPbWF4X2F0dGFjaG1lbnRzGAIgASgNEhUKDW1heF9maWxlX3NpemUYAyABKAQSHAoUY2hhbm5lbF9tZW1iZXJfbGltaXQYBCABKA0SGAoQdXNlcl9zb3VuZF9zbG90cxgFIAEoDRIdChVjb21tdW5pdHlfc291bmRfc2xvdHMYBiABKA0SNwoRbWF4X3N0cmVhbV9wcmVzZXQYByABKA4yHC5iZWJlYmVybG9nYS52MS5TdHJlYW1QcmVzZXQSHQoVbWF4X2NsaWVudF9mcmFtZV9zaXplGAggASgNEhwKFGNvbW11bml0aWVzX3Blcl91c2VyGAkgASgNItICCgxJbnN0YW5jZUluZm8SDAoEbmFtZRgBIAEoCRI/ChNyZWdpc3RyYXRpb25fcG9saWN5GAIgASgOMiIuYmViZWJlcmxvZ2EudjEuUmVnaXN0cmF0aW9uUG9saWN5EhEKCXJ1bGVzX3VybBgDIAEoCRITCgtwcml2YWN5X3VybBgEIAEoCRIWCg5zZXJ2ZXJfdmVyc2lvbhgFIAEoCRIYChBwcm90b2NvbF92ZXJzaW9uGAYgASgNEi4KBmxpbWl0cxgHIAEoCzIeLmJlYmViZXJsb2dhLnYxLkluc3RhbmNlTGltaXRzEhsKE2V4dGVybmFsX3NlbmRlcl9rZXkYCCABKAwSTAoZZXh0ZXJuYWxfc2VuZGVyX3JvdGF0aW9ucxgJIAMoCzIpLmJlYmViZXJsb2dhLnYxLkV4dGVybmFsU2VuZGVyS2V5Um90YXRpb24i0gEKDEhlYWx0aFN0YXR1cxIrCgZzdGF0dXMYASABKA4yGy5iZWJlYmVybG9nYS52MS5IZWFsdGhTdGF0ZRIPCgd2ZXJzaW9uGAIgASgJEjgKBmNoZWNrcxgDIAMoCzIoLmJlYmViZXJsb2dhLnYxLkhlYWx0aFN0YXR1cy5DaGVja3NFbnRyeRpKCgtDaGVja3NFbnRyeRILCgNrZXkYASABKAkSKgoFdmFsdWUYAiABKA4yGy5iZWJlYmVybG9nYS52MS5IZWFsdGhTdGF0ZToCOAEiUAoZRXh0ZXJuYWxTZW5kZXJLZXlSb3RhdGlvbhIPCgdvbGRfa2V5GAEgASgMEg8KB25ld19rZXkYAiABKAwSEQoJc2lnbmF0dXJlGAMgASgMKmoKDlByZXNlbmNlU3RhdHVzEh8KG1BSRVNFTkNFX1NUQVRVU19VTlNQRUNJRklFRBAAEhsKF1BSRVNFTkNFX1NUQVRVU19PRkZMSU5FEAESGgoWUFJFU0VOQ0VfU1RBVFVTX09OTElORRACKusBCg5EZXZpY2VQbGF0Zm9ybRIfChtERVZJQ0VfUExBVEZPUk1fVU5TUEVDSUZJRUQQABIjCh9ERVZJQ0VfUExBVEZPUk1fREVTS1RPUF9XSU5ET1dTEAESIQodREVWSUNFX1BMQVRGT1JNX0RFU0tUT1BfTUFDT1MQAhIhCh1ERVZJQ0VfUExBVEZPUk1fREVTS1RPUF9MSU5VWBADEhcKE0RFVklDRV9QTEFURk9STV9XRUIQBBIbChdERVZJQ0VfUExBVEZPUk1fQU5EUk9JRBAFEhcKE0RFVklDRV9QTEFURk9STV9JT1MQBiqcAQoSUmVnaXN0cmF0aW9uUG9saWN5EiMKH1JFR0lTVFJBVElPTl9QT0xJQ1lfVU5TUEVDSUZJRUQQABIcChhSRUdJU1RSQVRJT05fUE9MSUNZX09QRU4QARIjCh9SRUdJU1RSQVRJT05fUE9MSUNZX0lOVklURV9PTkxZEAISHgoaUkVHSVNUUkFUSU9OX1BPTElDWV9DTE9TRUQQAyp8CgxTdHJlYW1QcmVzZXQSHQoZU1RSRUFNX1BSRVNFVF9VTlNQRUNJRklFRBAAEhcKE1NUUkVBTV9QUkVTRVRfU0FWRVIQARIaChZTVFJFQU1fUFJFU0VUX0JBTEFOQ0VEEAISGAoUU1RSRUFNX1BSRVNFVF9TTU9PVEgQAyp4CgtIZWFsdGhTdGF0ZRIcChhIRUFMVEhfU1RBVEVfVU5TUEVDSUZJRUQQABITCg9IRUFMVEhfU1RBVEVfT0sQARIVChFIRUFMVEhfU1RBVEVfRE9XThACEh8KG0hFQUxUSF9TVEFURV9OT1RfQ09ORklHVVJFRBADQsQBChJjb20uYmViZWJlcmxvZ2EudjFCC0NvbW1vblByb3RvUAFaSGdpdGh1Yi5jb20vbmloZXN0dmVyL2JlYmViZXJsb2dhL3NlcnZlci9nZW4vYmViZWJlcmxvZ2EvdjE7YmViZWJlcmxvZ2F2MaICA0JYWKoCDkJlYmViZXJsb2dhLlYxygIOQmViZWJlcmxvZ2FcVjHiAhpCZWJlYmVybG9nYVxWMVxHUEJNZXRhZGF0YeoCD0JlYmViZXJsb2dhOjpWMWIGcHJvdG8z");
+export const file_bebeberloga_v1_common: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "ChtiZWJlYmVybG9nYS92MS9jb21tb24ucHJvdG8SDmJlYmViZXJsb2dhLnYxIjsKC1BhZ2VSZXF1ZXN0Eg4KBmJlZm9yZRgBIAEoCRINCgVhZnRlchgCIAEoCRINCgVsaW1pdBgDIAEoDSIxCghQYWdlSW5mbxISCgpoYXNfYmVmb3JlGAEgASgIEhEKCWhhc19hZnRlchgCIAEoCCJLCghQcmVzZW5jZRIPCgd1c2VyX2lkGAEgASgJEi4KBnN0YXR1cxgCIAEoDjIeLmJlYmViZXJsb2dhLnYxLlByZXNlbmNlU3RhdHVzIqYCCg5JbnN0YW5jZUxpbWl0cxIXCg9tYXhfdGV4dF9sZW5ndGgYASABKA0SFwoPbWF4X2F0dGFjaG1lbnRzGAIgASgNEhUKDW1heF9maWxlX3NpemUYAyABKAQSHAoUY2hhbm5lbF9tZW1iZXJfbGltaXQYBCABKA0SGAoQdXNlcl9zb3VuZF9zbG90cxgFIAEoDRIdChVjb21tdW5pdHlfc291bmRfc2xvdHMYBiABKA0SNwoRbWF4X3N0cmVhbV9wcmVzZXQYByABKA4yHC5iZWJlYmVybG9nYS52MS5TdHJlYW1QcmVzZXQSHQoVbWF4X2NsaWVudF9mcmFtZV9zaXplGAggASgNEhwKFGNvbW11bml0aWVzX3Blcl91c2VyGAkgASgNItICCgxJbnN0YW5jZUluZm8SDAoEbmFtZRgBIAEoCRI/ChNyZWdpc3RyYXRpb25fcG9saWN5GAIgASgOMiIuYmViZWJlcmxvZ2EudjEuUmVnaXN0cmF0aW9uUG9saWN5EhEKCXJ1bGVzX3VybBgDIAEoCRITCgtwcml2YWN5X3VybBgEIAEoCRIWCg5zZXJ2ZXJfdmVyc2lvbhgFIAEoCRIYChBwcm90b2NvbF92ZXJzaW9uGAYgASgNEi4KBmxpbWl0cxgHIAEoCzIeLmJlYmViZXJsb2dhLnYxLkluc3RhbmNlTGltaXRzEhsKE2V4dGVybmFsX3NlbmRlcl9rZXkYCCABKAwSTAoZZXh0ZXJuYWxfc2VuZGVyX3JvdGF0aW9ucxgJIAMoCzIpLmJlYmViZXJsb2dhLnYxLkV4dGVybmFsU2VuZGVyS2V5Um90YXRpb24i0gEKDEhlYWx0aFN0YXR1cxIrCgZzdGF0dXMYASABKA4yGy5iZWJlYmVybG9nYS52MS5IZWFsdGhTdGF0ZRIPCgd2ZXJzaW9uGAIgASgJEjgKBmNoZWNrcxgDIAMoCzIoLmJlYmViZXJsb2dhLnYxLkhlYWx0aFN0YXR1cy5DaGVja3NFbnRyeRpKCgtDaGVja3NFbnRyeRILCgNrZXkYASABKAkSKgoFdmFsdWUYAiABKA4yGy5iZWJlYmVybG9nYS52MS5IZWFsdGhTdGF0ZToCOAEiUAoZRXh0ZXJuYWxTZW5kZXJLZXlSb3RhdGlvbhIPCgdvbGRfa2V5GAEgASgMEg8KB25ld19rZXkYAiABKAwSEQoJc2lnbmF0dXJlGAMgASgMKmoKDlByZXNlbmNlU3RhdHVzEh8KG1BSRVNFTkNFX1NUQVRVU19VTlNQRUNJRklFRBAAEhsKF1BSRVNFTkNFX1NUQVRVU19PRkZMSU5FEAESGgoWUFJFU0VOQ0VfU1RBVFVTX09OTElORRACKusBCg5EZXZpY2VQbGF0Zm9ybRIfChtERVZJQ0VfUExBVEZPUk1fVU5TUEVDSUZJRUQQABIjCh9ERVZJQ0VfUExBVEZPUk1fREVTS1RPUF9XSU5ET1dTEAESIQodREVWSUNFX1BMQVRGT1JNX0RFU0tUT1BfTUFDT1MQAhIhCh1ERVZJQ0VfUExBVEZPUk1fREVTS1RPUF9MSU5VWBADEhcKE0RFVklDRV9QTEFURk9STV9XRUIQBBIbChdERVZJQ0VfUExBVEZPUk1fQU5EUk9JRBAFEhcKE0RFVklDRV9QTEFURk9STV9JT1MQBiqcAQoSUmVnaXN0cmF0aW9uUG9saWN5EiMKH1JFR0lTVFJBVElPTl9QT0xJQ1lfVU5TUEVDSUZJRUQQABIcChhSRUdJU1RSQVRJT05fUE9MSUNZX09QRU4QARIjCh9SRUdJU1RSQVRJT05fUE9MSUNZX0lOVklURV9PTkxZEAISHgoaUkVHSVNUUkFUSU9OX1BPTElDWV9DTE9TRUQQAyp8CgxTdHJlYW1QcmVzZXQSHQoZU1RSRUFNX1BSRVNFVF9VTlNQRUNJRklFRBAAEhcKE1NUUkVBTV9QUkVTRVRfU0FWRVIQARIaChZTVFJFQU1fUFJFU0VUX0JBTEFOQ0VEEAISGAoUU1RSRUFNX1BSRVNFVF9TTU9PVEgQAyp4CgtIZWFsdGhTdGF0ZRIcChhIRUFMVEhfU1RBVEVfVU5TUEVDSUZJRUQQABITCg9IRUFMVEhfU1RBVEVfT0sQARIVChFIRUFMVEhfU1RBVEVfRE9XThACEh8KG0hFQUxUSF9TVEFURV9OT1RfQ09ORklHVVJFRBADQsQBChJjb20uYmViZWJlcmxvZ2EudjFCC0NvbW1vblByb3RvUAFaSGdpdGh1Yi5jb20vbmloZXN0dmVyL2JlYmViZXJsb2dhL3NlcnZlci9nZW4vYmViZWJlcmxvZ2EvdjE7YmViZWJlcmxvZ2F2MaICA0JYWKoCDkJlYmViZXJsb2dhLlYxygIOQmViZWJlcmxvZ2FcVjHiAhpCZWJlYmVybG9nYVxWMVxHUEJNZXRhZGF0YeoCD0JlYmViZXJsb2dhOjpWMWIGcHJvdG8z",
+  );
 
 /**
  * Окно пагинации по UUIDv7. Используется для истории сообщений, списков
@@ -65,7 +68,8 @@ export type PageRequest = Message<"bebeberloga.v1.PageRequest"> & {
  * Describes the message bebeberloga.v1.PageRequest.
  * Use `create(PageRequestSchema)` to create a new message.
  */
-export const PageRequestSchema: GenMessage<PageRequest> = /*@__PURE__*/
+export const PageRequestSchema: GenMessage<PageRequest> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_common, 0);
 
 /**
@@ -93,7 +97,8 @@ export type PageInfo = Message<"bebeberloga.v1.PageInfo"> & {
  * Describes the message bebeberloga.v1.PageInfo.
  * Use `create(PageInfoSchema)` to create a new message.
  */
-export const PageInfoSchema: GenMessage<PageInfo> = /*@__PURE__*/
+export const PageInfoSchema: GenMessage<PageInfo> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_common, 1);
 
 /**
@@ -117,7 +122,8 @@ export type Presence = Message<"bebeberloga.v1.Presence"> & {
  * Describes the message bebeberloga.v1.Presence.
  * Use `create(PresenceSchema)` to create a new message.
  */
-export const PresenceSchema: GenMessage<Presence> = /*@__PURE__*/
+export const PresenceSchema: GenMessage<Presence> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_common, 2);
 
 /**
@@ -192,7 +198,8 @@ export type InstanceLimits = Message<"bebeberloga.v1.InstanceLimits"> & {
  * Describes the message bebeberloga.v1.InstanceLimits.
  * Use `create(InstanceLimitsSchema)` to create a new message.
  */
-export const InstanceLimitsSchema: GenMessage<InstanceLimits> = /*@__PURE__*/
+export const InstanceLimitsSchema: GenMessage<InstanceLimits> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_common, 3);
 
 /**
@@ -258,7 +265,8 @@ export type InstanceInfo = Message<"bebeberloga.v1.InstanceInfo"> & {
  * Describes the message bebeberloga.v1.InstanceInfo.
  * Use `create(InstanceInfoSchema)` to create a new message.
  */
-export const InstanceInfoSchema: GenMessage<InstanceInfo> = /*@__PURE__*/
+export const InstanceInfoSchema: GenMessage<InstanceInfo> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_common, 4);
 
 /**
@@ -295,7 +303,8 @@ export type HealthStatus = Message<"bebeberloga.v1.HealthStatus"> & {
  * Describes the message bebeberloga.v1.HealthStatus.
  * Use `create(HealthStatusSchema)` to create a new message.
  */
-export const HealthStatusSchema: GenMessage<HealthStatus> = /*@__PURE__*/
+export const HealthStatusSchema: GenMessage<HealthStatus> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_common, 5);
 
 /**
@@ -326,7 +335,8 @@ export type ExternalSenderKeyRotation = Message<"bebeberloga.v1.ExternalSenderKe
  * Describes the message bebeberloga.v1.ExternalSenderKeyRotation.
  * Use `create(ExternalSenderKeyRotationSchema)` to create a new message.
  */
-export const ExternalSenderKeyRotationSchema: GenMessage<ExternalSenderKeyRotation> = /*@__PURE__*/
+export const ExternalSenderKeyRotationSchema: GenMessage<ExternalSenderKeyRotation> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_common, 6);
 
 /**
@@ -355,7 +365,8 @@ export enum PresenceStatus {
 /**
  * Describes the enum bebeberloga.v1.PresenceStatus.
  */
-export const PresenceStatusSchema: GenEnum<PresenceStatus> = /*@__PURE__*/
+export const PresenceStatusSchema: GenEnum<PresenceStatus> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_common, 0);
 
 /**
@@ -405,7 +416,8 @@ export enum DevicePlatform {
 /**
  * Describes the enum bebeberloga.v1.DevicePlatform.
  */
-export const DevicePlatformSchema: GenEnum<DevicePlatform> = /*@__PURE__*/
+export const DevicePlatformSchema: GenEnum<DevicePlatform> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_common, 1);
 
 /**
@@ -440,7 +452,8 @@ export enum RegistrationPolicy {
 /**
  * Describes the enum bebeberloga.v1.RegistrationPolicy.
  */
-export const RegistrationPolicySchema: GenEnum<RegistrationPolicy> = /*@__PURE__*/
+export const RegistrationPolicySchema: GenEnum<RegistrationPolicy> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_common, 2);
 
 /**
@@ -479,7 +492,8 @@ export enum StreamPreset {
 /**
  * Describes the enum bebeberloga.v1.StreamPreset.
  */
-export const StreamPresetSchema: GenEnum<StreamPreset> = /*@__PURE__*/
+export const StreamPresetSchema: GenEnum<StreamPreset> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_common, 3);
 
 /**
@@ -518,6 +532,6 @@ export enum HealthState {
 /**
  * Describes the enum bebeberloga.v1.HealthState.
  */
-export const HealthStateSchema: GenEnum<HealthState> = /*@__PURE__*/
+export const HealthStateSchema: GenEnum<HealthState> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_common, 4);
-

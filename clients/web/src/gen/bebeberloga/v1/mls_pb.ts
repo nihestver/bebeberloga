@@ -19,8 +19,12 @@ import type { Message } from "@bufbuild/protobuf";
 /**
  * Describes the file bebeberloga/v1/mls.proto.
  */
-export const file_bebeberloga_v1_mls: GenFile = /*@__PURE__*/
-  fileDesc("ChhiZWJlYmVybG9nYS92MS9tbHMucHJvdG8SDmJlYmViZXJsb2dhLnYxIsgECgVHcm91cBIKCgJpZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJEicKBGtpbmQYAyABKA4yGS5iZWJlYmVybG9nYS52MS5Hcm91cEtpbmQSEwoLY2lwaGVyc3VpdGUYBCABKA0SDQoFZXBvY2gYBSABKAQSFAoMZGV2aWNlX2NvdW50GAYgASgNEhAKCGxhc3Rfc2VxGAcgASgEEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjQKEGxhc3Rfcm90YXRpb25fYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhoKDmhhc19ncm91cF9pbmZvGAogASgIQgIYARIeChZoYXNfaGlzdG9yeV9rZXlfYnVuZGxlGAsgASgIEikKBXN0YXRlGAwgASgOMhouYmViZWJlcmxvZ2EudjEuR3JvdXBTdGF0ZRIcChRwcmVkZWNlc3Nvcl9ncm91cF9pZBgNIAEoCRIaChJzdWNjZXNzb3JfZ3JvdXBfaWQYDiABKAkSEwoLcm9zdGVyX2hhc2gYDyABKAwSOwoRcmVjcmVhdGlvbl9yZWFzb24YESABKA4yIC5iZWJlYmVybG9nYS52MS5SZWNyZWF0aW9uUmVhc29uEh4KFmhpc3Rvcnlfa2V5X2dlbmVyYXRpb24YEyABKA1KBAgQEBFKBAgSEBNSCnJldmlld19zZXFSGXJlY3JlYXRpb25fZGVmZXJyZWRfdW50aWwiyAIKCUhhbmRzaGFrZRIQCghncm91cF9pZBgBIAEoCRINCgVlcG9jaBgCIAEoBBILCgNzZXEYAyABKAQSKwoEa2luZBgEIAEoDjIdLmJlYmViZXJsb2dhLnYxLkhhbmRzaGFrZUtpbmQSGAoQc2VuZGVyX2RldmljZV9pZBgFIAEoCRIcChRmcm9tX2V4dGVybmFsX3NlbmRlchgGIAEoCBIMCgRibG9iGAcgASgMEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhMKC3Jvc3Rlcl9oYXNoGAkgASgMEjUKDmhpc3RvcnlfY2hhbmdlGAogASgOMh0uYmViZWJlcmxvZ2EudjEuSGlzdG9yeUNoYW5nZRIeChZoaXN0b3J5X2tleV9nZW5lcmF0aW9uGAsgASgNIsoBCgdXZWxjb21lEhAKCGdyb3VwX2lkGAEgASgJEhIKCmNoYW5uZWxfaWQYAiABKAkSJwoEa2luZBgDIAEoDjIZLmJlYmViZXJsb2dhLnYxLkdyb3VwS2luZBIMCgRibG9iGAQgASgMEi4KCmNyZWF0ZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg0KBWVwb2NoGAYgASgEEgsKA3NlcRgHIAEoBBIWCg5oaXN0b3J5X2JyaWRnZRgIIAEoDCKFAQoQSGlzdG9yeUtleUJ1bmRsZRIQCghncm91cF9pZBgBIAEoCRINCgVlcG9jaBgCIAEoBBIMCgRibG9iGAMgASgMEi4KCnVwZGF0ZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhIKCmdlbmVyYXRpb24YBSABKA0ikwEKDkhpc3RvcnlLZXlMaW5rEhIKCmNoYW5uZWxfaWQYASABKAkSEgoKZ2VuZXJhdGlvbhgCIAEoDRIbChNwcmV2aW91c19nZW5lcmF0aW9uGAMgASgNEgwKBGJsb2IYBCABKAwSLgoKY3JlYXRlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAivwEKFUhpc3RvcnlHZW5lcmF0aW9uSW5mbxISCgpjaGFubmVsX2lkGAEgASgJEhIKCmdlbmVyYXRpb24YAiABKA0SLgoKc3RhcnRlZF9hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLQoGY2hhbmdlGAQgASgOMh0uYmViZWJlcmxvZ2EudjEuSGlzdG9yeUNoYW5nZRIQCghncm91cF9pZBgFIAEoCRINCgVlcG9jaBgGIAEoBCIwCg1IaXN0b3J5QnJpZGdlEhEKCWRldmljZV9pZBgBIAEoCRIMCgRibG9iGAIgASgMIkcKEkVuY3J5cHRlZEdyb3VwSW5mbxIQCghncm91cF9pZBgBIAEoCRINCgVlcG9jaBgCIAEoBBIMCgRibG9iGAMgASgMOgIYASIuCgtSb3N0ZXJFbnRyeRIMCgRsZWFmGAEgASgNEhEKCWRldmljZV9pZBgCIAEoCSJsCgZSb3N0ZXISEAoIZ3JvdXBfaWQYASABKAkSDQoFZXBvY2gYAiABKAQSLAoHZW50cmllcxgDIAMoCzIbLmJlYmViZXJsb2dhLnYxLlJvc3RlckVudHJ5EhMKC3Jvc3Rlcl9oYXNoGAQgASgMIoQCCg5SZWNyZWF0aW9uUGxhbhIUCgxvbGRfZ3JvdXBfaWQYASABKAkSEgoKY2hhbm5lbF9pZBgCIAEoCRInCgRraW5kGAMgASgOMhkuYmViZWJlcmxvZ2EudjEuR3JvdXBLaW5kEhkKEWxhc3RfYWdyZWVkX2Vwb2NoGAQgASgEEh4KFmhpc3Rvcnlfa2V5X2dlbmVyYXRpb24YBSABKA0SGQoRdGFyZ2V0X2RldmljZV9pZHMYBiADKAkSMAoGcmVhc29uGAcgASgOMiAuYmViZWJlcmxvZ2EudjEuUmVjcmVhdGlvblJlYXNvbhIXCg9uZXh0X2dlbmVyYXRpb24YCCABKA0qagoJR3JvdXBLaW5kEhoKFkdST1VQX0tJTkRfVU5TUEVDSUZJRUQQABITCg9HUk9VUF9LSU5EX0NIQVQQARITCg9HUk9VUF9LSU5EX0NBTEwQAhIXChNHUk9VUF9LSU5EX1BFUlNPTkFMEAMqjgIKDUhpc3RvcnlDaGFuZ2USHgoaSElTVE9SWV9DSEFOR0VfVU5TUEVDSUZJRUQQABIXChNISVNUT1JZX0NIQU5HRV9OT05FEAESGQoVSElTVE9SWV9DSEFOR0VfUk9UQVRFEAISIwofSElTVE9SWV9DSEFOR0VfQlJFQUtfTkVXX01FTUJFUhADEh8KG0hJU1RPUllfQ0hBTkdFX0JSRUFLX0VOQUJMRRAEEh4KGkhJU1RPUllfQ0hBTkdFX0JSRUFLX1JFU0VUEAUSIQodSElTVE9SWV9DSEFOR0VfQlJFQUtfUkVDUkVBVEUQBhIgChxISVNUT1JZX0NIQU5HRV9CUkVBS19ESVNBQkxFEAcqjwEKCkdyb3VwU3RhdGUSGwoXR1JPVVBfU1RBVEVfVU5TUEVDSUZJRUQQABIWChJHUk9VUF9TVEFURV9BQ1RJVkUQARIWChJHUk9VUF9TVEFURV9GUk9aRU4QAhIaChZHUk9VUF9TVEFURV9TVVBFUlNFREVEEAMiBAgEEAQqEkdST1VQX1NUQVRFX1JFVklFVyqgAQoQUmVjcmVhdGlvblJlYXNvbhIhCh1SRUNSRUFUSU9OX1JFQVNPTl9VTlNQRUNJRklFRBAAEh0KGVJFQ1JFQVRJT05fUkVBU09OX0RJU1BVVEUQARIiCh5SRUNSRUFUSU9OX1JFQVNPTl9KT1VSTkFMX0xPU1MQAhImCiJSRUNSRUFUSU9OX1JFQVNPTl9QRVJTT05BTF9SRVNUT1JFEAMqjwEKDUhhbmRzaGFrZUtpbmQSHgoaSEFORFNIQUtFX0tJTkRfVU5TUEVDSUZJRUQQABIbChdIQU5EU0hBS0VfS0lORF9QUk9QT1NBTBABEhkKFUhBTkRTSEFLRV9LSU5EX0NPTU1JVBACEiYKHkhBTkRTSEFLRV9LSU5EX0VYVEVSTkFMX0NPTU1JVBADGgIIASr9AwoNRGlzcHV0ZVJlYXNvbhIeChpESVNQVVRFX1JFQVNPTl9VTlNQRUNJRklFRBAAEiEKHURJU1BVVEVfUkVBU09OX0RFTFRBX01JU01BVENIEAESIQodRElTUFVURV9SRUFTT05fTUlTU0lOR19SRU1PVkUQAhIjCh9ESVNQVVRFX1JFQVNPTl9VTkFVVEhPUklaRURfQUREEAMSKgomRElTUFVURV9SRUFTT05fTEVBRl9DUkVERU5USUFMX0NIQU5HRUQQBBIlCiFESVNQVVRFX1JFQVNPTl9GT1JCSURERU5fUFJPUE9TQUwQBRIgChxESVNQVVRFX1JFQVNPTl9VTkRFQ1JZUFRBQkxFEAYSIgoeRElTUFVURV9SRUFTT05fUk9TVEVSX01JU01BVENIEAcSIwofRElTUFVURV9SRUFTT05fQklORElOR19NSVNNQVRDSBAIEiYKIkRJU1BVVEVfUkVBU09OX0tFWV9QQUNLQUdFX0VYUElSRUQQCRIlCiFESVNQVVRFX1JFQVNPTl9SRUNSRUFUSU9OX0lOVkFMSUQQChIrCidESVNQVVRFX1JFQVNPTl9ISVNUT1JZX1JPVEFUSU9OX01JU1NJTkcQCxInCiNESVNQVVRFX1JFQVNPTl9ISVNUT1JZX0xJTktfSU5WQUxJRBAMQsEBChJjb20uYmViZWJlcmxvZ2EudjFCCE1sc1Byb3RvUAFaSGdpdGh1Yi5jb20vbmloZXN0dmVyL2JlYmViZXJsb2dhL3NlcnZlci9nZW4vYmViZWJlcmxvZ2EvdjE7YmViZWJlcmxvZ2F2MaICA0JYWKoCDkJlYmViZXJsb2dhLlYxygIOQmViZWJlcmxvZ2FcVjHiAhpCZWJlYmVybG9nYVxWMVxHUEJNZXRhZGF0YeoCD0JlYmViZXJsb2dhOjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+export const file_bebeberloga_v1_mls: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "ChhiZWJlYmVybG9nYS92MS9tbHMucHJvdG8SDmJlYmViZXJsb2dhLnYxIsgECgVHcm91cBIKCgJpZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJEicKBGtpbmQYAyABKA4yGS5iZWJlYmVybG9nYS52MS5Hcm91cEtpbmQSEwoLY2lwaGVyc3VpdGUYBCABKA0SDQoFZXBvY2gYBSABKAQSFAoMZGV2aWNlX2NvdW50GAYgASgNEhAKCGxhc3Rfc2VxGAcgASgEEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjQKEGxhc3Rfcm90YXRpb25fYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhoKDmhhc19ncm91cF9pbmZvGAogASgIQgIYARIeChZoYXNfaGlzdG9yeV9rZXlfYnVuZGxlGAsgASgIEikKBXN0YXRlGAwgASgOMhouYmViZWJlcmxvZ2EudjEuR3JvdXBTdGF0ZRIcChRwcmVkZWNlc3Nvcl9ncm91cF9pZBgNIAEoCRIaChJzdWNjZXNzb3JfZ3JvdXBfaWQYDiABKAkSEwoLcm9zdGVyX2hhc2gYDyABKAwSOwoRcmVjcmVhdGlvbl9yZWFzb24YESABKA4yIC5iZWJlYmVybG9nYS52MS5SZWNyZWF0aW9uUmVhc29uEh4KFmhpc3Rvcnlfa2V5X2dlbmVyYXRpb24YEyABKA1KBAgQEBFKBAgSEBNSCnJldmlld19zZXFSGXJlY3JlYXRpb25fZGVmZXJyZWRfdW50aWwiyAIKCUhhbmRzaGFrZRIQCghncm91cF9pZBgBIAEoCRINCgVlcG9jaBgCIAEoBBILCgNzZXEYAyABKAQSKwoEa2luZBgEIAEoDjIdLmJlYmViZXJsb2dhLnYxLkhhbmRzaGFrZUtpbmQSGAoQc2VuZGVyX2RldmljZV9pZBgFIAEoCRIcChRmcm9tX2V4dGVybmFsX3NlbmRlchgGIAEoCBIMCgRibG9iGAcgASgMEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhMKC3Jvc3Rlcl9oYXNoGAkgASgMEjUKDmhpc3RvcnlfY2hhbmdlGAogASgOMh0uYmViZWJlcmxvZ2EudjEuSGlzdG9yeUNoYW5nZRIeChZoaXN0b3J5X2tleV9nZW5lcmF0aW9uGAsgASgNIsoBCgdXZWxjb21lEhAKCGdyb3VwX2lkGAEgASgJEhIKCmNoYW5uZWxfaWQYAiABKAkSJwoEa2luZBgDIAEoDjIZLmJlYmViZXJsb2dhLnYxLkdyb3VwS2luZBIMCgRibG9iGAQgASgMEi4KCmNyZWF0ZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg0KBWVwb2NoGAYgASgEEgsKA3NlcRgHIAEoBBIWCg5oaXN0b3J5X2JyaWRnZRgIIAEoDCKFAQoQSGlzdG9yeUtleUJ1bmRsZRIQCghncm91cF9pZBgBIAEoCRINCgVlcG9jaBgCIAEoBBIMCgRibG9iGAMgASgMEi4KCnVwZGF0ZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhIKCmdlbmVyYXRpb24YBSABKA0ikwEKDkhpc3RvcnlLZXlMaW5rEhIKCmNoYW5uZWxfaWQYASABKAkSEgoKZ2VuZXJhdGlvbhgCIAEoDRIbChNwcmV2aW91c19nZW5lcmF0aW9uGAMgASgNEgwKBGJsb2IYBCABKAwSLgoKY3JlYXRlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAivwEKFUhpc3RvcnlHZW5lcmF0aW9uSW5mbxISCgpjaGFubmVsX2lkGAEgASgJEhIKCmdlbmVyYXRpb24YAiABKA0SLgoKc3RhcnRlZF9hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLQoGY2hhbmdlGAQgASgOMh0uYmViZWJlcmxvZ2EudjEuSGlzdG9yeUNoYW5nZRIQCghncm91cF9pZBgFIAEoCRINCgVlcG9jaBgGIAEoBCIwCg1IaXN0b3J5QnJpZGdlEhEKCWRldmljZV9pZBgBIAEoCRIMCgRibG9iGAIgASgMIkcKEkVuY3J5cHRlZEdyb3VwSW5mbxIQCghncm91cF9pZBgBIAEoCRINCgVlcG9jaBgCIAEoBBIMCgRibG9iGAMgASgMOgIYASIuCgtSb3N0ZXJFbnRyeRIMCgRsZWFmGAEgASgNEhEKCWRldmljZV9pZBgCIAEoCSJsCgZSb3N0ZXISEAoIZ3JvdXBfaWQYASABKAkSDQoFZXBvY2gYAiABKAQSLAoHZW50cmllcxgDIAMoCzIbLmJlYmViZXJsb2dhLnYxLlJvc3RlckVudHJ5EhMKC3Jvc3Rlcl9oYXNoGAQgASgMIoQCCg5SZWNyZWF0aW9uUGxhbhIUCgxvbGRfZ3JvdXBfaWQYASABKAkSEgoKY2hhbm5lbF9pZBgCIAEoCRInCgRraW5kGAMgASgOMhkuYmViZWJlcmxvZ2EudjEuR3JvdXBLaW5kEhkKEWxhc3RfYWdyZWVkX2Vwb2NoGAQgASgEEh4KFmhpc3Rvcnlfa2V5X2dlbmVyYXRpb24YBSABKA0SGQoRdGFyZ2V0X2RldmljZV9pZHMYBiADKAkSMAoGcmVhc29uGAcgASgOMiAuYmViZWJlcmxvZ2EudjEuUmVjcmVhdGlvblJlYXNvbhIXCg9uZXh0X2dlbmVyYXRpb24YCCABKA0qagoJR3JvdXBLaW5kEhoKFkdST1VQX0tJTkRfVU5TUEVDSUZJRUQQABITCg9HUk9VUF9LSU5EX0NIQVQQARITCg9HUk9VUF9LSU5EX0NBTEwQAhIXChNHUk9VUF9LSU5EX1BFUlNPTkFMEAMqjgIKDUhpc3RvcnlDaGFuZ2USHgoaSElTVE9SWV9DSEFOR0VfVU5TUEVDSUZJRUQQABIXChNISVNUT1JZX0NIQU5HRV9OT05FEAESGQoVSElTVE9SWV9DSEFOR0VfUk9UQVRFEAISIwofSElTVE9SWV9DSEFOR0VfQlJFQUtfTkVXX01FTUJFUhADEh8KG0hJU1RPUllfQ0hBTkdFX0JSRUFLX0VOQUJMRRAEEh4KGkhJU1RPUllfQ0hBTkdFX0JSRUFLX1JFU0VUEAUSIQodSElTVE9SWV9DSEFOR0VfQlJFQUtfUkVDUkVBVEUQBhIgChxISVNUT1JZX0NIQU5HRV9CUkVBS19ESVNBQkxFEAcqjwEKCkdyb3VwU3RhdGUSGwoXR1JPVVBfU1RBVEVfVU5TUEVDSUZJRUQQABIWChJHUk9VUF9TVEFURV9BQ1RJVkUQARIWChJHUk9VUF9TVEFURV9GUk9aRU4QAhIaChZHUk9VUF9TVEFURV9TVVBFUlNFREVEEAMiBAgEEAQqEkdST1VQX1NUQVRFX1JFVklFVyqgAQoQUmVjcmVhdGlvblJlYXNvbhIhCh1SRUNSRUFUSU9OX1JFQVNPTl9VTlNQRUNJRklFRBAAEh0KGVJFQ1JFQVRJT05fUkVBU09OX0RJU1BVVEUQARIiCh5SRUNSRUFUSU9OX1JFQVNPTl9KT1VSTkFMX0xPU1MQAhImCiJSRUNSRUFUSU9OX1JFQVNPTl9QRVJTT05BTF9SRVNUT1JFEAMqjwEKDUhhbmRzaGFrZUtpbmQSHgoaSEFORFNIQUtFX0tJTkRfVU5TUEVDSUZJRUQQABIbChdIQU5EU0hBS0VfS0lORF9QUk9QT1NBTBABEhkKFUhBTkRTSEFLRV9LSU5EX0NPTU1JVBACEiYKHkhBTkRTSEFLRV9LSU5EX0VYVEVSTkFMX0NPTU1JVBADGgIIASr9AwoNRGlzcHV0ZVJlYXNvbhIeChpESVNQVVRFX1JFQVNPTl9VTlNQRUNJRklFRBAAEiEKHURJU1BVVEVfUkVBU09OX0RFTFRBX01JU01BVENIEAESIQodRElTUFVURV9SRUFTT05fTUlTU0lOR19SRU1PVkUQAhIjCh9ESVNQVVRFX1JFQVNPTl9VTkFVVEhPUklaRURfQUREEAMSKgomRElTUFVURV9SRUFTT05fTEVBRl9DUkVERU5USUFMX0NIQU5HRUQQBBIlCiFESVNQVVRFX1JFQVNPTl9GT1JCSURERU5fUFJPUE9TQUwQBRIgChxESVNQVVRFX1JFQVNPTl9VTkRFQ1JZUFRBQkxFEAYSIgoeRElTUFVURV9SRUFTT05fUk9TVEVSX01JU01BVENIEAcSIwofRElTUFVURV9SRUFTT05fQklORElOR19NSVNNQVRDSBAIEiYKIkRJU1BVVEVfUkVBU09OX0tFWV9QQUNLQUdFX0VYUElSRUQQCRIlCiFESVNQVVRFX1JFQVNPTl9SRUNSRUFUSU9OX0lOVkFMSUQQChIrCidESVNQVVRFX1JFQVNPTl9ISVNUT1JZX1JPVEFUSU9OX01JU1NJTkcQCxInCiNESVNQVVRFX1JFQVNPTl9ISVNUT1JZX0xJTktfSU5WQUxJRBAMQsEBChJjb20uYmViZWJlcmxvZ2EudjFCCE1sc1Byb3RvUAFaSGdpdGh1Yi5jb20vbmloZXN0dmVyL2JlYmViZXJsb2dhL3NlcnZlci9nZW4vYmViZWJlcmxvZ2EvdjE7YmViZWJlcmxvZ2F2MaICA0JYWKoCDkJlYmViZXJsb2dhLlYxygIOQmViZWJlcmxvZ2FcVjHiAhpCZWJlYmVybG9nYVxWMVxHUEJNZXRhZGF0YeoCD0JlYmViZXJsb2dhOjpWMWIGcHJvdG8z",
+    [file_google_protobuf_timestamp],
+  );
 
 /**
  * Состояние группы на сервере.
@@ -139,8 +143,7 @@ export type Group = Message<"bebeberloga.v1.Group"> & {
  * Describes the message bebeberloga.v1.Group.
  * Use `create(GroupSchema)` to create a new message.
  */
-export const GroupSchema: GenMessage<Group> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_mls, 0);
+export const GroupSchema: GenMessage<Group> = /*@__PURE__*/ messageDesc(file_bebeberloga_v1_mls, 0);
 
 /**
  * Handshake-сообщение MLS (Proposal или Commit), упорядоченное сервером по группе.
@@ -226,7 +229,8 @@ export type Handshake = Message<"bebeberloga.v1.Handshake"> & {
  * Describes the message bebeberloga.v1.Handshake.
  * Use `create(HandshakeSchema)` to create a new message.
  */
-export const HandshakeSchema: GenMessage<Handshake> = /*@__PURE__*/
+export const HandshakeSchema: GenMessage<Handshake> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_mls, 1);
 
 /**
@@ -290,7 +294,8 @@ export type Welcome = Message<"bebeberloga.v1.Welcome"> & {
  * Describes the message bebeberloga.v1.Welcome.
  * Use `create(WelcomeSchema)` to create a new message.
  */
-export const WelcomeSchema: GenMessage<Welcome> = /*@__PURE__*/
+export const WelcomeSchema: GenMessage<Welcome> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_mls, 2);
 
 /**
@@ -332,7 +337,8 @@ export type HistoryKeyBundle = Message<"bebeberloga.v1.HistoryKeyBundle"> & {
  * Describes the message bebeberloga.v1.HistoryKeyBundle.
  * Use `create(HistoryKeyBundleSchema)` to create a new message.
  */
-export const HistoryKeyBundleSchema: GenMessage<HistoryKeyBundle> = /*@__PURE__*/
+export const HistoryKeyBundleSchema: GenMessage<HistoryKeyBundle> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_mls, 3);
 
 /**
@@ -372,7 +378,8 @@ export type HistoryKeyLink = Message<"bebeberloga.v1.HistoryKeyLink"> & {
  * Describes the message bebeberloga.v1.HistoryKeyLink.
  * Use `create(HistoryKeyLinkSchema)` to create a new message.
  */
-export const HistoryKeyLinkSchema: GenMessage<HistoryKeyLink> = /*@__PURE__*/
+export const HistoryKeyLinkSchema: GenMessage<HistoryKeyLink> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_mls, 4);
 
 /**
@@ -418,7 +425,8 @@ export type HistoryGenerationInfo = Message<"bebeberloga.v1.HistoryGenerationInf
  * Describes the message bebeberloga.v1.HistoryGenerationInfo.
  * Use `create(HistoryGenerationInfoSchema)` to create a new message.
  */
-export const HistoryGenerationInfoSchema: GenMessage<HistoryGenerationInfo> = /*@__PURE__*/
+export const HistoryGenerationInfoSchema: GenMessage<HistoryGenerationInfo> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_mls, 5);
 
 /**
@@ -442,7 +450,8 @@ export type HistoryBridge = Message<"bebeberloga.v1.HistoryBridge"> & {
  * Describes the message bebeberloga.v1.HistoryBridge.
  * Use `create(HistoryBridgeSchema)` to create a new message.
  */
-export const HistoryBridgeSchema: GenMessage<HistoryBridge> = /*@__PURE__*/
+export const HistoryBridgeSchema: GenMessage<HistoryBridge> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_mls, 6);
 
 /**
@@ -473,7 +482,8 @@ export type EncryptedGroupInfo = Message<"bebeberloga.v1.EncryptedGroupInfo"> & 
  * Use `create(EncryptedGroupInfoSchema)` to create a new message.
  * @deprecated
  */
-export const EncryptedGroupInfoSchema: GenMessage<EncryptedGroupInfo> = /*@__PURE__*/
+export const EncryptedGroupInfoSchema: GenMessage<EncryptedGroupInfo> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_mls, 7);
 
 /**
@@ -497,7 +507,8 @@ export type RosterEntry = Message<"bebeberloga.v1.RosterEntry"> & {
  * Describes the message bebeberloga.v1.RosterEntry.
  * Use `create(RosterEntrySchema)` to create a new message.
  */
-export const RosterEntrySchema: GenMessage<RosterEntry> = /*@__PURE__*/
+export const RosterEntrySchema: GenMessage<RosterEntry> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_mls, 8);
 
 /**
@@ -535,7 +546,8 @@ export type Roster = Message<"bebeberloga.v1.Roster"> & {
  * Describes the message bebeberloga.v1.Roster.
  * Use `create(RosterSchema)` to create a new message.
  */
-export const RosterSchema: GenMessage<Roster> = /*@__PURE__*/
+export const RosterSchema: GenMessage<Roster> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_mls, 9);
 
 /**
@@ -602,7 +614,8 @@ export type RecreationPlan = Message<"bebeberloga.v1.RecreationPlan"> & {
  * Describes the message bebeberloga.v1.RecreationPlan.
  * Use `create(RecreationPlanSchema)` to create a new message.
  */
-export const RecreationPlanSchema: GenMessage<RecreationPlan> = /*@__PURE__*/
+export const RecreationPlanSchema: GenMessage<RecreationPlan> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_mls, 10);
 
 /**
@@ -641,7 +654,8 @@ export enum GroupKind {
 /**
  * Describes the enum bebeberloga.v1.GroupKind.
  */
-export const GroupKindSchema: GenEnum<GroupKind> = /*@__PURE__*/
+export const GroupKindSchema: GenEnum<GroupKind> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_mls, 0);
 
 /**
@@ -708,7 +722,8 @@ export enum HistoryChange {
 /**
  * Describes the enum bebeberloga.v1.HistoryChange.
  */
-export const HistoryChangeSchema: GenEnum<HistoryChange> = /*@__PURE__*/
+export const HistoryChangeSchema: GenEnum<HistoryChange> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_mls, 1);
 
 /**
@@ -749,7 +764,8 @@ export enum GroupState {
 /**
  * Describes the enum bebeberloga.v1.GroupState.
  */
-export const GroupStateSchema: GenEnum<GroupState> = /*@__PURE__*/
+export const GroupStateSchema: GenEnum<GroupState> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_mls, 2);
 
 /**
@@ -792,7 +808,8 @@ export enum RecreationReason {
 /**
  * Describes the enum bebeberloga.v1.RecreationReason.
  */
-export const RecreationReasonSchema: GenEnum<RecreationReason> = /*@__PURE__*/
+export const RecreationReasonSchema: GenEnum<RecreationReason> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_mls, 3);
 
 /**
@@ -829,7 +846,8 @@ export enum HandshakeKind {
 /**
  * Describes the enum bebeberloga.v1.HandshakeKind.
  */
-export const HandshakeKindSchema: GenEnum<HandshakeKind> = /*@__PURE__*/
+export const HandshakeKindSchema: GenEnum<HandshakeKind> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_mls, 4);
 
 /**
@@ -935,6 +953,6 @@ export enum DisputeReason {
 /**
  * Describes the enum bebeberloga.v1.DisputeReason.
  */
-export const DisputeReasonSchema: GenEnum<DisputeReason> = /*@__PURE__*/
+export const DisputeReasonSchema: GenEnum<DisputeReason> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_mls, 5);
-

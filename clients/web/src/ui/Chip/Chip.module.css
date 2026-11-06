@@ -1,0 +1,75 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.chip {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  max-width: 100%;
+  height: var(--size-control-xs);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-panel);
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  cursor: default;
+  transition: background-color var(--duration-fast);
+}
+
+.chip[data-hovered] {
+  background: var(--color-panel-hover);
+}
+
+.chip[data-disabled] {
+  opacity: var(--opacity-disabled);
+}
+
+.text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remove {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-right: calc(-1 * var(--space-1));
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.remove[data-hovered] {
+  background: var(--color-panel-active);
+  color: var(--color-text);
+}
+
+.remove[data-pressed] {
+  color: var(--color-danger);
+}
+
+.empty {
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}

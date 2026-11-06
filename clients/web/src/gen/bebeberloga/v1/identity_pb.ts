@@ -19,8 +19,12 @@ import type { Message } from "@bufbuild/protobuf";
 /**
  * Describes the file bebeberloga/v1/identity.proto.
  */
-export const file_bebeberloga_v1_identity: GenFile = /*@__PURE__*/
-  fileDesc("Ch1iZWJlYmVybG9nYS92MS9pZGVudGl0eS5wcm90bxIOYmViZWJlcmxvZ2EudjEizAEKBFVzZXISCgoCaWQYASABKAkSEAoIdXNlcm5hbWUYAiABKAkSFAoMZGlzcGxheV9uYW1lGAMgASgJEhEKCWF2YXRhcl9pZBgEIAEoCRINCgVhYm91dBgFIAEoCRIUCgxiYW5uZXJfY29sb3IYBiABKAkSFwoPaWRlbnRpdHlfcHVia2V5GAcgASgMEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB2RlbGV0ZWQYCSABKAgiqAEKB0FjY291bnQSIgoEdXNlchgBIAEoCzIULmJlYmViZXJsb2dhLnYxLlVzZXISDQoFZW1haWwYAiABKAkSFQoNcGVuZGluZ19lbWFpbBgDIAEoCRIWCg5lbWFpbF92ZXJpZmllZBgEIAEoCBI7ChdyZWNvdmVyeV9rZXlfY3JlYXRlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAi1QEKC1VzZXJQcm9maWxlEiIKBHVzZXIYASABKAsyFC5iZWJlYmVybG9nYS52MS5Vc2VyEjYKDHJlbGF0aW9uc2hpcBgCIAEoDjIgLmJlYmViZXJsb2dhLnYxLlJlbGF0aW9uc2hpcEtpbmQSMQoNZnJpZW5kc19zaW5jZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASHAoUbXV0dWFsX2NvbW11bml0eV9pZHMYBCADKAkSGQoRbXV0dWFsX2ZyaWVuZF9pZHMYBSADKAkiugMKBkRldmljZRIKCgJpZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSMAoIcGxhdGZvcm0YBCABKA4yHi5iZWJlYmVybG9nYS52MS5EZXZpY2VQbGF0Zm9ybRIWCg5jbGllbnRfdmVyc2lvbhgFIAEoCRIYChBzaWduYXR1cmVfcHVia2V5GAYgASgMEhoKEmlkZW50aXR5X3NpZ25hdHVyZRgHIAEoDBI4Cgx2ZXJpZmljYXRpb24YCCABKA4yIi5iZWJlYmVybG9nYS52MS5EZXZpY2VWZXJpZmljYXRpb24SLgoKY3JlYXRlZF9hdBgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMAoMbGFzdF9zZWVuX2F0GAogASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIaChJsYXN0X3NlZW5fbG9jYXRpb24YCyABKAkSDwoHY3VycmVudBgMIAEoCBIYChBoaXN0b3J5X2hwa2Vfa2V5GA0gASgMEiIKGmhpc3RvcnlfaHBrZV9rZXlfc2lnbmF0dXJlGA4gASgMIusCCgxQdWJsaWNEZXZpY2USCgoCaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIwCghwbGF0Zm9ybRgDIAEoDjIeLmJlYmViZXJsb2dhLnYxLkRldmljZVBsYXRmb3JtEhgKEHNpZ25hdHVyZV9wdWJrZXkYBCABKAwSGgoSaWRlbnRpdHlfc2lnbmF0dXJlGAUgASgMEjgKDHZlcmlmaWNhdGlvbhgGIAEoDjIiLmJlYmViZXJsb2dhLnYxLkRldmljZVZlcmlmaWNhdGlvbhIuCgpjcmVhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIYChBoaXN0b3J5X2hwa2Vfa2V5GAggASgMEiIKGmhpc3RvcnlfaHBrZV9rZXlfc2lnbmF0dXJlGAkgASgMEi4KCnJlbW92ZWRfYXQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIo0BChFJZGVudGl0eUtleVJlY29yZBIXCg9pZGVudGl0eV9wdWJrZXkYASABKAwSLgoKdmFsaWRfZnJvbRgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLdmFsaWRfdW50aWwYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wImMKEVJlY292ZXJ5UHVibGljS2V5EgsKA2tleRgBIAEoDBIuCgpjcmVhdGVkX2F0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIRCglzaWduYXR1cmUYAyABKAwiYgoOUGVyc29uYWxCYWNrdXASEgoKZ2VuZXJhdGlvbhgBIAEoDRIMCgRibG9iGAIgASgMEi4KCmNyZWF0ZWRfYXQYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wItUBChRJZGVudGl0eVJlc2V0UmVxdWVzdBIKCgJpZBgBIAEoCRIxCgVzdGF0ZRgCIAEoDjIiLmJlYmViZXJsb2dhLnYxLklkZW50aXR5UmVzZXRTdGF0ZRIeChZyZXF1ZXN0ZWRfYnlfZGV2aWNlX2lkGAMgASgJEi4KCmNyZWF0ZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCmFwcGxpZXNfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIn8KEkRldmljZVJlZ2lzdHJhdGlvbhIMCgRuYW1lGAEgASgJEjAKCHBsYXRmb3JtGAIgASgOMh4uYmViZWJlcmxvZ2EudjEuRGV2aWNlUGxhdGZvcm0SFgoOY2xpZW50X3ZlcnNpb24YAyABKAkSEQoJZGV2aWNlX2lkGAQgASgJIpwBCgdTZXNzaW9uEhQKDGFjY2Vzc190b2tlbhgBIAEoCRIVCg1yZWZyZXNoX3Rva2VuGAIgASgJEhIKCmV4cGlyZXNfaW4YAyABKA0SKAoHYWNjb3VudBgEIAEoCzIXLmJlYmViZXJsb2dhLnYxLkFjY291bnQSJgoGZGV2aWNlGAUgASgLMhYuYmViZWJlcmxvZ2EudjEuRGV2aWNlIkIKCktleVBhY2thZ2USEQoJZGV2aWNlX2lkGAEgASgJEhMKC2NpcGhlcnN1aXRlGAIgASgNEgwKBGJsb2IYAyABKAwifwoZRGV2aWNlVmVyaWZpY2F0aW9uUmVxdWVzdBIKCgJpZBgBIAEoCRImCgZkZXZpY2UYAiABKAsyFi5iZWJlYmVybG9nYS52MS5EZXZpY2USLgoKZXhwaXJlc19hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAijQEKDFJlbGF0aW9uc2hpcBIiCgR1c2VyGAEgASgLMhQuYmViZWJlcmxvZ2EudjEuVXNlchIuCgRraW5kGAIgASgOMiAuYmViZWJlcmxvZ2EudjEuUmVsYXRpb25zaGlwS2luZBIpCgVzaW5jZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAilQEKDFB1c2hFbmRwb2ludBIRCglkZXZpY2VfaWQYASABKAkSMAoJdHJhbnNwb3J0GAIgASgOMh0uYmViZWJlcmxvZ2EudjEuUHVzaFRyYW5zcG9ydBIQCghlbmRwb2ludBgDIAEoCRIuCgp1cGRhdGVkX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCp/ChJEZXZpY2VWZXJpZmljYXRpb24SIwofREVWSUNFX1ZFUklGSUNBVElPTl9VTlNQRUNJRklFRBAAEiIKHkRFVklDRV9WRVJJRklDQVRJT05fVU5WRVJJRklFRBABEiAKHERFVklDRV9WRVJJRklDQVRJT05fVkVSSUZJRUQQAirCAQoSSWRlbnRpdHlSZXNldFN0YXRlEiQKIElERU5USVRZX1JFU0VUX1NUQVRFX1VOU1BFQ0lGSUVEEAASIAocSURFTlRJVFlfUkVTRVRfU1RBVEVfUEVORElORxABEh4KGklERU5USVRZX1JFU0VUX1NUQVRFX1JFQURZEAISIgoeSURFTlRJVFlfUkVTRVRfU1RBVEVfQ0FOQ0VMTEVEEAMSIAocSURFTlRJVFlfUkVTRVRfU1RBVEVfQVBQTElFRBAEKsIBChBSZWxhdGlvbnNoaXBLaW5kEiEKHVJFTEFUSU9OU0hJUF9LSU5EX1VOU1BFQ0lGSUVEEAASHAoYUkVMQVRJT05TSElQX0tJTkRfRlJJRU5EEAESJgoiUkVMQVRJT05TSElQX0tJTkRfUkVRVUVTVF9JTkNPTUlORxACEiYKIlJFTEFUSU9OU0hJUF9LSU5EX1JFUVVFU1RfT1VUR09JTkcQAxIdChlSRUxBVElPTlNISVBfS0lORF9CTE9DS0VEEAQqgQEKDVB1c2hUcmFuc3BvcnQSHgoaUFVTSF9UUkFOU1BPUlRfVU5TUEVDSUZJRUQQABIfChtQVVNIX1RSQU5TUE9SVF9VTklGSUVEX1BVU0gQARIWChJQVVNIX1RSQU5TUE9SVF9GQ00QAhIXChNQVVNIX1RSQU5TUE9SVF9BUE5TEANCxgEKEmNvbS5iZWJlYmVybG9nYS52MUINSWRlbnRpdHlQcm90b1ABWkhnaXRodWIuY29tL25paGVzdHZlci9iZWJlYmVybG9nYS9zZXJ2ZXIvZ2VuL2JlYmViZXJsb2dhL3YxO2JlYmViZXJsb2dhdjGiAgNCWFiqAg5CZWJlYmVybG9nYS5WMcoCDkJlYmViZXJsb2dhXFYx4gIaQmViZWJlcmxvZ2FcVjFcR1BCTWV0YWRhdGHqAg9CZWJlYmVybG9nYTo6VjFiBnByb3RvMw", [file_bebeberloga_v1_common, file_google_protobuf_timestamp]);
+export const file_bebeberloga_v1_identity: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "Ch1iZWJlYmVybG9nYS92MS9pZGVudGl0eS5wcm90bxIOYmViZWJlcmxvZ2EudjEizAEKBFVzZXISCgoCaWQYASABKAkSEAoIdXNlcm5hbWUYAiABKAkSFAoMZGlzcGxheV9uYW1lGAMgASgJEhEKCWF2YXRhcl9pZBgEIAEoCRINCgVhYm91dBgFIAEoCRIUCgxiYW5uZXJfY29sb3IYBiABKAkSFwoPaWRlbnRpdHlfcHVia2V5GAcgASgMEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB2RlbGV0ZWQYCSABKAgiqAEKB0FjY291bnQSIgoEdXNlchgBIAEoCzIULmJlYmViZXJsb2dhLnYxLlVzZXISDQoFZW1haWwYAiABKAkSFQoNcGVuZGluZ19lbWFpbBgDIAEoCRIWCg5lbWFpbF92ZXJpZmllZBgEIAEoCBI7ChdyZWNvdmVyeV9rZXlfY3JlYXRlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAi1QEKC1VzZXJQcm9maWxlEiIKBHVzZXIYASABKAsyFC5iZWJlYmVybG9nYS52MS5Vc2VyEjYKDHJlbGF0aW9uc2hpcBgCIAEoDjIgLmJlYmViZXJsb2dhLnYxLlJlbGF0aW9uc2hpcEtpbmQSMQoNZnJpZW5kc19zaW5jZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASHAoUbXV0dWFsX2NvbW11bml0eV9pZHMYBCADKAkSGQoRbXV0dWFsX2ZyaWVuZF9pZHMYBSADKAkiugMKBkRldmljZRIKCgJpZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSMAoIcGxhdGZvcm0YBCABKA4yHi5iZWJlYmVybG9nYS52MS5EZXZpY2VQbGF0Zm9ybRIWCg5jbGllbnRfdmVyc2lvbhgFIAEoCRIYChBzaWduYXR1cmVfcHVia2V5GAYgASgMEhoKEmlkZW50aXR5X3NpZ25hdHVyZRgHIAEoDBI4Cgx2ZXJpZmljYXRpb24YCCABKA4yIi5iZWJlYmVybG9nYS52MS5EZXZpY2VWZXJpZmljYXRpb24SLgoKY3JlYXRlZF9hdBgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMAoMbGFzdF9zZWVuX2F0GAogASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIaChJsYXN0X3NlZW5fbG9jYXRpb24YCyABKAkSDwoHY3VycmVudBgMIAEoCBIYChBoaXN0b3J5X2hwa2Vfa2V5GA0gASgMEiIKGmhpc3RvcnlfaHBrZV9rZXlfc2lnbmF0dXJlGA4gASgMIusCCgxQdWJsaWNEZXZpY2USCgoCaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIwCghwbGF0Zm9ybRgDIAEoDjIeLmJlYmViZXJsb2dhLnYxLkRldmljZVBsYXRmb3JtEhgKEHNpZ25hdHVyZV9wdWJrZXkYBCABKAwSGgoSaWRlbnRpdHlfc2lnbmF0dXJlGAUgASgMEjgKDHZlcmlmaWNhdGlvbhgGIAEoDjIiLmJlYmViZXJsb2dhLnYxLkRldmljZVZlcmlmaWNhdGlvbhIuCgpjcmVhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIYChBoaXN0b3J5X2hwa2Vfa2V5GAggASgMEiIKGmhpc3RvcnlfaHBrZV9rZXlfc2lnbmF0dXJlGAkgASgMEi4KCnJlbW92ZWRfYXQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIo0BChFJZGVudGl0eUtleVJlY29yZBIXCg9pZGVudGl0eV9wdWJrZXkYASABKAwSLgoKdmFsaWRfZnJvbRgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLdmFsaWRfdW50aWwYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wImMKEVJlY292ZXJ5UHVibGljS2V5EgsKA2tleRgBIAEoDBIuCgpjcmVhdGVkX2F0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIRCglzaWduYXR1cmUYAyABKAwiYgoOUGVyc29uYWxCYWNrdXASEgoKZ2VuZXJhdGlvbhgBIAEoDRIMCgRibG9iGAIgASgMEi4KCmNyZWF0ZWRfYXQYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wItUBChRJZGVudGl0eVJlc2V0UmVxdWVzdBIKCgJpZBgBIAEoCRIxCgVzdGF0ZRgCIAEoDjIiLmJlYmViZXJsb2dhLnYxLklkZW50aXR5UmVzZXRTdGF0ZRIeChZyZXF1ZXN0ZWRfYnlfZGV2aWNlX2lkGAMgASgJEi4KCmNyZWF0ZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCmFwcGxpZXNfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIn8KEkRldmljZVJlZ2lzdHJhdGlvbhIMCgRuYW1lGAEgASgJEjAKCHBsYXRmb3JtGAIgASgOMh4uYmViZWJlcmxvZ2EudjEuRGV2aWNlUGxhdGZvcm0SFgoOY2xpZW50X3ZlcnNpb24YAyABKAkSEQoJZGV2aWNlX2lkGAQgASgJIpwBCgdTZXNzaW9uEhQKDGFjY2Vzc190b2tlbhgBIAEoCRIVCg1yZWZyZXNoX3Rva2VuGAIgASgJEhIKCmV4cGlyZXNfaW4YAyABKA0SKAoHYWNjb3VudBgEIAEoCzIXLmJlYmViZXJsb2dhLnYxLkFjY291bnQSJgoGZGV2aWNlGAUgASgLMhYuYmViZWJlcmxvZ2EudjEuRGV2aWNlIkIKCktleVBhY2thZ2USEQoJZGV2aWNlX2lkGAEgASgJEhMKC2NpcGhlcnN1aXRlGAIgASgNEgwKBGJsb2IYAyABKAwifwoZRGV2aWNlVmVyaWZpY2F0aW9uUmVxdWVzdBIKCgJpZBgBIAEoCRImCgZkZXZpY2UYAiABKAsyFi5iZWJlYmVybG9nYS52MS5EZXZpY2USLgoKZXhwaXJlc19hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAijQEKDFJlbGF0aW9uc2hpcBIiCgR1c2VyGAEgASgLMhQuYmViZWJlcmxvZ2EudjEuVXNlchIuCgRraW5kGAIgASgOMiAuYmViZWJlcmxvZ2EudjEuUmVsYXRpb25zaGlwS2luZBIpCgVzaW5jZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAilQEKDFB1c2hFbmRwb2ludBIRCglkZXZpY2VfaWQYASABKAkSMAoJdHJhbnNwb3J0GAIgASgOMh0uYmViZWJlcmxvZ2EudjEuUHVzaFRyYW5zcG9ydBIQCghlbmRwb2ludBgDIAEoCRIuCgp1cGRhdGVkX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCp/ChJEZXZpY2VWZXJpZmljYXRpb24SIwofREVWSUNFX1ZFUklGSUNBVElPTl9VTlNQRUNJRklFRBAAEiIKHkRFVklDRV9WRVJJRklDQVRJT05fVU5WRVJJRklFRBABEiAKHERFVklDRV9WRVJJRklDQVRJT05fVkVSSUZJRUQQAirCAQoSSWRlbnRpdHlSZXNldFN0YXRlEiQKIElERU5USVRZX1JFU0VUX1NUQVRFX1VOU1BFQ0lGSUVEEAASIAocSURFTlRJVFlfUkVTRVRfU1RBVEVfUEVORElORxABEh4KGklERU5USVRZX1JFU0VUX1NUQVRFX1JFQURZEAISIgoeSURFTlRJVFlfUkVTRVRfU1RBVEVfQ0FOQ0VMTEVEEAMSIAocSURFTlRJVFlfUkVTRVRfU1RBVEVfQVBQTElFRBAEKsIBChBSZWxhdGlvbnNoaXBLaW5kEiEKHVJFTEFUSU9OU0hJUF9LSU5EX1VOU1BFQ0lGSUVEEAASHAoYUkVMQVRJT05TSElQX0tJTkRfRlJJRU5EEAESJgoiUkVMQVRJT05TSElQX0tJTkRfUkVRVUVTVF9JTkNPTUlORxACEiYKIlJFTEFUSU9OU0hJUF9LSU5EX1JFUVVFU1RfT1VUR09JTkcQAxIdChlSRUxBVElPTlNISVBfS0lORF9CTE9DS0VEEAQqgQEKDVB1c2hUcmFuc3BvcnQSHgoaUFVTSF9UUkFOU1BPUlRfVU5TUEVDSUZJRUQQABIfChtQVVNIX1RSQU5TUE9SVF9VTklGSUVEX1BVU0gQARIWChJQVVNIX1RSQU5TUE9SVF9GQ00QAhIXChNQVVNIX1RSQU5TUE9SVF9BUE5TEANCxgEKEmNvbS5iZWJlYmVybG9nYS52MUINSWRlbnRpdHlQcm90b1ABWkhnaXRodWIuY29tL25paGVzdHZlci9iZWJlYmVybG9nYS9zZXJ2ZXIvZ2VuL2JlYmViZXJsb2dhL3YxO2JlYmViZXJsb2dhdjGiAgNCWFiqAg5CZWJlYmVybG9nYS5WMcoCDkJlYmViZXJsb2dhXFYx4gIaQmViZWJlcmxvZ2FcVjFcR1BCTWV0YWRhdGHqAg9CZWJlYmVybG9nYTo6VjFiBnByb3RvMw",
+    [file_bebeberloga_v1_common, file_google_protobuf_timestamp],
+  );
 
 /**
  * Публичный профиль пользователя. Аватар — id иконки из встроенного набора
@@ -93,7 +97,8 @@ export type User = Message<"bebeberloga.v1.User"> & {
  * Describes the message bebeberloga.v1.User.
  * Use `create(UserSchema)` to create a new message.
  */
-export const UserSchema: GenMessage<User> = /*@__PURE__*/
+export const UserSchema: GenMessage<User> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 0);
 
 /**
@@ -136,7 +141,8 @@ export type Account = Message<"bebeberloga.v1.Account"> & {
  * Describes the message bebeberloga.v1.Account.
  * Use `create(AccountSchema)` to create a new message.
  */
-export const AccountSchema: GenMessage<Account> = /*@__PURE__*/
+export const AccountSchema: GenMessage<Account> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 1);
 
 /**
@@ -177,7 +183,8 @@ export type UserProfile = Message<"bebeberloga.v1.UserProfile"> & {
  * Describes the message bebeberloga.v1.UserProfile.
  * Use `create(UserProfileSchema)` to create a new message.
  */
-export const UserProfileSchema: GenMessage<UserProfile> = /*@__PURE__*/
+export const UserProfileSchema: GenMessage<UserProfile> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 2);
 
 /**
@@ -275,7 +282,8 @@ export type Device = Message<"bebeberloga.v1.Device"> & {
  * Describes the message bebeberloga.v1.Device.
  * Use `create(DeviceSchema)` to create a new message.
  */
-export const DeviceSchema: GenMessage<Device> = /*@__PURE__*/
+export const DeviceSchema: GenMessage<Device> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 3);
 
 /**
@@ -344,7 +352,8 @@ export type PublicDevice = Message<"bebeberloga.v1.PublicDevice"> & {
  * Describes the message bebeberloga.v1.PublicDevice.
  * Use `create(PublicDeviceSchema)` to create a new message.
  */
-export const PublicDeviceSchema: GenMessage<PublicDevice> = /*@__PURE__*/
+export const PublicDeviceSchema: GenMessage<PublicDevice> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 4);
 
 /**
@@ -376,7 +385,8 @@ export type IdentityKeyRecord = Message<"bebeberloga.v1.IdentityKeyRecord"> & {
  * Describes the message bebeberloga.v1.IdentityKeyRecord.
  * Use `create(IdentityKeyRecordSchema)` to create a new message.
  */
-export const IdentityKeyRecordSchema: GenMessage<IdentityKeyRecord> = /*@__PURE__*/
+export const IdentityKeyRecordSchema: GenMessage<IdentityKeyRecord> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 5);
 
 /**
@@ -406,7 +416,8 @@ export type RecoveryPublicKey = Message<"bebeberloga.v1.RecoveryPublicKey"> & {
  * Describes the message bebeberloga.v1.RecoveryPublicKey.
  * Use `create(RecoveryPublicKeySchema)` to create a new message.
  */
-export const RecoveryPublicKeySchema: GenMessage<RecoveryPublicKey> = /*@__PURE__*/
+export const RecoveryPublicKeySchema: GenMessage<RecoveryPublicKey> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 6);
 
 /**
@@ -435,7 +446,8 @@ export type PersonalBackup = Message<"bebeberloga.v1.PersonalBackup"> & {
  * Describes the message bebeberloga.v1.PersonalBackup.
  * Use `create(PersonalBackupSchema)` to create a new message.
  */
-export const PersonalBackupSchema: GenMessage<PersonalBackup> = /*@__PURE__*/
+export const PersonalBackupSchema: GenMessage<PersonalBackup> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 7);
 
 /**
@@ -477,7 +489,8 @@ export type IdentityResetRequest = Message<"bebeberloga.v1.IdentityResetRequest"
  * Describes the message bebeberloga.v1.IdentityResetRequest.
  * Use `create(IdentityResetRequestSchema)` to create a new message.
  */
-export const IdentityResetRequestSchema: GenMessage<IdentityResetRequest> = /*@__PURE__*/
+export const IdentityResetRequestSchema: GenMessage<IdentityResetRequest> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 8);
 
 /**
@@ -515,7 +528,8 @@ export type DeviceRegistration = Message<"bebeberloga.v1.DeviceRegistration"> & 
  * Describes the message bebeberloga.v1.DeviceRegistration.
  * Use `create(DeviceRegistrationSchema)` to create a new message.
  */
-export const DeviceRegistrationSchema: GenMessage<DeviceRegistration> = /*@__PURE__*/
+export const DeviceRegistrationSchema: GenMessage<DeviceRegistration> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 9);
 
 /**
@@ -556,7 +570,8 @@ export type Session = Message<"bebeberloga.v1.Session"> & {
  * Describes the message bebeberloga.v1.Session.
  * Use `create(SessionSchema)` to create a new message.
  */
-export const SessionSchema: GenMessage<Session> = /*@__PURE__*/
+export const SessionSchema: GenMessage<Session> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 10);
 
 /**
@@ -588,7 +603,8 @@ export type KeyPackage = Message<"bebeberloga.v1.KeyPackage"> & {
  * Describes the message bebeberloga.v1.KeyPackage.
  * Use `create(KeyPackageSchema)` to create a new message.
  */
-export const KeyPackageSchema: GenMessage<KeyPackage> = /*@__PURE__*/
+export const KeyPackageSchema: GenMessage<KeyPackage> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 11);
 
 /**
@@ -619,7 +635,8 @@ export type DeviceVerificationRequest = Message<"bebeberloga.v1.DeviceVerificati
  * Describes the message bebeberloga.v1.DeviceVerificationRequest.
  * Use `create(DeviceVerificationRequestSchema)` to create a new message.
  */
-export const DeviceVerificationRequestSchema: GenMessage<DeviceVerificationRequest> = /*@__PURE__*/
+export const DeviceVerificationRequestSchema: GenMessage<DeviceVerificationRequest> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 12);
 
 /**
@@ -648,7 +665,8 @@ export type Relationship = Message<"bebeberloga.v1.Relationship"> & {
  * Describes the message bebeberloga.v1.Relationship.
  * Use `create(RelationshipSchema)` to create a new message.
  */
-export const RelationshipSchema: GenMessage<Relationship> = /*@__PURE__*/
+export const RelationshipSchema: GenMessage<Relationship> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 13);
 
 /**
@@ -684,7 +702,8 @@ export type PushEndpoint = Message<"bebeberloga.v1.PushEndpoint"> & {
  * Describes the message bebeberloga.v1.PushEndpoint.
  * Use `create(PushEndpointSchema)` to create a new message.
  */
-export const PushEndpointSchema: GenMessage<PushEndpoint> = /*@__PURE__*/
+export const PushEndpointSchema: GenMessage<PushEndpoint> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_identity, 14);
 
 /**
@@ -712,7 +731,8 @@ export enum DeviceVerification {
 /**
  * Describes the enum bebeberloga.v1.DeviceVerification.
  */
-export const DeviceVerificationSchema: GenEnum<DeviceVerification> = /*@__PURE__*/
+export const DeviceVerificationSchema: GenEnum<DeviceVerification> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_identity, 0);
 
 /**
@@ -752,7 +772,8 @@ export enum IdentityResetState {
 /**
  * Describes the enum bebeberloga.v1.IdentityResetState.
  */
-export const IdentityResetStateSchema: GenEnum<IdentityResetState> = /*@__PURE__*/
+export const IdentityResetStateSchema: GenEnum<IdentityResetState> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_identity, 1);
 
 /**
@@ -794,7 +815,8 @@ export enum RelationshipKind {
 /**
  * Describes the enum bebeberloga.v1.RelationshipKind.
  */
-export const RelationshipKindSchema: GenEnum<RelationshipKind> = /*@__PURE__*/
+export const RelationshipKindSchema: GenEnum<RelationshipKind> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_identity, 2);
 
 /**
@@ -827,6 +849,6 @@ export enum PushTransport {
 /**
  * Describes the enum bebeberloga.v1.PushTransport.
  */
-export const PushTransportSchema: GenEnum<PushTransport> = /*@__PURE__*/
+export const PushTransportSchema: GenEnum<PushTransport> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_identity, 3);
-

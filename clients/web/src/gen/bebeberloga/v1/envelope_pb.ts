@@ -18,8 +18,12 @@ import type { Message } from "@bufbuild/protobuf";
 /**
  * Describes the file bebeberloga/v1/envelope.proto.
  */
-export const file_bebeberloga_v1_envelope: GenFile = /*@__PURE__*/
-  fileDesc("Ch1iZWJlYmVybG9nYS92MS9lbnZlbG9wZS5wcm90bxIOYmViZWJlcmxvZ2EudjEi4AQKD01lc3NhZ2VFbnZlbG9wZRISCgptZXNzYWdlX2lkGAEgASgJEisKB3NlbnRfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEigKBHRleHQYCiABKAsyGC5iZWJlYmVybG9nYS52MS5UZXh0Qm9keUgAEigKBGVkaXQYCyABKAsyGC5iZWJlYmVybG9nYS52MS5FZGl0Qm9keUgAEiwKBmRlbGV0ZRgMIAEoCzIaLmJlYmViZXJsb2dhLnYxLkRlbGV0ZUJvZHlIABIwCghyZWFjdGlvbhgNIAEoCzIcLmJlYmViZXJsb2dhLnYxLlJlYWN0aW9uQm9keUgAEiYKA3BpbhgOIAEoCzIXLmJlYmViZXJsb2dhLnYxLlBpbkJvZHlIABIvCghmaWxlX2tleRgPIAEoCzIbLmJlYmViZXJsb2dhLnYxLkZpbGVLZXlCb2R5SAASMwoIY2FsbF9rZXkYECABKAsyGy5iZWJlYmVybG9nYS52MS5DYWxsS2V5Qm9keUICGAFIABI7CgxoaXN0b3J5X2tleXMYESABKAsyHy5iZWJlYmVybG9nYS52MS5IaXN0b3J5S2V5c0JvZHlCAhgBSAASOQoNZGV2aWNlX25vdGljZRgSIAEoCzIgLmJlYmViZXJsb2dhLnYxLkRldmljZU5vdGljZUJvZHlIABI5Cg1wZXJzb25hbF9zeW5jGBQgASgLMiAuYmViZWJlcmxvZ2EudjEuUGVyc29uYWxTeW5jQm9keUgAQgYKBGJvZHlKBAgTEBRSCXBvbGxfdm90ZSJwCgdNZW50aW9uEhEKB3VzZXJfaWQYASABKAlIABIRCgdyb2xlX2lkGAIgASgJSAASFAoKY2hhbm5lbF9pZBgDIAEoCUgAEg0KA2FsbBgEIAEoCEgAEhAKBm9ubGluZRgFIAEoCEgAQggKBnRhcmdldCLjAQoHRmlsZVJlZhIVCg1hdHRhY2htZW50X2lkGAEgASgJEgwKBG5hbWUYAiABKAkSEQoJbWltZV90eXBlGAMgASgJEgwKBHNpemUYBCABKAQSCwoDa2V5GAUgASgMEhQKDGNvbnRlbnRfaGFzaBgGIAEoDBIXCg9jaXBoZXJ0ZXh0X2hhc2gYByABKAwSDQoFd2lkdGgYCCABKA0SDgoGaGVpZ2h0GAkgASgNEhEKCXRodW1ibmFpbBgKIAEoDBIPCgdzcG9pbGVyGAsgASgIEhMKC2Rlc2NyaXB0aW9uGAwgASgJInkKC0xpbmtQcmV2aWV3EgsKA3VybBgBIAEoCRIRCglzaXRlX25hbWUYAiABKAkSDQoFdGl0bGUYAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSJgoFaW1hZ2UYBSABKAsyFy5iZWJlYmVybG9nYS52MS5GaWxlUmVmIs4BCghUZXh0Qm9keRIMCgR0ZXh0GAEgASgJEhAKCHJlcGx5X3RvGAIgASgJEhUKDXJlcGx5X21lbnRpb24YAyABKAgSKQoIbWVudGlvbnMYBCADKAsyFy5iZWJlYmVybG9nYS52MS5NZW50aW9uEiwKC2F0dGFjaG1lbnRzGAUgAygLMhcuYmViZWJlcmxvZ2EudjEuRmlsZVJlZhIyCg1saW5rX3ByZXZpZXdzGAYgAygLMhsuYmViZWJlcmxvZ2EudjEuTGlua1ByZXZpZXciigEKCEVkaXRCb2R5EhEKCXRhcmdldF9pZBgBIAEoCRIMCgR0ZXh0GAIgASgJEikKCG1lbnRpb25zGAMgAygLMhcuYmViZWJlcmxvZ2EudjEuTWVudGlvbhIyCg1saW5rX3ByZXZpZXdzGAQgAygLMhsuYmViZWJlcmxvZ2EudjEuTGlua1ByZXZpZXciHwoKRGVsZXRlQm9keRIRCgl0YXJnZXRfaWQYASABKAkiPAoMUmVhY3Rpb25Cb2R5EhEKCXRhcmdldF9pZBgBIAEoCRINCgVlbW9qaRgCIAEoCRIKCgJvbhgDIAEoCCIsCgdQaW5Cb2R5EhEKCXRhcmdldF9pZBgBIAEoCRIOCgZwaW5uZWQYAiABKAgiTwoLRmlsZUtleUJvZHkSGQoRdGFyZ2V0X21lc3NhZ2VfaWQYASABKAkSJQoEZmlsZRgCIAEoCzIXLmJlYmViZXJsb2dhLnYxLkZpbGVSZWYiSgoLQ2FsbEtleUJvZHkSEgoKY2hhbm5lbF9pZBgBIAEoCRINCgVlcG9jaBgCIAEoBBIUCgxrZXlfbWF0ZXJpYWwYAyABKAw6AhgBIj8KD0hpc3RvcnlLZXlzQm9keRIoCgRrZXlzGAEgAygLMhouYmViZWJlcmxvZ2EudjEuSGlzdG9yeUtleToCGAEiYQoKSGlzdG9yeUtleRISCgpnZW5lcmF0aW9uGAEgASgNEgsKA2tleRgCIAEoDBIuCgp2YWxpZF9mcm9tGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcDoCGAEi2gEKEERldmljZU5vdGljZUJvZHkSMwoEa2luZBgBIAEoDjIlLmJlYmViZXJsb2dhLnYxLkRldmljZU5vdGljZUJvZHkuS2luZBIPCgd1c2VyX2lkGAIgASgJEhMKC2RldmljZV9uYW1lGAMgASgJImsKBEtpbmQSFAoQS0lORF9VTlNQRUNJRklFRBAAEhUKEUtJTkRfREVWSUNFX0FEREVEEAESHQoZS0lORF9JREVOVElUWV9LRVlfQ0hBTkdFRBACEhcKE0tJTkRfREVWSUNFX1JFTU9WRUQQAyK9AQoQUGVyc29uYWxTeW5jQm9keRI4Cgx2ZXJpZmljYXRpb24YASADKAsyIi5iZWJlYmVybG9nYS52MS5WZXJpZmljYXRpb25TdGF0dXMSNgoPdHJ1c3RlZF9kb21haW5zGAIgAygLMh0uYmViZWJlcmxvZ2EudjEuVHJ1c3RlZERvbWFpbhI3CgxyZWNvdmVyeV9rZXkYAyABKAsyIS5iZWJlYmVybG9nYS52MS5SZWNvdmVyeUtleVJlY29yZCJWChFSZWNvdmVyeUtleVJlY29yZBIRCglkZXZpY2VfaWQYASABKAkSLgoKY3JlYXRlZF9hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAidQoSVmVyaWZpY2F0aW9uU3RhdHVzEg8KB3VzZXJfaWQYASABKAkSFAoMaWRlbnRpdHlfa2V5GAIgASgMEhAKCHZlcmlmaWVkGAMgASgIEiYKAmF0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCIwCg1UcnVzdGVkRG9tYWluEg4KBmRvbWFpbhgBIAEoCRIPCgd0cnVzdGVkGAIgASgIQsYBChJjb20uYmViZWJlcmxvZ2EudjFCDUVudmVsb3BlUHJvdG9QAVpIZ2l0aHViLmNvbS9uaWhlc3R2ZXIvYmViZWJlcmxvZ2Evc2VydmVyL2dlbi9iZWJlYmVybG9nYS92MTtiZWJlYmVybG9nYXYxogIDQlhYqgIOQmViZWJlcmxvZ2EuVjHKAg5CZWJlYmVybG9nYVxWMeICGkJlYmViZXJsb2dhXFYxXEdQQk1ldGFkYXRh6gIPQmViZWJlcmxvZ2E6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+export const file_bebeberloga_v1_envelope: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "Ch1iZWJlYmVybG9nYS92MS9lbnZlbG9wZS5wcm90bxIOYmViZWJlcmxvZ2EudjEi4AQKD01lc3NhZ2VFbnZlbG9wZRISCgptZXNzYWdlX2lkGAEgASgJEisKB3NlbnRfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEigKBHRleHQYCiABKAsyGC5iZWJlYmVybG9nYS52MS5UZXh0Qm9keUgAEigKBGVkaXQYCyABKAsyGC5iZWJlYmVybG9nYS52MS5FZGl0Qm9keUgAEiwKBmRlbGV0ZRgMIAEoCzIaLmJlYmViZXJsb2dhLnYxLkRlbGV0ZUJvZHlIABIwCghyZWFjdGlvbhgNIAEoCzIcLmJlYmViZXJsb2dhLnYxLlJlYWN0aW9uQm9keUgAEiYKA3BpbhgOIAEoCzIXLmJlYmViZXJsb2dhLnYxLlBpbkJvZHlIABIvCghmaWxlX2tleRgPIAEoCzIbLmJlYmViZXJsb2dhLnYxLkZpbGVLZXlCb2R5SAASMwoIY2FsbF9rZXkYECABKAsyGy5iZWJlYmVybG9nYS52MS5DYWxsS2V5Qm9keUICGAFIABI7CgxoaXN0b3J5X2tleXMYESABKAsyHy5iZWJlYmVybG9nYS52MS5IaXN0b3J5S2V5c0JvZHlCAhgBSAASOQoNZGV2aWNlX25vdGljZRgSIAEoCzIgLmJlYmViZXJsb2dhLnYxLkRldmljZU5vdGljZUJvZHlIABI5Cg1wZXJzb25hbF9zeW5jGBQgASgLMiAuYmViZWJlcmxvZ2EudjEuUGVyc29uYWxTeW5jQm9keUgAQgYKBGJvZHlKBAgTEBRSCXBvbGxfdm90ZSJwCgdNZW50aW9uEhEKB3VzZXJfaWQYASABKAlIABIRCgdyb2xlX2lkGAIgASgJSAASFAoKY2hhbm5lbF9pZBgDIAEoCUgAEg0KA2FsbBgEIAEoCEgAEhAKBm9ubGluZRgFIAEoCEgAQggKBnRhcmdldCLjAQoHRmlsZVJlZhIVCg1hdHRhY2htZW50X2lkGAEgASgJEgwKBG5hbWUYAiABKAkSEQoJbWltZV90eXBlGAMgASgJEgwKBHNpemUYBCABKAQSCwoDa2V5GAUgASgMEhQKDGNvbnRlbnRfaGFzaBgGIAEoDBIXCg9jaXBoZXJ0ZXh0X2hhc2gYByABKAwSDQoFd2lkdGgYCCABKA0SDgoGaGVpZ2h0GAkgASgNEhEKCXRodW1ibmFpbBgKIAEoDBIPCgdzcG9pbGVyGAsgASgIEhMKC2Rlc2NyaXB0aW9uGAwgASgJInkKC0xpbmtQcmV2aWV3EgsKA3VybBgBIAEoCRIRCglzaXRlX25hbWUYAiABKAkSDQoFdGl0bGUYAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSJgoFaW1hZ2UYBSABKAsyFy5iZWJlYmVybG9nYS52MS5GaWxlUmVmIs4BCghUZXh0Qm9keRIMCgR0ZXh0GAEgASgJEhAKCHJlcGx5X3RvGAIgASgJEhUKDXJlcGx5X21lbnRpb24YAyABKAgSKQoIbWVudGlvbnMYBCADKAsyFy5iZWJlYmVybG9nYS52MS5NZW50aW9uEiwKC2F0dGFjaG1lbnRzGAUgAygLMhcuYmViZWJlcmxvZ2EudjEuRmlsZVJlZhIyCg1saW5rX3ByZXZpZXdzGAYgAygLMhsuYmViZWJlcmxvZ2EudjEuTGlua1ByZXZpZXciigEKCEVkaXRCb2R5EhEKCXRhcmdldF9pZBgBIAEoCRIMCgR0ZXh0GAIgASgJEikKCG1lbnRpb25zGAMgAygLMhcuYmViZWJlcmxvZ2EudjEuTWVudGlvbhIyCg1saW5rX3ByZXZpZXdzGAQgAygLMhsuYmViZWJlcmxvZ2EudjEuTGlua1ByZXZpZXciHwoKRGVsZXRlQm9keRIRCgl0YXJnZXRfaWQYASABKAkiPAoMUmVhY3Rpb25Cb2R5EhEKCXRhcmdldF9pZBgBIAEoCRINCgVlbW9qaRgCIAEoCRIKCgJvbhgDIAEoCCIsCgdQaW5Cb2R5EhEKCXRhcmdldF9pZBgBIAEoCRIOCgZwaW5uZWQYAiABKAgiTwoLRmlsZUtleUJvZHkSGQoRdGFyZ2V0X21lc3NhZ2VfaWQYASABKAkSJQoEZmlsZRgCIAEoCzIXLmJlYmViZXJsb2dhLnYxLkZpbGVSZWYiSgoLQ2FsbEtleUJvZHkSEgoKY2hhbm5lbF9pZBgBIAEoCRINCgVlcG9jaBgCIAEoBBIUCgxrZXlfbWF0ZXJpYWwYAyABKAw6AhgBIj8KD0hpc3RvcnlLZXlzQm9keRIoCgRrZXlzGAEgAygLMhouYmViZWJlcmxvZ2EudjEuSGlzdG9yeUtleToCGAEiYQoKSGlzdG9yeUtleRISCgpnZW5lcmF0aW9uGAEgASgNEgsKA2tleRgCIAEoDBIuCgp2YWxpZF9mcm9tGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcDoCGAEi2gEKEERldmljZU5vdGljZUJvZHkSMwoEa2luZBgBIAEoDjIlLmJlYmViZXJsb2dhLnYxLkRldmljZU5vdGljZUJvZHkuS2luZBIPCgd1c2VyX2lkGAIgASgJEhMKC2RldmljZV9uYW1lGAMgASgJImsKBEtpbmQSFAoQS0lORF9VTlNQRUNJRklFRBAAEhUKEUtJTkRfREVWSUNFX0FEREVEEAESHQoZS0lORF9JREVOVElUWV9LRVlfQ0hBTkdFRBACEhcKE0tJTkRfREVWSUNFX1JFTU9WRUQQAyK9AQoQUGVyc29uYWxTeW5jQm9keRI4Cgx2ZXJpZmljYXRpb24YASADKAsyIi5iZWJlYmVybG9nYS52MS5WZXJpZmljYXRpb25TdGF0dXMSNgoPdHJ1c3RlZF9kb21haW5zGAIgAygLMh0uYmViZWJlcmxvZ2EudjEuVHJ1c3RlZERvbWFpbhI3CgxyZWNvdmVyeV9rZXkYAyABKAsyIS5iZWJlYmVybG9nYS52MS5SZWNvdmVyeUtleVJlY29yZCJWChFSZWNvdmVyeUtleVJlY29yZBIRCglkZXZpY2VfaWQYASABKAkSLgoKY3JlYXRlZF9hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAidQoSVmVyaWZpY2F0aW9uU3RhdHVzEg8KB3VzZXJfaWQYASABKAkSFAoMaWRlbnRpdHlfa2V5GAIgASgMEhAKCHZlcmlmaWVkGAMgASgIEiYKAmF0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCIwCg1UcnVzdGVkRG9tYWluEg4KBmRvbWFpbhgBIAEoCRIPCgd0cnVzdGVkGAIgASgIQsYBChJjb20uYmViZWJlcmxvZ2EudjFCDUVudmVsb3BlUHJvdG9QAVpIZ2l0aHViLmNvbS9uaWhlc3R2ZXIvYmViZWJlcmxvZ2Evc2VydmVyL2dlbi9iZWJlYmVybG9nYS92MTtiZWJlYmVybG9nYXYxogIDQlhYqgIOQmViZWJlcmxvZ2EuVjHKAg5CZWJlYmVybG9nYVxWMeICGkJlYmViZXJsb2dhXFYxXEdQQk1ldGFkYXRh6gIPQmViZWJlcmxvZ2E6OlYxYgZwcm90bzM",
+    [file_google_protobuf_timestamp],
+  );
 
 /**
  * Конверт. Внутри повторяется `message_id`, чтобы связать шифртекст с открытым id:
@@ -43,82 +47,94 @@ export type MessageEnvelope = Message<"bebeberloga.v1.MessageEnvelope"> & {
   /**
    * @generated from oneof bebeberloga.v1.MessageEnvelope.body
    */
-  body: {
-    /**
-     * @generated from field: bebeberloga.v1.TextBody text = 10;
-     */
-    value: TextBody;
-    case: "text";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.EditBody edit = 11;
-     */
-    value: EditBody;
-    case: "edit";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.DeleteBody delete = 12;
-     */
-    value: DeleteBody;
-    case: "delete";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.ReactionBody reaction = 13;
-     */
-    value: ReactionBody;
-    case: "reaction";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.PinBody pin = 14;
-     */
-    value: PinBody;
-    case: "pin";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.FileKeyBody file_key = 15;
-     */
-    value: FileKeyBody;
-    case: "fileKey";
-  } | {
-    /**
-     * Не используется в 1.0: ключи медиа выводятся из MLS-Exporter (CRYPTO.md §5.5).
-     *
-     * @generated from field: bebeberloga.v1.CallKeyBody call_key = 16 [deprecated = true];
-     * @deprecated
-     */
-    value: CallKeyBody;
-    case: "callKey";
-  } | {
-    /**
-     * Не используется в 1.0: ключи поколений выводятся из exporter, через разрыв — мостом (CRYPTO.md §6.6).
-     *
-     * @generated from field: bebeberloga.v1.HistoryKeysBody history_keys = 17 [deprecated = true];
-     * @deprecated
-     */
-    value: HistoryKeysBody;
-    case: "historyKeys";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.DeviceNoticeBody device_notice = 18;
-     */
-    value: DeviceNoticeBody;
-    case: "deviceNotice";
-  } | {
-    /**
-     * Только в личном канале пользователя (CRYPTO.md §6.5).
-     *
-     * @generated from field: bebeberloga.v1.PersonalSyncBody personal_sync = 20;
-     */
-    value: PersonalSyncBody;
-    case: "personalSync";
-  } | { case: undefined; value?: undefined };
+  body:
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.TextBody text = 10;
+         */
+        value: TextBody;
+        case: "text";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.EditBody edit = 11;
+         */
+        value: EditBody;
+        case: "edit";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.DeleteBody delete = 12;
+         */
+        value: DeleteBody;
+        case: "delete";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.ReactionBody reaction = 13;
+         */
+        value: ReactionBody;
+        case: "reaction";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.PinBody pin = 14;
+         */
+        value: PinBody;
+        case: "pin";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.FileKeyBody file_key = 15;
+         */
+        value: FileKeyBody;
+        case: "fileKey";
+      }
+    | {
+        /**
+         * Не используется в 1.0: ключи медиа выводятся из MLS-Exporter (CRYPTO.md §5.5).
+         *
+         * @generated from field: bebeberloga.v1.CallKeyBody call_key = 16 [deprecated = true];
+         * @deprecated
+         */
+        value: CallKeyBody;
+        case: "callKey";
+      }
+    | {
+        /**
+         * Не используется в 1.0: ключи поколений выводятся из exporter, через разрыв — мостом (CRYPTO.md §6.6).
+         *
+         * @generated from field: bebeberloga.v1.HistoryKeysBody history_keys = 17 [deprecated = true];
+         * @deprecated
+         */
+        value: HistoryKeysBody;
+        case: "historyKeys";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.DeviceNoticeBody device_notice = 18;
+         */
+        value: DeviceNoticeBody;
+        case: "deviceNotice";
+      }
+    | {
+        /**
+         * Только в личном канале пользователя (CRYPTO.md §6.5).
+         *
+         * @generated from field: bebeberloga.v1.PersonalSyncBody personal_sync = 20;
+         */
+        value: PersonalSyncBody;
+        case: "personalSync";
+      }
+    | { case: undefined; value?: undefined };
 };
 
 /**
  * Describes the message bebeberloga.v1.MessageEnvelope.
  * Use `create(MessageEnvelopeSchema)` to create a new message.
  */
-export const MessageEnvelopeSchema: GenMessage<MessageEnvelope> = /*@__PURE__*/
+export const MessageEnvelopeSchema: GenMessage<MessageEnvelope> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 0);
 
 /**
@@ -131,50 +147,57 @@ export type Mention = Message<"bebeberloga.v1.Mention"> & {
   /**
    * @generated from oneof bebeberloga.v1.Mention.target
    */
-  target: {
-    /**
-     * @generated from field: string user_id = 1;
-     */
-    value: string;
-    case: "userId";
-  } | {
-    /**
-     * @generated from field: string role_id = 2;
-     */
-    value: string;
-    case: "roleId";
-  } | {
-    /**
-     * «#канал» — переход, без уведомления.
-     *
-     * @generated from field: string channel_id = 3;
-     */
-    value: string;
-    case: "channelId";
-  } | {
-    /**
-     * «@все».
-     *
-     * @generated from field: bool all = 4;
-     */
-    value: boolean;
-    case: "all";
-  } | {
-    /**
-     * «@здесь».
-     *
-     * @generated from field: bool online = 5;
-     */
-    value: boolean;
-    case: "online";
-  } | { case: undefined; value?: undefined };
+  target:
+    | {
+        /**
+         * @generated from field: string user_id = 1;
+         */
+        value: string;
+        case: "userId";
+      }
+    | {
+        /**
+         * @generated from field: string role_id = 2;
+         */
+        value: string;
+        case: "roleId";
+      }
+    | {
+        /**
+         * «#канал» — переход, без уведомления.
+         *
+         * @generated from field: string channel_id = 3;
+         */
+        value: string;
+        case: "channelId";
+      }
+    | {
+        /**
+         * «@все».
+         *
+         * @generated from field: bool all = 4;
+         */
+        value: boolean;
+        case: "all";
+      }
+    | {
+        /**
+         * «@здесь».
+         *
+         * @generated from field: bool online = 5;
+         */
+        value: boolean;
+        case: "online";
+      }
+    | { case: undefined; value?: undefined };
 };
 
 /**
  * Describes the message bebeberloga.v1.Mention.
  * Use `create(MentionSchema)` to create a new message.
  */
-export const MentionSchema: GenMessage<Mention> = /*@__PURE__*/
+export const MentionSchema: GenMessage<Mention> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 1);
 
 /**
@@ -270,7 +293,8 @@ export type FileRef = Message<"bebeberloga.v1.FileRef"> & {
  * Describes the message bebeberloga.v1.FileRef.
  * Use `create(FileRefSchema)` to create a new message.
  */
-export const FileRefSchema: GenMessage<FileRef> = /*@__PURE__*/
+export const FileRefSchema: GenMessage<FileRef> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 2);
 
 /**
@@ -311,7 +335,8 @@ export type LinkPreview = Message<"bebeberloga.v1.LinkPreview"> & {
  * Describes the message bebeberloga.v1.LinkPreview.
  * Use `create(LinkPreviewSchema)` to create a new message.
  */
-export const LinkPreviewSchema: GenMessage<LinkPreview> = /*@__PURE__*/
+export const LinkPreviewSchema: GenMessage<LinkPreview> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 3);
 
 /**
@@ -363,7 +388,8 @@ export type TextBody = Message<"bebeberloga.v1.TextBody"> & {
  * Describes the message bebeberloga.v1.TextBody.
  * Use `create(TextBodySchema)` to create a new message.
  */
-export const TextBodySchema: GenMessage<TextBody> = /*@__PURE__*/
+export const TextBodySchema: GenMessage<TextBody> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 4);
 
 /**
@@ -397,7 +423,8 @@ export type EditBody = Message<"bebeberloga.v1.EditBody"> & {
  * Describes the message bebeberloga.v1.EditBody.
  * Use `create(EditBodySchema)` to create a new message.
  */
-export const EditBodySchema: GenMessage<EditBody> = /*@__PURE__*/
+export const EditBodySchema: GenMessage<EditBody> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 5);
 
 /**
@@ -417,7 +444,8 @@ export type DeleteBody = Message<"bebeberloga.v1.DeleteBody"> & {
  * Describes the message bebeberloga.v1.DeleteBody.
  * Use `create(DeleteBodySchema)` to create a new message.
  */
-export const DeleteBodySchema: GenMessage<DeleteBody> = /*@__PURE__*/
+export const DeleteBodySchema: GenMessage<DeleteBody> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 6);
 
 /**
@@ -450,7 +478,8 @@ export type ReactionBody = Message<"bebeberloga.v1.ReactionBody"> & {
  * Describes the message bebeberloga.v1.ReactionBody.
  * Use `create(ReactionBodySchema)` to create a new message.
  */
-export const ReactionBodySchema: GenMessage<ReactionBody> = /*@__PURE__*/
+export const ReactionBodySchema: GenMessage<ReactionBody> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 7);
 
 /**
@@ -474,7 +503,8 @@ export type PinBody = Message<"bebeberloga.v1.PinBody"> & {
  * Describes the message bebeberloga.v1.PinBody.
  * Use `create(PinBodySchema)` to create a new message.
  */
-export const PinBodySchema: GenMessage<PinBody> = /*@__PURE__*/
+export const PinBodySchema: GenMessage<PinBody> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 8);
 
 /**
@@ -499,7 +529,8 @@ export type FileKeyBody = Message<"bebeberloga.v1.FileKeyBody"> & {
  * Describes the message bebeberloga.v1.FileKeyBody.
  * Use `create(FileKeyBodySchema)` to create a new message.
  */
-export const FileKeyBodySchema: GenMessage<FileKeyBody> = /*@__PURE__*/
+export const FileKeyBodySchema: GenMessage<FileKeyBody> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 9);
 
 /**
@@ -530,7 +561,8 @@ export type CallKeyBody = Message<"bebeberloga.v1.CallKeyBody"> & {
  * Use `create(CallKeyBodySchema)` to create a new message.
  * @deprecated
  */
-export const CallKeyBodySchema: GenMessage<CallKeyBody> = /*@__PURE__*/
+export const CallKeyBodySchema: GenMessage<CallKeyBody> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 10);
 
 /**
@@ -552,7 +584,8 @@ export type HistoryKeysBody = Message<"bebeberloga.v1.HistoryKeysBody"> & {
  * Use `create(HistoryKeysBodySchema)` to create a new message.
  * @deprecated
  */
-export const HistoryKeysBodySchema: GenMessage<HistoryKeysBody> = /*@__PURE__*/
+export const HistoryKeysBodySchema: GenMessage<HistoryKeysBody> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 11);
 
 /**
@@ -585,7 +618,8 @@ export type HistoryKey = Message<"bebeberloga.v1.HistoryKey"> & {
  * Use `create(HistoryKeySchema)` to create a new message.
  * @deprecated
  */
-export const HistoryKeySchema: GenMessage<HistoryKey> = /*@__PURE__*/
+export const HistoryKeySchema: GenMessage<HistoryKey> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 12);
 
 /**
@@ -616,7 +650,8 @@ export type DeviceNoticeBody = Message<"bebeberloga.v1.DeviceNoticeBody"> & {
  * Describes the message bebeberloga.v1.DeviceNoticeBody.
  * Use `create(DeviceNoticeBodySchema)` to create a new message.
  */
-export const DeviceNoticeBodySchema: GenMessage<DeviceNoticeBody> = /*@__PURE__*/
+export const DeviceNoticeBodySchema: GenMessage<DeviceNoticeBody> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 13);
 
 /**
@@ -647,7 +682,8 @@ export enum DeviceNoticeBody_Kind {
 /**
  * Describes the enum bebeberloga.v1.DeviceNoticeBody.Kind.
  */
-export const DeviceNoticeBody_KindSchema: GenEnum<DeviceNoticeBody_Kind> = /*@__PURE__*/
+export const DeviceNoticeBody_KindSchema: GenEnum<DeviceNoticeBody_Kind> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_envelope, 13, 0);
 
 /**
@@ -680,7 +716,8 @@ export type PersonalSyncBody = Message<"bebeberloga.v1.PersonalSyncBody"> & {
  * Describes the message bebeberloga.v1.PersonalSyncBody.
  * Use `create(PersonalSyncBodySchema)` to create a new message.
  */
-export const PersonalSyncBodySchema: GenMessage<PersonalSyncBody> = /*@__PURE__*/
+export const PersonalSyncBodySchema: GenMessage<PersonalSyncBody> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 14);
 
 /**
@@ -702,7 +739,8 @@ export type RecoveryKeyRecord = Message<"bebeberloga.v1.RecoveryKeyRecord"> & {
  * Describes the message bebeberloga.v1.RecoveryKeyRecord.
  * Use `create(RecoveryKeyRecordSchema)` to create a new message.
  */
-export const RecoveryKeyRecordSchema: GenMessage<RecoveryKeyRecord> = /*@__PURE__*/
+export const RecoveryKeyRecordSchema: GenMessage<RecoveryKeyRecord> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 15);
 
 /**
@@ -736,7 +774,8 @@ export type VerificationStatus = Message<"bebeberloga.v1.VerificationStatus"> & 
  * Describes the message bebeberloga.v1.VerificationStatus.
  * Use `create(VerificationStatusSchema)` to create a new message.
  */
-export const VerificationStatusSchema: GenMessage<VerificationStatus> = /*@__PURE__*/
+export const VerificationStatusSchema: GenMessage<VerificationStatus> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 16);
 
 /**
@@ -760,6 +799,6 @@ export type TrustedDomain = Message<"bebeberloga.v1.TrustedDomain"> & {
  * Describes the message bebeberloga.v1.TrustedDomain.
  * Use `create(TrustedDomainSchema)` to create a new message.
  */
-export const TrustedDomainSchema: GenMessage<TrustedDomain> = /*@__PURE__*/
+export const TrustedDomainSchema: GenMessage<TrustedDomain> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 17);
-

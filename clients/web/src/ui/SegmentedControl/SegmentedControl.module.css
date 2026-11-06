@@ -1,0 +1,115 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.segmented {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-m);
+  background: var(--color-panel);
+}
+
+.segment {
+  height: var(--size-control-s);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast),
+    color var(--duration-fast);
+}
+
+.segment[data-hovered] {
+  background: var(--color-panel-hover);
+  color: var(--color-text);
+}
+
+.segment[data-pressed] {
+  background: var(--color-panel-pressed);
+}
+
+.segment[data-selected] {
+  background: var(--color-panel-active);
+  color: var(--color-text);
+}
+
+.segment[data-disabled],
+.triSegment[data-disabled] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+/* TriState: три кнопки 32×26 */
+.triState {
+  display: inline-flex;
+  flex: none;
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-s);
+  background: var(--color-bg);
+}
+
+.triSegment {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast),
+    color var(--duration-fast);
+}
+
+.triSegment:first-child {
+  border-radius: var(--radius-xs) 0 0 var(--radius-xs);
+}
+
+.triSegment:last-child {
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+}
+
+.triSegment + .triSegment {
+  border-left: var(--size-border) solid var(--color-border);
+}
+
+.triSegment[data-hovered] {
+  background: var(--color-panel-hover);
+  color: var(--color-text);
+}
+
+.triSegment[data-pressed] {
+  background: var(--color-panel-pressed);
+}
+
+.triSegment[data-selected][data-tone="deny"] {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.triSegment[data-selected][data-tone="inherit"] {
+  background: var(--color-panel-active);
+  color: var(--color-text);
+}
+
+.triSegment[data-selected][data-tone="allow"] {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+/* Кольцо фокуса не прячется под соседним сегментом */
+.triSegment[data-focus-visible],
+.segment[data-focus-visible] {
+  position: relative;
+  z-index: 1;
+}

@@ -12,11 +12,33 @@ import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv1"
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv1";
 import type { InstanceLimits, Presence } from "./common_pb.js";
 import { file_bebeberloga_v1_common } from "./common_pb.js";
-import type { Ban, Category, Channel, Community, CommunityRemoval, CommunityRemovalReason, EffectivePermissions, Invite, LockedChannel, Member, NotificationSettings, ReadState, Role, VoicePresence } from "./community_pb.js";
+import type {
+  Ban,
+  Category,
+  Channel,
+  Community,
+  CommunityRemoval,
+  CommunityRemovalReason,
+  EffectivePermissions,
+  Invite,
+  LockedChannel,
+  Member,
+  NotificationSettings,
+  ReadState,
+  Role,
+  VoicePresence,
+} from "./community_pb.js";
 import { file_bebeberloga_v1_community } from "./community_pb.js";
 import type { Error } from "./error_pb.js";
 import { file_bebeberloga_v1_error } from "./error_pb.js";
-import type { Account, Device, DeviceVerificationRequest, IdentityResetRequest, Relationship, User } from "./identity_pb.js";
+import type {
+  Account,
+  Device,
+  DeviceVerificationRequest,
+  IdentityResetRequest,
+  Relationship,
+  User,
+} from "./identity_pb.js";
 import { file_bebeberloga_v1_identity } from "./identity_pb.js";
 import type { MessageMeta } from "./message_pb.js";
 import { file_bebeberloga_v1_message } from "./message_pb.js";
@@ -31,8 +53,21 @@ import type { Message } from "@bufbuild/protobuf";
 /**
  * Describes the file bebeberloga/v1/gateway.proto.
  */
-export const file_bebeberloga_v1_gateway: GenFile = /*@__PURE__*/
-  fileDesc("ChxiZWJlYmVybG9nYS92MS9nYXRld2F5LnByb3RvEg5iZWJlYmVybG9nYS52MSKWAwoLQ2xpZW50RnJhbWUSDQoFbm9uY2UYASABKA0SLAoIaWRlbnRpZnkYCiABKAsyGC5iZWJlYmVybG9nYS52MS5JZGVudGlmeUgAEigKBnJlc3VtZRgLIAEoCzIWLmJlYmViZXJsb2dhLnYxLlJlc3VtZUgAEi4KCWhlYXJ0YmVhdBgMIAEoCzIZLmJlYmViZXJsb2dhLnYxLkhlYXJ0YmVhdEgAEjMKDHR5cGluZ19zdGFydBgUIAEoCzIbLmJlYmViZXJsb2dhLnYxLlR5cGluZ1N0YXJ0SAASPgoSc2V0X3ZvaWNlX3ByZXNlbmNlGBUgASgLMiAuYmViZWJlcmxvZ2EudjEuU2V0Vm9pY2VQcmVzZW5jZUgAEi8KCnBsYXlfc291bmQYFiABKAsyGS5iZWJlYmVybG9nYS52MS5QbGF5U291bmRIABI/ChJwcmVzZW5jZV9zdWJzY3JpYmUYFyABKAsyIS5iZWJlYmVybG9nYS52MS5QcmVzZW5jZVN1YnNjcmliZUgAQgkKB3BheWxvYWQinBkKC1NlcnZlckZyYW1lEgsKA3NlcRgBIAEoBBImCgVyZWFkeRgKIAEoCzIVLmJlYmViZXJsb2dhLnYxLlJlYWR5SAASKgoHcmVzdW1lZBgLIAEoCzIXLmJlYmViZXJsb2dhLnYxLlJlc3VtZWRIABI1Cg1oZWFydGJlYXRfYWNrGAwgASgLMhwuYmViZWJlcmxvZ2EudjEuSGVhcnRiZWF0QWNrSAASOQoPc2Vzc2lvbl9pbnZhbGlkGA0gASgLMh4uYmViZWJlcmxvZ2EudjEuU2Vzc2lvbkludmFsaWRIABI7ChBjb21tYW5kX3JlamVjdGVkGA4gASgLMh8uYmViZWJlcmxvZ2EudjEuQ29tbWFuZFJlamVjdGVkSAASOQoPbWVzc2FnZV9jcmVhdGVkGGQgASgLMh4uYmViZWJlcmxvZ2EudjEuTWVzc2FnZUNyZWF0ZWRIABI5Cg9tZXNzYWdlX3VwZGF0ZWQYZSABKAsyHi5iZWJlYmVybG9nYS52MS5NZXNzYWdlVXBkYXRlZEgAEjkKD21lc3NhZ2VfZGVsZXRlZBhmIAEoCzIeLmJlYmViZXJsb2dhLnYxLk1lc3NhZ2VEZWxldGVkSAASNwoOdHlwaW5nX3N0YXJ0ZWQYZyABKAsyHS5iZWJlYmVybG9nYS52MS5UeXBpbmdTdGFydGVkSAASPgoScmVhZF9zdGF0ZV91cGRhdGVkGGggASgLMiAuYmViZWJlcmxvZ2EudjEuUmVhZFN0YXRlVXBkYXRlZEgAEjUKDW1sc19oYW5kc2hha2UYbiABKAsyHC5iZWJlYmVybG9nYS52MS5NbHNIYW5kc2hha2VIABIxCgttbHNfd2VsY29tZRhvIAEoCzIaLmJlYmViZXJsb2dhLnYxLk1sc1dlbGNvbWVIABJCChRtbHNfdXBkYXRlX3JlcXVlc3RlZBhwIAEoCzIiLmJlYmViZXJsb2dhLnYxLk1sc1VwZGF0ZVJlcXVlc3RlZEgAEkcKF21sc19ncm91cF9zdGF0ZV9jaGFuZ2VkGHEgASgLMiQuYmViZWJlcmxvZ2EudjEuTWxzR3JvdXBTdGF0ZUNoYW5nZWRIABI7ChBwcmVzZW5jZV91cGRhdGVkGHggASgLMh8uYmViZWJlcmxvZ2EudjEuUHJlc2VuY2VVcGRhdGVkSAASRgoWdm9pY2VfcHJlc2VuY2VfY2hhbmdlZBh5IAEoCzIkLmJlYmViZXJsb2dhLnYxLlZvaWNlUHJlc2VuY2VDaGFuZ2VkSAASMwoMY2FsbF9zdGFydGVkGHogASgLMhsuYmViZWJlcmxvZ2EudjEuQ2FsbFN0YXJ0ZWRIABIvCgpjYWxsX2VuZGVkGHsgASgLMhkuYmViZWJlcmxvZ2EudjEuQ2FsbEVuZGVkSAASMwoMc291bmRfcGxheWVkGHwgASgLMhsuYmViZWJlcmxvZ2EudjEuU291bmRQbGF5ZWRIABI+ChFjb21tdW5pdHlfY3JlYXRlZBiCASABKAsyIC5iZWJlYmVybG9nYS52MS5Db21tdW5pdHlDcmVhdGVkSAASPgoRY29tbXVuaXR5X3VwZGF0ZWQYgwEgASgLMiAuYmViZWJlcmxvZ2EudjEuQ29tbXVuaXR5VXBkYXRlZEgAEj4KEWNvbW11bml0eV9yZW1vdmVkGIQBIAEoCzIgLmJlYmViZXJsb2dhLnYxLkNvbW11bml0eVJlbW92ZWRIABI8ChBjYXRlZ29yeV9jcmVhdGVkGIUBIAEoCzIfLmJlYmViZXJsb2dhLnYxLkNhdGVnb3J5Q3JlYXRlZEgAEjwKEGNhdGVnb3J5X3VwZGF0ZWQYhgEgASgLMh8uYmViZWJlcmxvZ2EudjEuQ2F0ZWdvcnlVcGRhdGVkSAASPAoQY2F0ZWdvcnlfZGVsZXRlZBiHASABKAsyHy5iZWJlYmVybG9nYS52MS5DYXRlZ29yeURlbGV0ZWRIABI6Cg9jaGFubmVsX2NyZWF0ZWQYiAEgASgLMh4uYmViZWJlcmxvZ2EudjEuQ2hhbm5lbENyZWF0ZWRIABI6Cg9jaGFubmVsX3VwZGF0ZWQYiQEgASgLMh4uYmViZWJlcmxvZ2EudjEuQ2hhbm5lbFVwZGF0ZWRIABI6Cg9jaGFubmVsX2RlbGV0ZWQYigEgASgLMh4uYmViZWJlcmxvZ2EudjEuQ2hhbm5lbERlbGV0ZWRIABI2Cg1tZW1iZXJfam9pbmVkGIsBIAEoCzIcLmJlYmViZXJsb2dhLnYxLk1lbWJlckpvaW5lZEgAEjgKDm1lbWJlcl91cGRhdGVkGIwBIAEoCzIdLmJlYmViZXJsb2dhLnYxLk1lbWJlclVwZGF0ZWRIABIyCgttZW1iZXJfbGVmdBiNASABKAsyGi5iZWJlYmVybG9nYS52MS5NZW1iZXJMZWZ0SAASNAoMcm9sZV9jcmVhdGVkGI4BIAEoCzIbLmJlYmViZXJsb2dhLnYxLlJvbGVDcmVhdGVkSAASNAoMcm9sZV91cGRhdGVkGI8BIAEoCzIbLmJlYmViZXJsb2dhLnYxLlJvbGVVcGRhdGVkSAASNAoMcm9sZV9kZWxldGVkGJABIAEoCzIbLmJlYmViZXJsb2dhLnYxLlJvbGVEZWxldGVkSAASQgoTcGVybWlzc2lvbnNfdXBkYXRlZBiRASABKAsyIi5iZWJlYmVybG9nYS52MS5QZXJtaXNzaW9uc1VwZGF0ZWRIABI4Cg5pbnZpdGVfY3JlYXRlZBiSASABKAsyHS5iZWJlYmVybG9nYS52MS5JbnZpdGVDcmVhdGVkSAASOAoOaW52aXRlX3Jldm9rZWQYkwEgASgLMh0uYmViZWJlcmxvZ2EudjEuSW52aXRlUmV2b2tlZEgAEi4KCWJhbl9hZGRlZBiUASABKAsyGC5iZWJlYmVybG9nYS52MS5CYW5BZGRlZEgAEjIKC2Jhbl9yZW1vdmVkGJUBIAEoCzIaLmJlYmViZXJsb2dhLnYxLkJhblJlbW92ZWRIABIyCgtzb3VuZF9hZGRlZBiWASABKAsyGi5iZWJlYmVybG9nYS52MS5Tb3VuZEFkZGVkSAASNgoNc291bmRfdXBkYXRlZBiXASABKAsyHC5iZWJlYmVybG9nYS52MS5Tb3VuZFVwZGF0ZWRIABI2Cg1zb3VuZF9yZW1vdmVkGJgBIAEoCzIcLmJlYmViZXJsb2dhLnYxLlNvdW5kUmVtb3ZlZEgAEkkKF2xvY2tlZF9jaGFubmVsc191cGRhdGVkGJkBIAEoCzIlLmJlYmViZXJsb2dhLnYxLkxvY2tlZENoYW5uZWxzVXBkYXRlZEgAEjQKDHVzZXJfdXBkYXRlZBigASABKAsyGy5iZWJlYmVybG9nYS52MS5Vc2VyVXBkYXRlZEgAEjQKDGRldmljZV9hZGRlZBihASABKAsyGy5iZWJlYmVybG9nYS52MS5EZXZpY2VBZGRlZEgAEjoKD2RldmljZV92ZXJpZmllZBiiASABKAsyHi5iZWJlYmVybG9nYS52MS5EZXZpY2VWZXJpZmllZEgAEjgKDmRldmljZV9yZW1vdmVkGKMBIAEoCzIdLmJlYmViZXJsb2dhLnYxLkRldmljZVJlbW92ZWRIABJRChtkZXZpY2VfdmVyaWZpY2F0aW9uX21lc3NhZ2UYpAEgASgLMikuYmViZWJlcmxvZ2EudjEuRGV2aWNlVmVyaWZpY2F0aW9uTWVzc2FnZUgAEkQKFHJlbGF0aW9uc2hpcF91cGRhdGVkGKUBIAEoCzIjLmJlYmViZXJsb2dhLnYxLlJlbGF0aW9uc2hpcFVwZGF0ZWRIABJEChRyZWxhdGlvbnNoaXBfcmVtb3ZlZBimASABKAsyIy5iZWJlYmVybG9nYS52MS5SZWxhdGlvbnNoaXBSZW1vdmVkSAASVQodbm90aWZpY2F0aW9uX3NldHRpbmdzX3VwZGF0ZWQYpwEgASgLMisuYmViZWJlcmxvZ2EudjEuTm90aWZpY2F0aW9uU2V0dGluZ3NVcGRhdGVkSAASSwoYaWRlbnRpdHlfcmVzZXRfcmVxdWVzdGVkGKgBIAEoCzImLmJlYmViZXJsb2dhLnYxLklkZW50aXR5UmVzZXRSZXF1ZXN0ZWRIABJLChhpZGVudGl0eV9yZXNldF9jYW5jZWxsZWQYqQEgASgLMiYuYmViZWJlcmxvZ2EudjEuSWRlbnRpdHlSZXNldENhbmNlbGxlZEgAQgkKB3BheWxvYWQifQoISWRlbnRpZnkSFAoMYWNjZXNzX3Rva2VuGAEgASgJEhEKCWRldmljZV9pZBgCIAEoCRIwCgtjb21wcmVzc2lvbhgDIAEoDjIbLmJlYmViZXJsb2dhLnYxLkNvbXByZXNzaW9uEhYKDmNsaWVudF92ZXJzaW9uGAQgASgJIv8FCgVSZWFkeRISCgpzZXNzaW9uX2lkGAEgASgJEh0KFWhlYXJ0YmVhdF9pbnRlcnZhbF9tcxgCIAEoDRILCgNzZXEYAyABKAQSKAoHYWNjb3VudBgEIAEoCzIXLmJlYmViZXJsb2dhLnYxLkFjY291bnQSJwoHZGV2aWNlcxgFIAMoCzIWLmJlYmViZXJsb2dhLnYxLkRldmljZRI2Cgtjb21tdW5pdGllcxgGIAMoCzIhLmJlYmViZXJsb2dhLnYxLkNvbW11bml0eVNuYXBzaG90EiwKC2RtX2NoYW5uZWxzGAcgAygLMhcuYmViZWJlcmxvZ2EudjEuQ2hhbm5lbBIuCgtyZWFkX3N0YXRlcxgIIAMoCzIZLmJlYmViZXJsb2dhLnYxLlJlYWRTdGF0ZRIzCg1yZWxhdGlvbnNoaXBzGAkgAygLMhwuYmViZWJlcmxvZ2EudjEuUmVsYXRpb25zaGlwEisKCXByZXNlbmNlcxgKIAMoCzIYLmJlYmViZXJsb2dhLnYxLlByZXNlbmNlEkMKFW5vdGlmaWNhdGlvbl9zZXR0aW5ncxgLIAMoCzIkLmJlYmViZXJsb2dhLnYxLk5vdGlmaWNhdGlvblNldHRpbmdzEi4KBmxpbWl0cxgMIAEoCzIeLmJlYmViZXJsb2dhLnYxLkluc3RhbmNlTGltaXRzEi8KC21sc19wZW5kaW5nGA0gAygLMhouYmViZWJlcmxvZ2EudjEuTWxzUGVuZGluZxIvCgtzZXJ2ZXJfdGltZRgOIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASPAoSY29tbXVuaXR5X3JlbW92YWxzGA8gAygLMiAuYmViZWJlcmxvZ2EudjEuQ29tbXVuaXR5UmVtb3ZhbBIYChBkZXZpY2VfcmV0dXJuaW5nGBAgASgIEjwKDmlkZW50aXR5X3Jlc2V0GBEgASgLMiQuYmViZWJlcmxvZ2EudjEuSWRlbnRpdHlSZXNldFJlcXVlc3QijgMKEUNvbW11bml0eVNuYXBzaG90EiwKCWNvbW11bml0eRgBIAEoCzIZLmJlYmViZXJsb2dhLnYxLkNvbW11bml0eRIsCgpjYXRlZ29yaWVzGAIgAygLMhguYmViZWJlcmxvZ2EudjEuQ2F0ZWdvcnkSKQoIY2hhbm5lbHMYAyADKAsyFy5iZWJlYmVybG9nYS52MS5DaGFubmVsEiMKBXJvbGVzGAQgAygLMhQuYmViZWJlcmxvZ2EudjEuUm9sZRIiCgJtZRgFIAEoCzIWLmJlYmViZXJsb2dhLnYxLk1lbWJlchI5CgtwZXJtaXNzaW9ucxgGIAEoCzIkLmJlYmViZXJsb2dhLnYxLkVmZmVjdGl2ZVBlcm1pc3Npb25zEjYKD3ZvaWNlX3ByZXNlbmNlcxgHIAMoCzIdLmJlYmViZXJsb2dhLnYxLlZvaWNlUHJlc2VuY2USNgoPbG9ja2VkX2NoYW5uZWxzGAggAygLMh0uYmViZWJlcmxvZ2EudjEuTG9ja2VkQ2hhbm5lbCKEAQoKTWxzUGVuZGluZxIQCghncm91cF9pZBgBIAEoCRINCgVlcG9jaBgCIAEoBBIXCg93ZWxjb21lX3BlbmRpbmcYAyABKAgSFwoPaGFuZHNoYWtlX2NvdW50GAQgASgNEhEKCXJldHVybmluZxgFIAEoCEoECAYQB1IKcmV2aWV3X3NlcSJxCgZSZXN1bWUSFAoMYWNjZXNzX3Rva2VuGAEgASgJEhIKCnNlc3Npb25faWQYAiABKAkSCwoDc2VxGAMgASgEEjAKC2NvbXByZXNzaW9uGAQgASgOMhsuYmViZWJlcmxvZ2EudjEuQ29tcHJlc3Npb24iQQoHUmVzdW1lZBIdChVoZWFydGJlYXRfaW50ZXJ2YWxfbXMYASABKA0SFwoPcmVwbGF5ZWRfZXZlbnRzGAIgASgNIsECCg5TZXNzaW9uSW52YWxpZBI1CgZyZWFzb24YASABKA4yJS5iZWJlYmVybG9nYS52MS5TZXNzaW9uSW52YWxpZC5SZWFzb24SPAoOaWRlbnRpdHlfcmVzZXQYAiABKAsyJC5iZWJlYmVybG9nYS52MS5JZGVudGl0eVJlc2V0UmVxdWVzdCK5AQoGUmVhc29uEhYKElJFQVNPTl9VTlNQRUNJRklFRBAAEiAKHFJFQVNPTl9SRVNVTUVfV0lORE9XX0VYUElSRUQQARIYChRSRUFTT05fU0VTU0lPTl9FTkRFRBACEhkKFVJFQVNPTl9ERVZJQ0VfUkVNT1ZFRBADEhwKGFJFQVNPTl9QUk9UT0NPTF9NSVNNQVRDSBAEEiIKHlJFQVNPTl9ERVZJQ0VfUkVNT1ZFRF9CWV9SRVNFVBAFIhgKCUhlYXJ0YmVhdBILCgNzZXEYASABKAQiPwoMSGVhcnRiZWF0QWNrEi8KC3NlcnZlcl90aW1lGAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJGCg9Db21tYW5kUmVqZWN0ZWQSDQoFbm9uY2UYASABKA0SJAoFZXJyb3IYAiABKAsyFS5iZWJlYmVybG9nYS52MS5FcnJvciIhCgtUeXBpbmdTdGFydBISCgpjaGFubmVsX2lkGAEgASgJInAKEFNldFZvaWNlUHJlc2VuY2USEgoKY2hhbm5lbF9pZBgBIAEoCRIPCgdtaWNfb2ZmGAIgASgIEhEKCXNvdW5kX29mZhgDIAEoCBIRCgljYW1lcmFfb24YBCABKAgSEQoJc3RyZWFtaW5nGAUgASgIIjEKCVBsYXlTb3VuZBISCgpjaGFubmVsX2lkGAEgASgJEhAKCHNvdW5kX2lkGAIgASgJIikKEVByZXNlbmNlU3Vic2NyaWJlEhQKDGNvbW11bml0eV9pZBgBIAEoCSI+Cg5NZXNzYWdlQ3JlYXRlZBIsCgdtZXNzYWdlGAEgASgLMhsuYmViZWJlcmxvZ2EudjEuTWVzc2FnZU1ldGEiPgoOTWVzc2FnZVVwZGF0ZWQSLAoHbWVzc2FnZRgBIAEoCzIbLmJlYmViZXJsb2dhLnYxLk1lc3NhZ2VNZXRhIjkKDk1lc3NhZ2VEZWxldGVkEhIKCmNoYW5uZWxfaWQYASABKAkSEwoLbWVzc2FnZV9pZHMYAiADKAkiNAoNVHlwaW5nU3RhcnRlZBISCgpjaGFubmVsX2lkGAEgASgJEg8KB3VzZXJfaWQYAiABKAkiQQoQUmVhZFN0YXRlVXBkYXRlZBItCgpyZWFkX3N0YXRlGAEgASgLMhkuYmViZWJlcmxvZ2EudjEuUmVhZFN0YXRlIjwKDE1sc0hhbmRzaGFrZRIsCgloYW5kc2hha2UYASABKAsyGS5iZWJlYmVybG9nYS52MS5IYW5kc2hha2UiNgoKTWxzV2VsY29tZRIoCgd3ZWxjb21lGAEgASgLMhcuYmViZWJlcmxvZ2EudjEuV2VsY29tZSL2AgoSTWxzVXBkYXRlUmVxdWVzdGVkEhAKCGdyb3VwX2lkGAEgASgJEjkKBnJlYXNvbhgCIAEoDjIpLmJlYmViZXJsb2dhLnYxLk1sc1VwZGF0ZVJlcXVlc3RlZC5SZWFzb24SHAoUZGVzaWduYXRlZF9kZXZpY2VfaWQYAyABKAkSDQoFZXBvY2gYBCABKAQi5QEKBlJlYXNvbhIWChJSRUFTT05fVU5TUEVDSUZJRUQQABIcChhSRUFTT05fUEVORElOR19QUk9QT1NBTFMQARIdChlSRUFTT05fU0NIRURVTEVEX1JPVEFUSU9OEAISEQoNUkVBU09OX01BTlVBTBADEh0KFVJFQVNPTl9ISVNUT1JZX0JVTkRMRRAEGgIIARITCg9SRUFTT05fUkVDUkVBVEUQBRIjCh9SRUFTT05fRVhURVJOQUxfU0VOREVSX1JPVEFUSU9OEAYSGgoWUkVBU09OX0hJU1RPUllfU0VUVElORxAHIvMBChRNbHNHcm91cFN0YXRlQ2hhbmdlZBIQCghncm91cF9pZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJEhoKEnN1Y2Nlc3Nvcl9ncm91cF9pZBgDIAEoCRIpCgVzdGF0ZRgEIAEoDjIaLmJlYmViZXJsb2dhLnYxLkdyb3VwU3RhdGUSOwoRcmVjcmVhdGlvbl9yZWFzb24YBiABKA4yIC5iZWJlYmVybG9nYS52MS5SZWNyZWF0aW9uUmVhc29uSgQIBRAGSgQIBxAIUgpyZXZpZXdfc2VxUhlyZWNyZWF0aW9uX2RlZmVycmVkX3VudGlsIj0KD1ByZXNlbmNlVXBkYXRlZBIqCghwcmVzZW5jZRgBIAEoCzIYLmJlYmViZXJsb2dhLnYxLlByZXNlbmNlInEKFFZvaWNlUHJlc2VuY2VDaGFuZ2VkEi8KCHByZXNlbmNlGAEgASgLMh0uYmViZWJlcmxvZ2EudjEuVm9pY2VQcmVzZW5jZRIXCg9sZWZ0X2NoYW5uZWxfaWQYAiABKAkSDwoHdXNlcl9pZBgDIAEoCSI0CgtDYWxsU3RhcnRlZBISCgpjaGFubmVsX2lkGAEgASgJEhEKCWNhbGxlcl9pZBgCIAEoCSIfCglDYWxsRW5kZWQSEgoKY2hhbm5lbF9pZBgBIAEoCSJUCgtTb3VuZFBsYXllZBISCgpjaGFubmVsX2lkGAEgASgJEg8KB3VzZXJfaWQYAiABKAkSEAoIc291bmRfaWQYAyABKAkSDgoGdm9sdW1lGAQgASgNIkgKEENvbW11bml0eUNyZWF0ZWQSNAoJY29tbXVuaXR5GAEgASgLMiEuYmViZWJlcmxvZ2EudjEuQ29tbXVuaXR5U25hcHNob3QiQAoQQ29tbXVuaXR5VXBkYXRlZBIsCgljb21tdW5pdHkYASABKAsyGS5iZWJlYmVybG9nYS52MS5Db21tdW5pdHkiRQoQQ29tbXVuaXR5UmVtb3ZlZBIxCgdyZW1vdmFsGAEgASgLMiAuYmViZWJlcmxvZ2EudjEuQ29tbXVuaXR5UmVtb3ZhbCI9Cg9DYXRlZ29yeUNyZWF0ZWQSKgoIY2F0ZWdvcnkYASABKAsyGC5iZWJlYmVybG9nYS52MS5DYXRlZ29yeSI9Cg9DYXRlZ29yeVVwZGF0ZWQSKgoIY2F0ZWdvcnkYASABKAsyGC5iZWJlYmVybG9nYS52MS5DYXRlZ29yeSI8Cg9DYXRlZ29yeURlbGV0ZWQSFAoMY29tbXVuaXR5X2lkGAEgASgJEhMKC2NhdGVnb3J5X2lkGAIgASgJIjoKDkNoYW5uZWxDcmVhdGVkEigKB2NoYW5uZWwYASABKAsyFy5iZWJlYmVybG9nYS52MS5DaGFubmVsIjoKDkNoYW5uZWxVcGRhdGVkEigKB2NoYW5uZWwYASABKAsyFy5iZWJlYmVybG9nYS52MS5DaGFubmVsIjoKDkNoYW5uZWxEZWxldGVkEhQKDGNvbW11bml0eV9pZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJImUKFUxvY2tlZENoYW5uZWxzVXBkYXRlZBIUCgxjb21tdW5pdHlfaWQYASABKAkSNgoPbG9ja2VkX2NoYW5uZWxzGAIgAygLMh0uYmViZWJlcmxvZ2EudjEuTG9ja2VkQ2hhbm5lbCI2CgxNZW1iZXJKb2luZWQSJgoGbWVtYmVyGAEgASgLMhYuYmViZWJlcmxvZ2EudjEuTWVtYmVyIjcKDU1lbWJlclVwZGF0ZWQSJgoGbWVtYmVyGAEgASgLMhYuYmViZWJlcmxvZ2EudjEuTWVtYmVyImsKCk1lbWJlckxlZnQSFAoMY29tbXVuaXR5X2lkGAEgASgJEg8KB3VzZXJfaWQYAiABKAkSNgoGcmVhc29uGAMgASgOMiYuYmViZWJlcmxvZ2EudjEuQ29tbXVuaXR5UmVtb3ZhbFJlYXNvbiIxCgtSb2xlQ3JlYXRlZBIiCgRyb2xlGAEgASgLMhQuYmViZWJlcmxvZ2EudjEuUm9sZSIxCgtSb2xlVXBkYXRlZBIiCgRyb2xlGAEgASgLMhQuYmViZWJlcmxvZ2EudjEuUm9sZSI0CgtSb2xlRGVsZXRlZBIUCgxjb21tdW5pdHlfaWQYASABKAkSDwoHcm9sZV9pZBgCIAEoCSJPChJQZXJtaXNzaW9uc1VwZGF0ZWQSOQoLcGVybWlzc2lvbnMYASABKAsyJC5iZWJlYmVybG9nYS52MS5FZmZlY3RpdmVQZXJtaXNzaW9ucyI3Cg1JbnZpdGVDcmVhdGVkEiYKBmludml0ZRgBIAEoCzIWLmJlYmViZXJsb2dhLnYxLkludml0ZSIzCg1JbnZpdGVSZXZva2VkEhQKDGNvbW11bml0eV9pZBgBIAEoCRIMCgRjb2RlGAIgASgJIiwKCEJhbkFkZGVkEiAKA2JhbhgBIAEoCzITLmJlYmViZXJsb2dhLnYxLkJhbiIzCgpCYW5SZW1vdmVkEhQKDGNvbW11bml0eV9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJIjIKClNvdW5kQWRkZWQSJAoFc291bmQYASABKAsyFS5iZWJlYmVybG9nYS52MS5Tb3VuZCI0CgxTb3VuZFVwZGF0ZWQSJAoFc291bmQYASABKAsyFS5iZWJlYmVybG9nYS52MS5Tb3VuZCJHCgxTb3VuZFJlbW92ZWQSEAoIc291bmRfaWQYASABKAkSFAoMY29tbXVuaXR5X2lkGAIgASgJEg8KB3VzZXJfaWQYAyABKAkiMQoLVXNlclVwZGF0ZWQSIgoEdXNlchgBIAEoCzIULmJlYmViZXJsb2dhLnYxLlVzZXIifgoLRGV2aWNlQWRkZWQSJgoGZGV2aWNlGAEgASgLMhYuYmViZWJlcmxvZ2EudjEuRGV2aWNlEkcKFHZlcmlmaWNhdGlvbl9yZXF1ZXN0GAIgASgLMikuYmViZWJlcmxvZ2EudjEuRGV2aWNlVmVyaWZpY2F0aW9uUmVxdWVzdCI4Cg5EZXZpY2VWZXJpZmllZBImCgZkZXZpY2UYASABKAsyFi5iZWJlYmVybG9nYS52MS5EZXZpY2UiTgoNRGV2aWNlUmVtb3ZlZBIPCgd1c2VyX2lkGAEgASgJEhEKCWRldmljZV9pZBgCIAEoCRIZChFieV9pZGVudGl0eV9yZXNldBgDIAEoCCJPChZJZGVudGl0eVJlc2V0UmVxdWVzdGVkEjUKB3JlcXVlc3QYASABKAsyJC5iZWJlYmVybG9nYS52MS5JZGVudGl0eVJlc2V0UmVxdWVzdCIsChZJZGVudGl0eVJlc2V0Q2FuY2VsbGVkEhIKCnJlcXVlc3RfaWQYASABKAkiWAoZRGV2aWNlVmVyaWZpY2F0aW9uTWVzc2FnZRISCgpyZXF1ZXN0X2lkGAEgASgJEhYKDmZyb21fZGV2aWNlX2lkGAIgASgJEg8KB3BheWxvYWQYAyABKAwiSQoTUmVsYXRpb25zaGlwVXBkYXRlZBIyCgxyZWxhdGlvbnNoaXAYASABKAsyHC5iZWJlYmVybG9nYS52MS5SZWxhdGlvbnNoaXAiJgoTUmVsYXRpb25zaGlwUmVtb3ZlZBIPCgd1c2VyX2lkGAEgASgJIlUKG05vdGlmaWNhdGlvblNldHRpbmdzVXBkYXRlZBI2CghzZXR0aW5ncxgBIAEoCzIkLmJlYmViZXJsb2dhLnYxLk5vdGlmaWNhdGlvblNldHRpbmdzKlYKC0NvbXByZXNzaW9uEhsKF0NPTVBSRVNTSU9OX1VOU1BFQ0lGSUVEEAASFAoQQ09NUFJFU1NJT05fTk9ORRABEhQKEENPTVBSRVNTSU9OX1pTVEQQAkLFAQoSY29tLmJlYmViZXJsb2dhLnYxQgxHYXRld2F5UHJvdG9QAVpIZ2l0aHViLmNvbS9uaWhlc3R2ZXIvYmViZWJlcmxvZ2Evc2VydmVyL2dlbi9iZWJlYmVybG9nYS92MTtiZWJlYmVybG9nYXYxogIDQlhYqgIOQmViZWJlcmxvZ2EuVjHKAg5CZWJlYmVybG9nYVxWMeICGkJlYmViZXJsb2dhXFYxXEdQQk1ldGFkYXRh6gIPQmViZWJlcmxvZ2E6OlYxYgZwcm90bzM", [file_bebeberloga_v1_common, file_bebeberloga_v1_community, file_bebeberloga_v1_error, file_bebeberloga_v1_identity, file_bebeberloga_v1_message, file_bebeberloga_v1_mls, file_bebeberloga_v1_sound, file_google_protobuf_timestamp]);
+export const file_bebeberloga_v1_gateway: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "ChxiZWJlYmVybG9nYS92MS9nYXRld2F5LnByb3RvEg5iZWJlYmVybG9nYS52MSKWAwoLQ2xpZW50RnJhbWUSDQoFbm9uY2UYASABKA0SLAoIaWRlbnRpZnkYCiABKAsyGC5iZWJlYmVybG9nYS52MS5JZGVudGlmeUgAEigKBnJlc3VtZRgLIAEoCzIWLmJlYmViZXJsb2dhLnYxLlJlc3VtZUgAEi4KCWhlYXJ0YmVhdBgMIAEoCzIZLmJlYmViZXJsb2dhLnYxLkhlYXJ0YmVhdEgAEjMKDHR5cGluZ19zdGFydBgUIAEoCzIbLmJlYmViZXJsb2dhLnYxLlR5cGluZ1N0YXJ0SAASPgoSc2V0X3ZvaWNlX3ByZXNlbmNlGBUgASgLMiAuYmViZWJlcmxvZ2EudjEuU2V0Vm9pY2VQcmVzZW5jZUgAEi8KCnBsYXlfc291bmQYFiABKAsyGS5iZWJlYmVybG9nYS52MS5QbGF5U291bmRIABI/ChJwcmVzZW5jZV9zdWJzY3JpYmUYFyABKAsyIS5iZWJlYmVybG9nYS52MS5QcmVzZW5jZVN1YnNjcmliZUgAQgkKB3BheWxvYWQinBkKC1NlcnZlckZyYW1lEgsKA3NlcRgBIAEoBBImCgVyZWFkeRgKIAEoCzIVLmJlYmViZXJsb2dhLnYxLlJlYWR5SAASKgoHcmVzdW1lZBgLIAEoCzIXLmJlYmViZXJsb2dhLnYxLlJlc3VtZWRIABI1Cg1oZWFydGJlYXRfYWNrGAwgASgLMhwuYmViZWJlcmxvZ2EudjEuSGVhcnRiZWF0QWNrSAASOQoPc2Vzc2lvbl9pbnZhbGlkGA0gASgLMh4uYmViZWJlcmxvZ2EudjEuU2Vzc2lvbkludmFsaWRIABI7ChBjb21tYW5kX3JlamVjdGVkGA4gASgLMh8uYmViZWJlcmxvZ2EudjEuQ29tbWFuZFJlamVjdGVkSAASOQoPbWVzc2FnZV9jcmVhdGVkGGQgASgLMh4uYmViZWJlcmxvZ2EudjEuTWVzc2FnZUNyZWF0ZWRIABI5Cg9tZXNzYWdlX3VwZGF0ZWQYZSABKAsyHi5iZWJlYmVybG9nYS52MS5NZXNzYWdlVXBkYXRlZEgAEjkKD21lc3NhZ2VfZGVsZXRlZBhmIAEoCzIeLmJlYmViZXJsb2dhLnYxLk1lc3NhZ2VEZWxldGVkSAASNwoOdHlwaW5nX3N0YXJ0ZWQYZyABKAsyHS5iZWJlYmVybG9nYS52MS5UeXBpbmdTdGFydGVkSAASPgoScmVhZF9zdGF0ZV91cGRhdGVkGGggASgLMiAuYmViZWJlcmxvZ2EudjEuUmVhZFN0YXRlVXBkYXRlZEgAEjUKDW1sc19oYW5kc2hha2UYbiABKAsyHC5iZWJlYmVybG9nYS52MS5NbHNIYW5kc2hha2VIABIxCgttbHNfd2VsY29tZRhvIAEoCzIaLmJlYmViZXJsb2dhLnYxLk1sc1dlbGNvbWVIABJCChRtbHNfdXBkYXRlX3JlcXVlc3RlZBhwIAEoCzIiLmJlYmViZXJsb2dhLnYxLk1sc1VwZGF0ZVJlcXVlc3RlZEgAEkcKF21sc19ncm91cF9zdGF0ZV9jaGFuZ2VkGHEgASgLMiQuYmViZWJlcmxvZ2EudjEuTWxzR3JvdXBTdGF0ZUNoYW5nZWRIABI7ChBwcmVzZW5jZV91cGRhdGVkGHggASgLMh8uYmViZWJlcmxvZ2EudjEuUHJlc2VuY2VVcGRhdGVkSAASRgoWdm9pY2VfcHJlc2VuY2VfY2hhbmdlZBh5IAEoCzIkLmJlYmViZXJsb2dhLnYxLlZvaWNlUHJlc2VuY2VDaGFuZ2VkSAASMwoMY2FsbF9zdGFydGVkGHogASgLMhsuYmViZWJlcmxvZ2EudjEuQ2FsbFN0YXJ0ZWRIABIvCgpjYWxsX2VuZGVkGHsgASgLMhkuYmViZWJlcmxvZ2EudjEuQ2FsbEVuZGVkSAASMwoMc291bmRfcGxheWVkGHwgASgLMhsuYmViZWJlcmxvZ2EudjEuU291bmRQbGF5ZWRIABI+ChFjb21tdW5pdHlfY3JlYXRlZBiCASABKAsyIC5iZWJlYmVybG9nYS52MS5Db21tdW5pdHlDcmVhdGVkSAASPgoRY29tbXVuaXR5X3VwZGF0ZWQYgwEgASgLMiAuYmViZWJlcmxvZ2EudjEuQ29tbXVuaXR5VXBkYXRlZEgAEj4KEWNvbW11bml0eV9yZW1vdmVkGIQBIAEoCzIgLmJlYmViZXJsb2dhLnYxLkNvbW11bml0eVJlbW92ZWRIABI8ChBjYXRlZ29yeV9jcmVhdGVkGIUBIAEoCzIfLmJlYmViZXJsb2dhLnYxLkNhdGVnb3J5Q3JlYXRlZEgAEjwKEGNhdGVnb3J5X3VwZGF0ZWQYhgEgASgLMh8uYmViZWJlcmxvZ2EudjEuQ2F0ZWdvcnlVcGRhdGVkSAASPAoQY2F0ZWdvcnlfZGVsZXRlZBiHASABKAsyHy5iZWJlYmVybG9nYS52MS5DYXRlZ29yeURlbGV0ZWRIABI6Cg9jaGFubmVsX2NyZWF0ZWQYiAEgASgLMh4uYmViZWJlcmxvZ2EudjEuQ2hhbm5lbENyZWF0ZWRIABI6Cg9jaGFubmVsX3VwZGF0ZWQYiQEgASgLMh4uYmViZWJlcmxvZ2EudjEuQ2hhbm5lbFVwZGF0ZWRIABI6Cg9jaGFubmVsX2RlbGV0ZWQYigEgASgLMh4uYmViZWJlcmxvZ2EudjEuQ2hhbm5lbERlbGV0ZWRIABI2Cg1tZW1iZXJfam9pbmVkGIsBIAEoCzIcLmJlYmViZXJsb2dhLnYxLk1lbWJlckpvaW5lZEgAEjgKDm1lbWJlcl91cGRhdGVkGIwBIAEoCzIdLmJlYmViZXJsb2dhLnYxLk1lbWJlclVwZGF0ZWRIABIyCgttZW1iZXJfbGVmdBiNASABKAsyGi5iZWJlYmVybG9nYS52MS5NZW1iZXJMZWZ0SAASNAoMcm9sZV9jcmVhdGVkGI4BIAEoCzIbLmJlYmViZXJsb2dhLnYxLlJvbGVDcmVhdGVkSAASNAoMcm9sZV91cGRhdGVkGI8BIAEoCzIbLmJlYmViZXJsb2dhLnYxLlJvbGVVcGRhdGVkSAASNAoMcm9sZV9kZWxldGVkGJABIAEoCzIbLmJlYmViZXJsb2dhLnYxLlJvbGVEZWxldGVkSAASQgoTcGVybWlzc2lvbnNfdXBkYXRlZBiRASABKAsyIi5iZWJlYmVybG9nYS52MS5QZXJtaXNzaW9uc1VwZGF0ZWRIABI4Cg5pbnZpdGVfY3JlYXRlZBiSASABKAsyHS5iZWJlYmVybG9nYS52MS5JbnZpdGVDcmVhdGVkSAASOAoOaW52aXRlX3Jldm9rZWQYkwEgASgLMh0uYmViZWJlcmxvZ2EudjEuSW52aXRlUmV2b2tlZEgAEi4KCWJhbl9hZGRlZBiUASABKAsyGC5iZWJlYmVybG9nYS52MS5CYW5BZGRlZEgAEjIKC2Jhbl9yZW1vdmVkGJUBIAEoCzIaLmJlYmViZXJsb2dhLnYxLkJhblJlbW92ZWRIABIyCgtzb3VuZF9hZGRlZBiWASABKAsyGi5iZWJlYmVybG9nYS52MS5Tb3VuZEFkZGVkSAASNgoNc291bmRfdXBkYXRlZBiXASABKAsyHC5iZWJlYmVybG9nYS52MS5Tb3VuZFVwZGF0ZWRIABI2Cg1zb3VuZF9yZW1vdmVkGJgBIAEoCzIcLmJlYmViZXJsb2dhLnYxLlNvdW5kUmVtb3ZlZEgAEkkKF2xvY2tlZF9jaGFubmVsc191cGRhdGVkGJkBIAEoCzIlLmJlYmViZXJsb2dhLnYxLkxvY2tlZENoYW5uZWxzVXBkYXRlZEgAEjQKDHVzZXJfdXBkYXRlZBigASABKAsyGy5iZWJlYmVybG9nYS52MS5Vc2VyVXBkYXRlZEgAEjQKDGRldmljZV9hZGRlZBihASABKAsyGy5iZWJlYmVybG9nYS52MS5EZXZpY2VBZGRlZEgAEjoKD2RldmljZV92ZXJpZmllZBiiASABKAsyHi5iZWJlYmVybG9nYS52MS5EZXZpY2VWZXJpZmllZEgAEjgKDmRldmljZV9yZW1vdmVkGKMBIAEoCzIdLmJlYmViZXJsb2dhLnYxLkRldmljZVJlbW92ZWRIABJRChtkZXZpY2VfdmVyaWZpY2F0aW9uX21lc3NhZ2UYpAEgASgLMikuYmViZWJlcmxvZ2EudjEuRGV2aWNlVmVyaWZpY2F0aW9uTWVzc2FnZUgAEkQKFHJlbGF0aW9uc2hpcF91cGRhdGVkGKUBIAEoCzIjLmJlYmViZXJsb2dhLnYxLlJlbGF0aW9uc2hpcFVwZGF0ZWRIABJEChRyZWxhdGlvbnNoaXBfcmVtb3ZlZBimASABKAsyIy5iZWJlYmVybG9nYS52MS5SZWxhdGlvbnNoaXBSZW1vdmVkSAASVQodbm90aWZpY2F0aW9uX3NldHRpbmdzX3VwZGF0ZWQYpwEgASgLMisuYmViZWJlcmxvZ2EudjEuTm90aWZpY2F0aW9uU2V0dGluZ3NVcGRhdGVkSAASSwoYaWRlbnRpdHlfcmVzZXRfcmVxdWVzdGVkGKgBIAEoCzImLmJlYmViZXJsb2dhLnYxLklkZW50aXR5UmVzZXRSZXF1ZXN0ZWRIABJLChhpZGVudGl0eV9yZXNldF9jYW5jZWxsZWQYqQEgASgLMiYuYmViZWJlcmxvZ2EudjEuSWRlbnRpdHlSZXNldENhbmNlbGxlZEgAQgkKB3BheWxvYWQifQoISWRlbnRpZnkSFAoMYWNjZXNzX3Rva2VuGAEgASgJEhEKCWRldmljZV9pZBgCIAEoCRIwCgtjb21wcmVzc2lvbhgDIAEoDjIbLmJlYmViZXJsb2dhLnYxLkNvbXByZXNzaW9uEhYKDmNsaWVudF92ZXJzaW9uGAQgASgJIv8FCgVSZWFkeRISCgpzZXNzaW9uX2lkGAEgASgJEh0KFWhlYXJ0YmVhdF9pbnRlcnZhbF9tcxgCIAEoDRILCgNzZXEYAyABKAQSKAoHYWNjb3VudBgEIAEoCzIXLmJlYmViZXJsb2dhLnYxLkFjY291bnQSJwoHZGV2aWNlcxgFIAMoCzIWLmJlYmViZXJsb2dhLnYxLkRldmljZRI2Cgtjb21tdW5pdGllcxgGIAMoCzIhLmJlYmViZXJsb2dhLnYxLkNvbW11bml0eVNuYXBzaG90EiwKC2RtX2NoYW5uZWxzGAcgAygLMhcuYmViZWJlcmxvZ2EudjEuQ2hhbm5lbBIuCgtyZWFkX3N0YXRlcxgIIAMoCzIZLmJlYmViZXJsb2dhLnYxLlJlYWRTdGF0ZRIzCg1yZWxhdGlvbnNoaXBzGAkgAygLMhwuYmViZWJlcmxvZ2EudjEuUmVsYXRpb25zaGlwEisKCXByZXNlbmNlcxgKIAMoCzIYLmJlYmViZXJsb2dhLnYxLlByZXNlbmNlEkMKFW5vdGlmaWNhdGlvbl9zZXR0aW5ncxgLIAMoCzIkLmJlYmViZXJsb2dhLnYxLk5vdGlmaWNhdGlvblNldHRpbmdzEi4KBmxpbWl0cxgMIAEoCzIeLmJlYmViZXJsb2dhLnYxLkluc3RhbmNlTGltaXRzEi8KC21sc19wZW5kaW5nGA0gAygLMhouYmViZWJlcmxvZ2EudjEuTWxzUGVuZGluZxIvCgtzZXJ2ZXJfdGltZRgOIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASPAoSY29tbXVuaXR5X3JlbW92YWxzGA8gAygLMiAuYmViZWJlcmxvZ2EudjEuQ29tbXVuaXR5UmVtb3ZhbBIYChBkZXZpY2VfcmV0dXJuaW5nGBAgASgIEjwKDmlkZW50aXR5X3Jlc2V0GBEgASgLMiQuYmViZWJlcmxvZ2EudjEuSWRlbnRpdHlSZXNldFJlcXVlc3QijgMKEUNvbW11bml0eVNuYXBzaG90EiwKCWNvbW11bml0eRgBIAEoCzIZLmJlYmViZXJsb2dhLnYxLkNvbW11bml0eRIsCgpjYXRlZ29yaWVzGAIgAygLMhguYmViZWJlcmxvZ2EudjEuQ2F0ZWdvcnkSKQoIY2hhbm5lbHMYAyADKAsyFy5iZWJlYmVybG9nYS52MS5DaGFubmVsEiMKBXJvbGVzGAQgAygLMhQuYmViZWJlcmxvZ2EudjEuUm9sZRIiCgJtZRgFIAEoCzIWLmJlYmViZXJsb2dhLnYxLk1lbWJlchI5CgtwZXJtaXNzaW9ucxgGIAEoCzIkLmJlYmViZXJsb2dhLnYxLkVmZmVjdGl2ZVBlcm1pc3Npb25zEjYKD3ZvaWNlX3ByZXNlbmNlcxgHIAMoCzIdLmJlYmViZXJsb2dhLnYxLlZvaWNlUHJlc2VuY2USNgoPbG9ja2VkX2NoYW5uZWxzGAggAygLMh0uYmViZWJlcmxvZ2EudjEuTG9ja2VkQ2hhbm5lbCKEAQoKTWxzUGVuZGluZxIQCghncm91cF9pZBgBIAEoCRINCgVlcG9jaBgCIAEoBBIXCg93ZWxjb21lX3BlbmRpbmcYAyABKAgSFwoPaGFuZHNoYWtlX2NvdW50GAQgASgNEhEKCXJldHVybmluZxgFIAEoCEoECAYQB1IKcmV2aWV3X3NlcSJxCgZSZXN1bWUSFAoMYWNjZXNzX3Rva2VuGAEgASgJEhIKCnNlc3Npb25faWQYAiABKAkSCwoDc2VxGAMgASgEEjAKC2NvbXByZXNzaW9uGAQgASgOMhsuYmViZWJlcmxvZ2EudjEuQ29tcHJlc3Npb24iQQoHUmVzdW1lZBIdChVoZWFydGJlYXRfaW50ZXJ2YWxfbXMYASABKA0SFwoPcmVwbGF5ZWRfZXZlbnRzGAIgASgNIsECCg5TZXNzaW9uSW52YWxpZBI1CgZyZWFzb24YASABKA4yJS5iZWJlYmVybG9nYS52MS5TZXNzaW9uSW52YWxpZC5SZWFzb24SPAoOaWRlbnRpdHlfcmVzZXQYAiABKAsyJC5iZWJlYmVybG9nYS52MS5JZGVudGl0eVJlc2V0UmVxdWVzdCK5AQoGUmVhc29uEhYKElJFQVNPTl9VTlNQRUNJRklFRBAAEiAKHFJFQVNPTl9SRVNVTUVfV0lORE9XX0VYUElSRUQQARIYChRSRUFTT05fU0VTU0lPTl9FTkRFRBACEhkKFVJFQVNPTl9ERVZJQ0VfUkVNT1ZFRBADEhwKGFJFQVNPTl9QUk9UT0NPTF9NSVNNQVRDSBAEEiIKHlJFQVNPTl9ERVZJQ0VfUkVNT1ZFRF9CWV9SRVNFVBAFIhgKCUhlYXJ0YmVhdBILCgNzZXEYASABKAQiPwoMSGVhcnRiZWF0QWNrEi8KC3NlcnZlcl90aW1lGAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJGCg9Db21tYW5kUmVqZWN0ZWQSDQoFbm9uY2UYASABKA0SJAoFZXJyb3IYAiABKAsyFS5iZWJlYmVybG9nYS52MS5FcnJvciIhCgtUeXBpbmdTdGFydBISCgpjaGFubmVsX2lkGAEgASgJInAKEFNldFZvaWNlUHJlc2VuY2USEgoKY2hhbm5lbF9pZBgBIAEoCRIPCgdtaWNfb2ZmGAIgASgIEhEKCXNvdW5kX29mZhgDIAEoCBIRCgljYW1lcmFfb24YBCABKAgSEQoJc3RyZWFtaW5nGAUgASgIIjEKCVBsYXlTb3VuZBISCgpjaGFubmVsX2lkGAEgASgJEhAKCHNvdW5kX2lkGAIgASgJIikKEVByZXNlbmNlU3Vic2NyaWJlEhQKDGNvbW11bml0eV9pZBgBIAEoCSI+Cg5NZXNzYWdlQ3JlYXRlZBIsCgdtZXNzYWdlGAEgASgLMhsuYmViZWJlcmxvZ2EudjEuTWVzc2FnZU1ldGEiPgoOTWVzc2FnZVVwZGF0ZWQSLAoHbWVzc2FnZRgBIAEoCzIbLmJlYmViZXJsb2dhLnYxLk1lc3NhZ2VNZXRhIjkKDk1lc3NhZ2VEZWxldGVkEhIKCmNoYW5uZWxfaWQYASABKAkSEwoLbWVzc2FnZV9pZHMYAiADKAkiNAoNVHlwaW5nU3RhcnRlZBISCgpjaGFubmVsX2lkGAEgASgJEg8KB3VzZXJfaWQYAiABKAkiQQoQUmVhZFN0YXRlVXBkYXRlZBItCgpyZWFkX3N0YXRlGAEgASgLMhkuYmViZWJlcmxvZ2EudjEuUmVhZFN0YXRlIjwKDE1sc0hhbmRzaGFrZRIsCgloYW5kc2hha2UYASABKAsyGS5iZWJlYmVybG9nYS52MS5IYW5kc2hha2UiNgoKTWxzV2VsY29tZRIoCgd3ZWxjb21lGAEgASgLMhcuYmViZWJlcmxvZ2EudjEuV2VsY29tZSL2AgoSTWxzVXBkYXRlUmVxdWVzdGVkEhAKCGdyb3VwX2lkGAEgASgJEjkKBnJlYXNvbhgCIAEoDjIpLmJlYmViZXJsb2dhLnYxLk1sc1VwZGF0ZVJlcXVlc3RlZC5SZWFzb24SHAoUZGVzaWduYXRlZF9kZXZpY2VfaWQYAyABKAkSDQoFZXBvY2gYBCABKAQi5QEKBlJlYXNvbhIWChJSRUFTT05fVU5TUEVDSUZJRUQQABIcChhSRUFTT05fUEVORElOR19QUk9QT1NBTFMQARIdChlSRUFTT05fU0NIRURVTEVEX1JPVEFUSU9OEAISEQoNUkVBU09OX01BTlVBTBADEh0KFVJFQVNPTl9ISVNUT1JZX0JVTkRMRRAEGgIIARITCg9SRUFTT05fUkVDUkVBVEUQBRIjCh9SRUFTT05fRVhURVJOQUxfU0VOREVSX1JPVEFUSU9OEAYSGgoWUkVBU09OX0hJU1RPUllfU0VUVElORxAHIvMBChRNbHNHcm91cFN0YXRlQ2hhbmdlZBIQCghncm91cF9pZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJEhoKEnN1Y2Nlc3Nvcl9ncm91cF9pZBgDIAEoCRIpCgVzdGF0ZRgEIAEoDjIaLmJlYmViZXJsb2dhLnYxLkdyb3VwU3RhdGUSOwoRcmVjcmVhdGlvbl9yZWFzb24YBiABKA4yIC5iZWJlYmVybG9nYS52MS5SZWNyZWF0aW9uUmVhc29uSgQIBRAGSgQIBxAIUgpyZXZpZXdfc2VxUhlyZWNyZWF0aW9uX2RlZmVycmVkX3VudGlsIj0KD1ByZXNlbmNlVXBkYXRlZBIqCghwcmVzZW5jZRgBIAEoCzIYLmJlYmViZXJsb2dhLnYxLlByZXNlbmNlInEKFFZvaWNlUHJlc2VuY2VDaGFuZ2VkEi8KCHByZXNlbmNlGAEgASgLMh0uYmViZWJlcmxvZ2EudjEuVm9pY2VQcmVzZW5jZRIXCg9sZWZ0X2NoYW5uZWxfaWQYAiABKAkSDwoHdXNlcl9pZBgDIAEoCSI0CgtDYWxsU3RhcnRlZBISCgpjaGFubmVsX2lkGAEgASgJEhEKCWNhbGxlcl9pZBgCIAEoCSIfCglDYWxsRW5kZWQSEgoKY2hhbm5lbF9pZBgBIAEoCSJUCgtTb3VuZFBsYXllZBISCgpjaGFubmVsX2lkGAEgASgJEg8KB3VzZXJfaWQYAiABKAkSEAoIc291bmRfaWQYAyABKAkSDgoGdm9sdW1lGAQgASgNIkgKEENvbW11bml0eUNyZWF0ZWQSNAoJY29tbXVuaXR5GAEgASgLMiEuYmViZWJlcmxvZ2EudjEuQ29tbXVuaXR5U25hcHNob3QiQAoQQ29tbXVuaXR5VXBkYXRlZBIsCgljb21tdW5pdHkYASABKAsyGS5iZWJlYmVybG9nYS52MS5Db21tdW5pdHkiRQoQQ29tbXVuaXR5UmVtb3ZlZBIxCgdyZW1vdmFsGAEgASgLMiAuYmViZWJlcmxvZ2EudjEuQ29tbXVuaXR5UmVtb3ZhbCI9Cg9DYXRlZ29yeUNyZWF0ZWQSKgoIY2F0ZWdvcnkYASABKAsyGC5iZWJlYmVybG9nYS52MS5DYXRlZ29yeSI9Cg9DYXRlZ29yeVVwZGF0ZWQSKgoIY2F0ZWdvcnkYASABKAsyGC5iZWJlYmVybG9nYS52MS5DYXRlZ29yeSI8Cg9DYXRlZ29yeURlbGV0ZWQSFAoMY29tbXVuaXR5X2lkGAEgASgJEhMKC2NhdGVnb3J5X2lkGAIgASgJIjoKDkNoYW5uZWxDcmVhdGVkEigKB2NoYW5uZWwYASABKAsyFy5iZWJlYmVybG9nYS52MS5DaGFubmVsIjoKDkNoYW5uZWxVcGRhdGVkEigKB2NoYW5uZWwYASABKAsyFy5iZWJlYmVybG9nYS52MS5DaGFubmVsIjoKDkNoYW5uZWxEZWxldGVkEhQKDGNvbW11bml0eV9pZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJImUKFUxvY2tlZENoYW5uZWxzVXBkYXRlZBIUCgxjb21tdW5pdHlfaWQYASABKAkSNgoPbG9ja2VkX2NoYW5uZWxzGAIgAygLMh0uYmViZWJlcmxvZ2EudjEuTG9ja2VkQ2hhbm5lbCI2CgxNZW1iZXJKb2luZWQSJgoGbWVtYmVyGAEgASgLMhYuYmViZWJlcmxvZ2EudjEuTWVtYmVyIjcKDU1lbWJlclVwZGF0ZWQSJgoGbWVtYmVyGAEgASgLMhYuYmViZWJlcmxvZ2EudjEuTWVtYmVyImsKCk1lbWJlckxlZnQSFAoMY29tbXVuaXR5X2lkGAEgASgJEg8KB3VzZXJfaWQYAiABKAkSNgoGcmVhc29uGAMgASgOMiYuYmViZWJlcmxvZ2EudjEuQ29tbXVuaXR5UmVtb3ZhbFJlYXNvbiIxCgtSb2xlQ3JlYXRlZBIiCgRyb2xlGAEgASgLMhQuYmViZWJlcmxvZ2EudjEuUm9sZSIxCgtSb2xlVXBkYXRlZBIiCgRyb2xlGAEgASgLMhQuYmViZWJlcmxvZ2EudjEuUm9sZSI0CgtSb2xlRGVsZXRlZBIUCgxjb21tdW5pdHlfaWQYASABKAkSDwoHcm9sZV9pZBgCIAEoCSJPChJQZXJtaXNzaW9uc1VwZGF0ZWQSOQoLcGVybWlzc2lvbnMYASABKAsyJC5iZWJlYmVybG9nYS52MS5FZmZlY3RpdmVQZXJtaXNzaW9ucyI3Cg1JbnZpdGVDcmVhdGVkEiYKBmludml0ZRgBIAEoCzIWLmJlYmViZXJsb2dhLnYxLkludml0ZSIzCg1JbnZpdGVSZXZva2VkEhQKDGNvbW11bml0eV9pZBgBIAEoCRIMCgRjb2RlGAIgASgJIiwKCEJhbkFkZGVkEiAKA2JhbhgBIAEoCzITLmJlYmViZXJsb2dhLnYxLkJhbiIzCgpCYW5SZW1vdmVkEhQKDGNvbW11bml0eV9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJIjIKClNvdW5kQWRkZWQSJAoFc291bmQYASABKAsyFS5iZWJlYmVybG9nYS52MS5Tb3VuZCI0CgxTb3VuZFVwZGF0ZWQSJAoFc291bmQYASABKAsyFS5iZWJlYmVybG9nYS52MS5Tb3VuZCJHCgxTb3VuZFJlbW92ZWQSEAoIc291bmRfaWQYASABKAkSFAoMY29tbXVuaXR5X2lkGAIgASgJEg8KB3VzZXJfaWQYAyABKAkiMQoLVXNlclVwZGF0ZWQSIgoEdXNlchgBIAEoCzIULmJlYmViZXJsb2dhLnYxLlVzZXIifgoLRGV2aWNlQWRkZWQSJgoGZGV2aWNlGAEgASgLMhYuYmViZWJlcmxvZ2EudjEuRGV2aWNlEkcKFHZlcmlmaWNhdGlvbl9yZXF1ZXN0GAIgASgLMikuYmViZWJlcmxvZ2EudjEuRGV2aWNlVmVyaWZpY2F0aW9uUmVxdWVzdCI4Cg5EZXZpY2VWZXJpZmllZBImCgZkZXZpY2UYASABKAsyFi5iZWJlYmVybG9nYS52MS5EZXZpY2UiTgoNRGV2aWNlUmVtb3ZlZBIPCgd1c2VyX2lkGAEgASgJEhEKCWRldmljZV9pZBgCIAEoCRIZChFieV9pZGVudGl0eV9yZXNldBgDIAEoCCJPChZJZGVudGl0eVJlc2V0UmVxdWVzdGVkEjUKB3JlcXVlc3QYASABKAsyJC5iZWJlYmVybG9nYS52MS5JZGVudGl0eVJlc2V0UmVxdWVzdCIsChZJZGVudGl0eVJlc2V0Q2FuY2VsbGVkEhIKCnJlcXVlc3RfaWQYASABKAkiWAoZRGV2aWNlVmVyaWZpY2F0aW9uTWVzc2FnZRISCgpyZXF1ZXN0X2lkGAEgASgJEhYKDmZyb21fZGV2aWNlX2lkGAIgASgJEg8KB3BheWxvYWQYAyABKAwiSQoTUmVsYXRpb25zaGlwVXBkYXRlZBIyCgxyZWxhdGlvbnNoaXAYASABKAsyHC5iZWJlYmVybG9nYS52MS5SZWxhdGlvbnNoaXAiJgoTUmVsYXRpb25zaGlwUmVtb3ZlZBIPCgd1c2VyX2lkGAEgASgJIlUKG05vdGlmaWNhdGlvblNldHRpbmdzVXBkYXRlZBI2CghzZXR0aW5ncxgBIAEoCzIkLmJlYmViZXJsb2dhLnYxLk5vdGlmaWNhdGlvblNldHRpbmdzKlYKC0NvbXByZXNzaW9uEhsKF0NPTVBSRVNTSU9OX1VOU1BFQ0lGSUVEEAASFAoQQ09NUFJFU1NJT05fTk9ORRABEhQKEENPTVBSRVNTSU9OX1pTVEQQAkLFAQoSY29tLmJlYmViZXJsb2dhLnYxQgxHYXRld2F5UHJvdG9QAVpIZ2l0aHViLmNvbS9uaWhlc3R2ZXIvYmViZWJlcmxvZ2Evc2VydmVyL2dlbi9iZWJlYmVybG9nYS92MTtiZWJlYmVybG9nYXYxogIDQlhYqgIOQmViZWJlcmxvZ2EuVjHKAg5CZWJlYmVybG9nYVxWMeICGkJlYmViZXJsb2dhXFYxXEdQQk1ldGFkYXRh6gIPQmViZWJlcmxvZ2E6OlYxYgZwcm90bzM",
+    [
+      file_bebeberloga_v1_common,
+      file_bebeberloga_v1_community,
+      file_bebeberloga_v1_error,
+      file_bebeberloga_v1_identity,
+      file_bebeberloga_v1_message,
+      file_bebeberloga_v1_mls,
+      file_bebeberloga_v1_sound,
+      file_google_protobuf_timestamp,
+    ],
+  );
 
 /**
  * Кадр от клиента. Один WebSocket-кадр = одно сообщение ClientFrame.
@@ -50,56 +85,65 @@ export type ClientFrame = Message<"bebeberloga.v1.ClientFrame"> & {
   /**
    * @generated from oneof bebeberloga.v1.ClientFrame.payload
    */
-  payload: {
-    /**
-     * @generated from field: bebeberloga.v1.Identify identify = 10;
-     */
-    value: Identify;
-    case: "identify";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.Resume resume = 11;
-     */
-    value: Resume;
-    case: "resume";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.Heartbeat heartbeat = 12;
-     */
-    value: Heartbeat;
-    case: "heartbeat";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.TypingStart typing_start = 20;
-     */
-    value: TypingStart;
-    case: "typingStart";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.SetVoicePresence set_voice_presence = 21;
-     */
-    value: SetVoicePresence;
-    case: "setVoicePresence";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.PlaySound play_sound = 22;
-     */
-    value: PlaySound;
-    case: "playSound";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.PresenceSubscribe presence_subscribe = 23;
-     */
-    value: PresenceSubscribe;
-    case: "presenceSubscribe";
-  } | { case: undefined; value?: undefined };
+  payload:
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.Identify identify = 10;
+         */
+        value: Identify;
+        case: "identify";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.Resume resume = 11;
+         */
+        value: Resume;
+        case: "resume";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.Heartbeat heartbeat = 12;
+         */
+        value: Heartbeat;
+        case: "heartbeat";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.TypingStart typing_start = 20;
+         */
+        value: TypingStart;
+        case: "typingStart";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.SetVoicePresence set_voice_presence = 21;
+         */
+        value: SetVoicePresence;
+        case: "setVoicePresence";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.PlaySound play_sound = 22;
+         */
+        value: PlaySound;
+        case: "playSound";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.PresenceSubscribe presence_subscribe = 23;
+         */
+        value: PresenceSubscribe;
+        case: "presenceSubscribe";
+      }
+    | { case: undefined; value?: undefined };
 };
 
 /**
  * Describes the message bebeberloga.v1.ClientFrame.
  * Use `create(ClientFrameSchema)` to create a new message.
  */
-export const ClientFrameSchema: GenMessage<ClientFrame> = /*@__PURE__*/
+export const ClientFrameSchema: GenMessage<ClientFrame> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 0);
 
 /**
@@ -117,342 +161,397 @@ export type ServerFrame = Message<"bebeberloga.v1.ServerFrame"> & {
   /**
    * @generated from oneof bebeberloga.v1.ServerFrame.payload
    */
-  payload: {
-    /**
-     * @generated from field: bebeberloga.v1.Ready ready = 10;
-     */
-    value: Ready;
-    case: "ready";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.Resumed resumed = 11;
-     */
-    value: Resumed;
-    case: "resumed";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.HeartbeatAck heartbeat_ack = 12;
-     */
-    value: HeartbeatAck;
-    case: "heartbeatAck";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.SessionInvalid session_invalid = 13;
-     */
-    value: SessionInvalid;
-    case: "sessionInvalid";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.CommandRejected command_rejected = 14;
-     */
-    value: CommandRejected;
-    case: "commandRejected";
-  } | {
-    /**
-     * --- сообщения -----------------------------------------------------
-     *
-     * @generated from field: bebeberloga.v1.MessageCreated message_created = 100;
-     */
-    value: MessageCreated;
-    case: "messageCreated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.MessageUpdated message_updated = 101;
-     */
-    value: MessageUpdated;
-    case: "messageUpdated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.MessageDeleted message_deleted = 102;
-     */
-    value: MessageDeleted;
-    case: "messageDeleted";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.TypingStarted typing_started = 103;
-     */
-    value: TypingStarted;
-    case: "typingStarted";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.ReadStateUpdated read_state_updated = 104;
-     */
-    value: ReadStateUpdated;
-    case: "readStateUpdated";
-  } | {
-    /**
-     * --- MLS -----------------------------------------------------------
-     *
-     * @generated from field: bebeberloga.v1.MlsHandshake mls_handshake = 110;
-     */
-    value: MlsHandshake;
-    case: "mlsHandshake";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.MlsWelcome mls_welcome = 111;
-     */
-    value: MlsWelcome;
-    case: "mlsWelcome";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.MlsUpdateRequested mls_update_requested = 112;
-     */
-    value: MlsUpdateRequested;
-    case: "mlsUpdateRequested";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.MlsGroupStateChanged mls_group_state_changed = 113;
-     */
-    value: MlsGroupStateChanged;
-    case: "mlsGroupStateChanged";
-  } | {
-    /**
-     * --- присутствие и голос -------------------------------------------
-     *
-     * @generated from field: bebeberloga.v1.PresenceUpdated presence_updated = 120;
-     */
-    value: PresenceUpdated;
-    case: "presenceUpdated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.VoicePresenceChanged voice_presence_changed = 121;
-     */
-    value: VoicePresenceChanged;
-    case: "voicePresenceChanged";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.CallStarted call_started = 122;
-     */
-    value: CallStarted;
-    case: "callStarted";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.CallEnded call_ended = 123;
-     */
-    value: CallEnded;
-    case: "callEnded";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.SoundPlayed sound_played = 124;
-     */
-    value: SoundPlayed;
-    case: "soundPlayed";
-  } | {
-    /**
-     * --- сообщества ----------------------------------------------------
-     *
-     * @generated from field: bebeberloga.v1.CommunityCreated community_created = 130;
-     */
-    value: CommunityCreated;
-    case: "communityCreated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.CommunityUpdated community_updated = 131;
-     */
-    value: CommunityUpdated;
-    case: "communityUpdated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.CommunityRemoved community_removed = 132;
-     */
-    value: CommunityRemoved;
-    case: "communityRemoved";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.CategoryCreated category_created = 133;
-     */
-    value: CategoryCreated;
-    case: "categoryCreated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.CategoryUpdated category_updated = 134;
-     */
-    value: CategoryUpdated;
-    case: "categoryUpdated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.CategoryDeleted category_deleted = 135;
-     */
-    value: CategoryDeleted;
-    case: "categoryDeleted";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.ChannelCreated channel_created = 136;
-     */
-    value: ChannelCreated;
-    case: "channelCreated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.ChannelUpdated channel_updated = 137;
-     */
-    value: ChannelUpdated;
-    case: "channelUpdated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.ChannelDeleted channel_deleted = 138;
-     */
-    value: ChannelDeleted;
-    case: "channelDeleted";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.MemberJoined member_joined = 139;
-     */
-    value: MemberJoined;
-    case: "memberJoined";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.MemberUpdated member_updated = 140;
-     */
-    value: MemberUpdated;
-    case: "memberUpdated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.MemberLeft member_left = 141;
-     */
-    value: MemberLeft;
-    case: "memberLeft";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.RoleCreated role_created = 142;
-     */
-    value: RoleCreated;
-    case: "roleCreated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.RoleUpdated role_updated = 143;
-     */
-    value: RoleUpdated;
-    case: "roleUpdated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.RoleDeleted role_deleted = 144;
-     */
-    value: RoleDeleted;
-    case: "roleDeleted";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.PermissionsUpdated permissions_updated = 145;
-     */
-    value: PermissionsUpdated;
-    case: "permissionsUpdated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.InviteCreated invite_created = 146;
-     */
-    value: InviteCreated;
-    case: "inviteCreated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.InviteRevoked invite_revoked = 147;
-     */
-    value: InviteRevoked;
-    case: "inviteRevoked";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.BanAdded ban_added = 148;
-     */
-    value: BanAdded;
-    case: "banAdded";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.BanRemoved ban_removed = 149;
-     */
-    value: BanRemoved;
-    case: "banRemoved";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.SoundAdded sound_added = 150;
-     */
-    value: SoundAdded;
-    case: "soundAdded";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.SoundUpdated sound_updated = 151;
-     */
-    value: SoundUpdated;
-    case: "soundUpdated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.SoundRemoved sound_removed = 152;
-     */
-    value: SoundRemoved;
-    case: "soundRemoved";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.LockedChannelsUpdated locked_channels_updated = 153;
-     */
-    value: LockedChannelsUpdated;
-    case: "lockedChannelsUpdated";
-  } | {
-    /**
-     * --- пользователь и устройства -------------------------------------
-     *
-     * @generated from field: bebeberloga.v1.UserUpdated user_updated = 160;
-     */
-    value: UserUpdated;
-    case: "userUpdated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.DeviceAdded device_added = 161;
-     */
-    value: DeviceAdded;
-    case: "deviceAdded";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.DeviceVerified device_verified = 162;
-     */
-    value: DeviceVerified;
-    case: "deviceVerified";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.DeviceRemoved device_removed = 163;
-     */
-    value: DeviceRemoved;
-    case: "deviceRemoved";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.DeviceVerificationMessage device_verification_message = 164;
-     */
-    value: DeviceVerificationMessage;
-    case: "deviceVerificationMessage";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.RelationshipUpdated relationship_updated = 165;
-     */
-    value: RelationshipUpdated;
-    case: "relationshipUpdated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.RelationshipRemoved relationship_removed = 166;
-     */
-    value: RelationshipRemoved;
-    case: "relationshipRemoved";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.NotificationSettingsUpdated notification_settings_updated = 167;
-     */
-    value: NotificationSettingsUpdated;
-    case: "notificationSettingsUpdated";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.IdentityResetRequested identity_reset_requested = 168;
-     */
-    value: IdentityResetRequested;
-    case: "identityResetRequested";
-  } | {
-    /**
-     * @generated from field: bebeberloga.v1.IdentityResetCancelled identity_reset_cancelled = 169;
-     */
-    value: IdentityResetCancelled;
-    case: "identityResetCancelled";
-  } | { case: undefined; value?: undefined };
+  payload:
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.Ready ready = 10;
+         */
+        value: Ready;
+        case: "ready";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.Resumed resumed = 11;
+         */
+        value: Resumed;
+        case: "resumed";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.HeartbeatAck heartbeat_ack = 12;
+         */
+        value: HeartbeatAck;
+        case: "heartbeatAck";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.SessionInvalid session_invalid = 13;
+         */
+        value: SessionInvalid;
+        case: "sessionInvalid";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.CommandRejected command_rejected = 14;
+         */
+        value: CommandRejected;
+        case: "commandRejected";
+      }
+    | {
+        /**
+         * --- сообщения -----------------------------------------------------
+         *
+         * @generated from field: bebeberloga.v1.MessageCreated message_created = 100;
+         */
+        value: MessageCreated;
+        case: "messageCreated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.MessageUpdated message_updated = 101;
+         */
+        value: MessageUpdated;
+        case: "messageUpdated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.MessageDeleted message_deleted = 102;
+         */
+        value: MessageDeleted;
+        case: "messageDeleted";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.TypingStarted typing_started = 103;
+         */
+        value: TypingStarted;
+        case: "typingStarted";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.ReadStateUpdated read_state_updated = 104;
+         */
+        value: ReadStateUpdated;
+        case: "readStateUpdated";
+      }
+    | {
+        /**
+         * --- MLS -----------------------------------------------------------
+         *
+         * @generated from field: bebeberloga.v1.MlsHandshake mls_handshake = 110;
+         */
+        value: MlsHandshake;
+        case: "mlsHandshake";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.MlsWelcome mls_welcome = 111;
+         */
+        value: MlsWelcome;
+        case: "mlsWelcome";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.MlsUpdateRequested mls_update_requested = 112;
+         */
+        value: MlsUpdateRequested;
+        case: "mlsUpdateRequested";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.MlsGroupStateChanged mls_group_state_changed = 113;
+         */
+        value: MlsGroupStateChanged;
+        case: "mlsGroupStateChanged";
+      }
+    | {
+        /**
+         * --- присутствие и голос -------------------------------------------
+         *
+         * @generated from field: bebeberloga.v1.PresenceUpdated presence_updated = 120;
+         */
+        value: PresenceUpdated;
+        case: "presenceUpdated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.VoicePresenceChanged voice_presence_changed = 121;
+         */
+        value: VoicePresenceChanged;
+        case: "voicePresenceChanged";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.CallStarted call_started = 122;
+         */
+        value: CallStarted;
+        case: "callStarted";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.CallEnded call_ended = 123;
+         */
+        value: CallEnded;
+        case: "callEnded";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.SoundPlayed sound_played = 124;
+         */
+        value: SoundPlayed;
+        case: "soundPlayed";
+      }
+    | {
+        /**
+         * --- сообщества ----------------------------------------------------
+         *
+         * @generated from field: bebeberloga.v1.CommunityCreated community_created = 130;
+         */
+        value: CommunityCreated;
+        case: "communityCreated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.CommunityUpdated community_updated = 131;
+         */
+        value: CommunityUpdated;
+        case: "communityUpdated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.CommunityRemoved community_removed = 132;
+         */
+        value: CommunityRemoved;
+        case: "communityRemoved";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.CategoryCreated category_created = 133;
+         */
+        value: CategoryCreated;
+        case: "categoryCreated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.CategoryUpdated category_updated = 134;
+         */
+        value: CategoryUpdated;
+        case: "categoryUpdated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.CategoryDeleted category_deleted = 135;
+         */
+        value: CategoryDeleted;
+        case: "categoryDeleted";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.ChannelCreated channel_created = 136;
+         */
+        value: ChannelCreated;
+        case: "channelCreated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.ChannelUpdated channel_updated = 137;
+         */
+        value: ChannelUpdated;
+        case: "channelUpdated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.ChannelDeleted channel_deleted = 138;
+         */
+        value: ChannelDeleted;
+        case: "channelDeleted";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.MemberJoined member_joined = 139;
+         */
+        value: MemberJoined;
+        case: "memberJoined";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.MemberUpdated member_updated = 140;
+         */
+        value: MemberUpdated;
+        case: "memberUpdated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.MemberLeft member_left = 141;
+         */
+        value: MemberLeft;
+        case: "memberLeft";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.RoleCreated role_created = 142;
+         */
+        value: RoleCreated;
+        case: "roleCreated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.RoleUpdated role_updated = 143;
+         */
+        value: RoleUpdated;
+        case: "roleUpdated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.RoleDeleted role_deleted = 144;
+         */
+        value: RoleDeleted;
+        case: "roleDeleted";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.PermissionsUpdated permissions_updated = 145;
+         */
+        value: PermissionsUpdated;
+        case: "permissionsUpdated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.InviteCreated invite_created = 146;
+         */
+        value: InviteCreated;
+        case: "inviteCreated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.InviteRevoked invite_revoked = 147;
+         */
+        value: InviteRevoked;
+        case: "inviteRevoked";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.BanAdded ban_added = 148;
+         */
+        value: BanAdded;
+        case: "banAdded";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.BanRemoved ban_removed = 149;
+         */
+        value: BanRemoved;
+        case: "banRemoved";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.SoundAdded sound_added = 150;
+         */
+        value: SoundAdded;
+        case: "soundAdded";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.SoundUpdated sound_updated = 151;
+         */
+        value: SoundUpdated;
+        case: "soundUpdated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.SoundRemoved sound_removed = 152;
+         */
+        value: SoundRemoved;
+        case: "soundRemoved";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.LockedChannelsUpdated locked_channels_updated = 153;
+         */
+        value: LockedChannelsUpdated;
+        case: "lockedChannelsUpdated";
+      }
+    | {
+        /**
+         * --- пользователь и устройства -------------------------------------
+         *
+         * @generated from field: bebeberloga.v1.UserUpdated user_updated = 160;
+         */
+        value: UserUpdated;
+        case: "userUpdated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.DeviceAdded device_added = 161;
+         */
+        value: DeviceAdded;
+        case: "deviceAdded";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.DeviceVerified device_verified = 162;
+         */
+        value: DeviceVerified;
+        case: "deviceVerified";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.DeviceRemoved device_removed = 163;
+         */
+        value: DeviceRemoved;
+        case: "deviceRemoved";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.DeviceVerificationMessage device_verification_message = 164;
+         */
+        value: DeviceVerificationMessage;
+        case: "deviceVerificationMessage";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.RelationshipUpdated relationship_updated = 165;
+         */
+        value: RelationshipUpdated;
+        case: "relationshipUpdated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.RelationshipRemoved relationship_removed = 166;
+         */
+        value: RelationshipRemoved;
+        case: "relationshipRemoved";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.NotificationSettingsUpdated notification_settings_updated = 167;
+         */
+        value: NotificationSettingsUpdated;
+        case: "notificationSettingsUpdated";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.IdentityResetRequested identity_reset_requested = 168;
+         */
+        value: IdentityResetRequested;
+        case: "identityResetRequested";
+      }
+    | {
+        /**
+         * @generated from field: bebeberloga.v1.IdentityResetCancelled identity_reset_cancelled = 169;
+         */
+        value: IdentityResetCancelled;
+        case: "identityResetCancelled";
+      }
+    | { case: undefined; value?: undefined };
 };
 
 /**
  * Describes the message bebeberloga.v1.ServerFrame.
  * Use `create(ServerFrameSchema)` to create a new message.
  */
-export const ServerFrameSchema: GenMessage<ServerFrame> = /*@__PURE__*/
+export const ServerFrameSchema: GenMessage<ServerFrame> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 1);
 
 /**
@@ -492,7 +591,8 @@ export type Identify = Message<"bebeberloga.v1.Identify"> & {
  * Describes the message bebeberloga.v1.Identify.
  * Use `create(IdentifySchema)` to create a new message.
  */
-export const IdentifySchema: GenMessage<Identify> = /*@__PURE__*/
+export const IdentifySchema: GenMessage<Identify> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 2);
 
 /**
@@ -614,7 +714,8 @@ export type Ready = Message<"bebeberloga.v1.Ready"> & {
  * Describes the message bebeberloga.v1.Ready.
  * Use `create(ReadySchema)` to create a new message.
  */
-export const ReadySchema: GenMessage<Ready> = /*@__PURE__*/
+export const ReadySchema: GenMessage<Ready> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 3);
 
 /**
@@ -677,7 +778,8 @@ export type CommunitySnapshot = Message<"bebeberloga.v1.CommunitySnapshot"> & {
  * Describes the message bebeberloga.v1.CommunitySnapshot.
  * Use `create(CommunitySnapshotSchema)` to create a new message.
  */
-export const CommunitySnapshotSchema: GenMessage<CommunitySnapshot> = /*@__PURE__*/
+export const CommunitySnapshotSchema: GenMessage<CommunitySnapshot> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 4);
 
 /**
@@ -723,7 +825,8 @@ export type MlsPending = Message<"bebeberloga.v1.MlsPending"> & {
  * Describes the message bebeberloga.v1.MlsPending.
  * Use `create(MlsPendingSchema)` to create a new message.
  */
-export const MlsPendingSchema: GenMessage<MlsPending> = /*@__PURE__*/
+export const MlsPendingSchema: GenMessage<MlsPending> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 5);
 
 /**
@@ -759,7 +862,8 @@ export type Resume = Message<"bebeberloga.v1.Resume"> & {
  * Describes the message bebeberloga.v1.Resume.
  * Use `create(ResumeSchema)` to create a new message.
  */
-export const ResumeSchema: GenMessage<Resume> = /*@__PURE__*/
+export const ResumeSchema: GenMessage<Resume> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 6);
 
 /**
@@ -785,7 +889,8 @@ export type Resumed = Message<"bebeberloga.v1.Resumed"> & {
  * Describes the message bebeberloga.v1.Resumed.
  * Use `create(ResumedSchema)` to create a new message.
  */
-export const ResumedSchema: GenMessage<Resumed> = /*@__PURE__*/
+export const ResumedSchema: GenMessage<Resumed> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 7);
 
 /**
@@ -811,7 +916,8 @@ export type SessionInvalid = Message<"bebeberloga.v1.SessionInvalid"> & {
  * Describes the message bebeberloga.v1.SessionInvalid.
  * Use `create(SessionInvalidSchema)` to create a new message.
  */
-export const SessionInvalidSchema: GenMessage<SessionInvalid> = /*@__PURE__*/
+export const SessionInvalidSchema: GenMessage<SessionInvalid> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 8);
 
 /**
@@ -867,7 +973,8 @@ export enum SessionInvalid_Reason {
 /**
  * Describes the enum bebeberloga.v1.SessionInvalid.Reason.
  */
-export const SessionInvalid_ReasonSchema: GenEnum<SessionInvalid_Reason> = /*@__PURE__*/
+export const SessionInvalid_ReasonSchema: GenEnum<SessionInvalid_Reason> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_gateway, 8, 0);
 
 /**
@@ -886,7 +993,8 @@ export type Heartbeat = Message<"bebeberloga.v1.Heartbeat"> & {
  * Describes the message bebeberloga.v1.Heartbeat.
  * Use `create(HeartbeatSchema)` to create a new message.
  */
-export const HeartbeatSchema: GenMessage<Heartbeat> = /*@__PURE__*/
+export const HeartbeatSchema: GenMessage<Heartbeat> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 9);
 
 /**
@@ -903,7 +1011,8 @@ export type HeartbeatAck = Message<"bebeberloga.v1.HeartbeatAck"> & {
  * Describes the message bebeberloga.v1.HeartbeatAck.
  * Use `create(HeartbeatAckSchema)` to create a new message.
  */
-export const HeartbeatAckSchema: GenMessage<HeartbeatAck> = /*@__PURE__*/
+export const HeartbeatAckSchema: GenMessage<HeartbeatAck> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 10);
 
 /**
@@ -927,7 +1036,8 @@ export type CommandRejected = Message<"bebeberloga.v1.CommandRejected"> & {
  * Describes the message bebeberloga.v1.CommandRejected.
  * Use `create(CommandRejectedSchema)` to create a new message.
  */
-export const CommandRejectedSchema: GenMessage<CommandRejected> = /*@__PURE__*/
+export const CommandRejectedSchema: GenMessage<CommandRejected> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 11);
 
 /**
@@ -947,7 +1057,8 @@ export type TypingStart = Message<"bebeberloga.v1.TypingStart"> & {
  * Describes the message bebeberloga.v1.TypingStart.
  * Use `create(TypingStartSchema)` to create a new message.
  */
-export const TypingStartSchema: GenMessage<TypingStart> = /*@__PURE__*/
+export const TypingStartSchema: GenMessage<TypingStart> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 12);
 
 /**
@@ -987,7 +1098,8 @@ export type SetVoicePresence = Message<"bebeberloga.v1.SetVoicePresence"> & {
  * Describes the message bebeberloga.v1.SetVoicePresence.
  * Use `create(SetVoicePresenceSchema)` to create a new message.
  */
-export const SetVoicePresenceSchema: GenMessage<SetVoicePresence> = /*@__PURE__*/
+export const SetVoicePresenceSchema: GenMessage<SetVoicePresence> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 13);
 
 /**
@@ -1012,7 +1124,8 @@ export type PlaySound = Message<"bebeberloga.v1.PlaySound"> & {
  * Describes the message bebeberloga.v1.PlaySound.
  * Use `create(PlaySoundSchema)` to create a new message.
  */
-export const PlaySoundSchema: GenMessage<PlaySound> = /*@__PURE__*/
+export const PlaySoundSchema: GenMessage<PlaySound> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 14);
 
 /**
@@ -1034,7 +1147,8 @@ export type PresenceSubscribe = Message<"bebeberloga.v1.PresenceSubscribe"> & {
  * Describes the message bebeberloga.v1.PresenceSubscribe.
  * Use `create(PresenceSubscribeSchema)` to create a new message.
  */
-export const PresenceSubscribeSchema: GenMessage<PresenceSubscribe> = /*@__PURE__*/
+export const PresenceSubscribeSchema: GenMessage<PresenceSubscribe> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 15);
 
 /**
@@ -1051,7 +1165,8 @@ export type MessageCreated = Message<"bebeberloga.v1.MessageCreated"> & {
  * Describes the message bebeberloga.v1.MessageCreated.
  * Use `create(MessageCreatedSchema)` to create a new message.
  */
-export const MessageCreatedSchema: GenMessage<MessageCreated> = /*@__PURE__*/
+export const MessageCreatedSchema: GenMessage<MessageCreated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 16);
 
 /**
@@ -1071,7 +1186,8 @@ export type MessageUpdated = Message<"bebeberloga.v1.MessageUpdated"> & {
  * Describes the message bebeberloga.v1.MessageUpdated.
  * Use `create(MessageUpdatedSchema)` to create a new message.
  */
-export const MessageUpdatedSchema: GenMessage<MessageUpdated> = /*@__PURE__*/
+export const MessageUpdatedSchema: GenMessage<MessageUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 17);
 
 /**
@@ -1095,7 +1211,8 @@ export type MessageDeleted = Message<"bebeberloga.v1.MessageDeleted"> & {
  * Describes the message bebeberloga.v1.MessageDeleted.
  * Use `create(MessageDeletedSchema)` to create a new message.
  */
-export const MessageDeletedSchema: GenMessage<MessageDeleted> = /*@__PURE__*/
+export const MessageDeletedSchema: GenMessage<MessageDeleted> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 18);
 
 /**
@@ -1117,7 +1234,8 @@ export type TypingStarted = Message<"bebeberloga.v1.TypingStarted"> & {
  * Describes the message bebeberloga.v1.TypingStarted.
  * Use `create(TypingStartedSchema)` to create a new message.
  */
-export const TypingStartedSchema: GenMessage<TypingStarted> = /*@__PURE__*/
+export const TypingStartedSchema: GenMessage<TypingStarted> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 19);
 
 /**
@@ -1136,7 +1254,8 @@ export type ReadStateUpdated = Message<"bebeberloga.v1.ReadStateUpdated"> & {
  * Describes the message bebeberloga.v1.ReadStateUpdated.
  * Use `create(ReadStateUpdatedSchema)` to create a new message.
  */
-export const ReadStateUpdatedSchema: GenMessage<ReadStateUpdated> = /*@__PURE__*/
+export const ReadStateUpdatedSchema: GenMessage<ReadStateUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 20);
 
 /**
@@ -1155,7 +1274,8 @@ export type MlsHandshake = Message<"bebeberloga.v1.MlsHandshake"> & {
  * Describes the message bebeberloga.v1.MlsHandshake.
  * Use `create(MlsHandshakeSchema)` to create a new message.
  */
-export const MlsHandshakeSchema: GenMessage<MlsHandshake> = /*@__PURE__*/
+export const MlsHandshakeSchema: GenMessage<MlsHandshake> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 21);
 
 /**
@@ -1174,7 +1294,8 @@ export type MlsWelcome = Message<"bebeberloga.v1.MlsWelcome"> & {
  * Describes the message bebeberloga.v1.MlsWelcome.
  * Use `create(MlsWelcomeSchema)` to create a new message.
  */
-export const MlsWelcomeSchema: GenMessage<MlsWelcome> = /*@__PURE__*/
+export const MlsWelcomeSchema: GenMessage<MlsWelcome> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 22);
 
 /**
@@ -1216,7 +1337,8 @@ export type MlsUpdateRequested = Message<"bebeberloga.v1.MlsUpdateRequested"> & 
  * Describes the message bebeberloga.v1.MlsUpdateRequested.
  * Use `create(MlsUpdateRequestedSchema)` to create a new message.
  */
-export const MlsUpdateRequestedSchema: GenMessage<MlsUpdateRequested> = /*@__PURE__*/
+export const MlsUpdateRequestedSchema: GenMessage<MlsUpdateRequested> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 23);
 
 /**
@@ -1284,7 +1406,8 @@ export enum MlsUpdateRequested_Reason {
 /**
  * Describes the enum bebeberloga.v1.MlsUpdateRequested.Reason.
  */
-export const MlsUpdateRequested_ReasonSchema: GenEnum<MlsUpdateRequested_Reason> = /*@__PURE__*/
+export const MlsUpdateRequested_ReasonSchema: GenEnum<MlsUpdateRequested_Reason> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_gateway, 23, 0);
 
 /**
@@ -1329,7 +1452,8 @@ export type MlsGroupStateChanged = Message<"bebeberloga.v1.MlsGroupStateChanged"
  * Describes the message bebeberloga.v1.MlsGroupStateChanged.
  * Use `create(MlsGroupStateChangedSchema)` to create a new message.
  */
-export const MlsGroupStateChangedSchema: GenMessage<MlsGroupStateChanged> = /*@__PURE__*/
+export const MlsGroupStateChangedSchema: GenMessage<MlsGroupStateChanged> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 24);
 
 /**
@@ -1346,7 +1470,8 @@ export type PresenceUpdated = Message<"bebeberloga.v1.PresenceUpdated"> & {
  * Describes the message bebeberloga.v1.PresenceUpdated.
  * Use `create(PresenceUpdatedSchema)` to create a new message.
  */
-export const PresenceUpdatedSchema: GenMessage<PresenceUpdated> = /*@__PURE__*/
+export const PresenceUpdatedSchema: GenMessage<PresenceUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 25);
 
 /**
@@ -1379,7 +1504,8 @@ export type VoicePresenceChanged = Message<"bebeberloga.v1.VoicePresenceChanged"
  * Describes the message bebeberloga.v1.VoicePresenceChanged.
  * Use `create(VoicePresenceChangedSchema)` to create a new message.
  */
-export const VoicePresenceChangedSchema: GenMessage<VoicePresenceChanged> = /*@__PURE__*/
+export const VoicePresenceChangedSchema: GenMessage<VoicePresenceChanged> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 26);
 
 /**
@@ -1403,7 +1529,8 @@ export type CallStarted = Message<"bebeberloga.v1.CallStarted"> & {
  * Describes the message bebeberloga.v1.CallStarted.
  * Use `create(CallStartedSchema)` to create a new message.
  */
-export const CallStartedSchema: GenMessage<CallStarted> = /*@__PURE__*/
+export const CallStartedSchema: GenMessage<CallStarted> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 27);
 
 /**
@@ -1420,7 +1547,8 @@ export type CallEnded = Message<"bebeberloga.v1.CallEnded"> & {
  * Describes the message bebeberloga.v1.CallEnded.
  * Use `create(CallEndedSchema)` to create a new message.
  */
-export const CallEndedSchema: GenMessage<CallEnded> = /*@__PURE__*/
+export const CallEndedSchema: GenMessage<CallEnded> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 28);
 
 /**
@@ -1456,7 +1584,8 @@ export type SoundPlayed = Message<"bebeberloga.v1.SoundPlayed"> & {
  * Describes the message bebeberloga.v1.SoundPlayed.
  * Use `create(SoundPlayedSchema)` to create a new message.
  */
-export const SoundPlayedSchema: GenMessage<SoundPlayed> = /*@__PURE__*/
+export const SoundPlayedSchema: GenMessage<SoundPlayed> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 29);
 
 /**
@@ -1473,7 +1602,8 @@ export type CommunityCreated = Message<"bebeberloga.v1.CommunityCreated"> & {
  * Describes the message bebeberloga.v1.CommunityCreated.
  * Use `create(CommunityCreatedSchema)` to create a new message.
  */
-export const CommunityCreatedSchema: GenMessage<CommunityCreated> = /*@__PURE__*/
+export const CommunityCreatedSchema: GenMessage<CommunityCreated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 30);
 
 /**
@@ -1490,7 +1620,8 @@ export type CommunityUpdated = Message<"bebeberloga.v1.CommunityUpdated"> & {
  * Describes the message bebeberloga.v1.CommunityUpdated.
  * Use `create(CommunityUpdatedSchema)` to create a new message.
  */
-export const CommunityUpdatedSchema: GenMessage<CommunityUpdated> = /*@__PURE__*/
+export const CommunityUpdatedSchema: GenMessage<CommunityUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 31);
 
 /**
@@ -1509,7 +1640,8 @@ export type CommunityRemoved = Message<"bebeberloga.v1.CommunityRemoved"> & {
  * Describes the message bebeberloga.v1.CommunityRemoved.
  * Use `create(CommunityRemovedSchema)` to create a new message.
  */
-export const CommunityRemovedSchema: GenMessage<CommunityRemoved> = /*@__PURE__*/
+export const CommunityRemovedSchema: GenMessage<CommunityRemoved> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 32);
 
 /**
@@ -1526,7 +1658,8 @@ export type CategoryCreated = Message<"bebeberloga.v1.CategoryCreated"> & {
  * Describes the message bebeberloga.v1.CategoryCreated.
  * Use `create(CategoryCreatedSchema)` to create a new message.
  */
-export const CategoryCreatedSchema: GenMessage<CategoryCreated> = /*@__PURE__*/
+export const CategoryCreatedSchema: GenMessage<CategoryCreated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 33);
 
 /**
@@ -1543,7 +1676,8 @@ export type CategoryUpdated = Message<"bebeberloga.v1.CategoryUpdated"> & {
  * Describes the message bebeberloga.v1.CategoryUpdated.
  * Use `create(CategoryUpdatedSchema)` to create a new message.
  */
-export const CategoryUpdatedSchema: GenMessage<CategoryUpdated> = /*@__PURE__*/
+export const CategoryUpdatedSchema: GenMessage<CategoryUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 34);
 
 /**
@@ -1565,7 +1699,8 @@ export type CategoryDeleted = Message<"bebeberloga.v1.CategoryDeleted"> & {
  * Describes the message bebeberloga.v1.CategoryDeleted.
  * Use `create(CategoryDeletedSchema)` to create a new message.
  */
-export const CategoryDeletedSchema: GenMessage<CategoryDeleted> = /*@__PURE__*/
+export const CategoryDeletedSchema: GenMessage<CategoryDeleted> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 35);
 
 /**
@@ -1582,7 +1717,8 @@ export type ChannelCreated = Message<"bebeberloga.v1.ChannelCreated"> & {
  * Describes the message bebeberloga.v1.ChannelCreated.
  * Use `create(ChannelCreatedSchema)` to create a new message.
  */
-export const ChannelCreatedSchema: GenMessage<ChannelCreated> = /*@__PURE__*/
+export const ChannelCreatedSchema: GenMessage<ChannelCreated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 36);
 
 /**
@@ -1599,7 +1735,8 @@ export type ChannelUpdated = Message<"bebeberloga.v1.ChannelUpdated"> & {
  * Describes the message bebeberloga.v1.ChannelUpdated.
  * Use `create(ChannelUpdatedSchema)` to create a new message.
  */
-export const ChannelUpdatedSchema: GenMessage<ChannelUpdated> = /*@__PURE__*/
+export const ChannelUpdatedSchema: GenMessage<ChannelUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 37);
 
 /**
@@ -1623,7 +1760,8 @@ export type ChannelDeleted = Message<"bebeberloga.v1.ChannelDeleted"> & {
  * Describes the message bebeberloga.v1.ChannelDeleted.
  * Use `create(ChannelDeletedSchema)` to create a new message.
  */
-export const ChannelDeletedSchema: GenMessage<ChannelDeleted> = /*@__PURE__*/
+export const ChannelDeletedSchema: GenMessage<ChannelDeleted> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 38);
 
 /**
@@ -1647,7 +1785,8 @@ export type LockedChannelsUpdated = Message<"bebeberloga.v1.LockedChannelsUpdate
  * Describes the message bebeberloga.v1.LockedChannelsUpdated.
  * Use `create(LockedChannelsUpdatedSchema)` to create a new message.
  */
-export const LockedChannelsUpdatedSchema: GenMessage<LockedChannelsUpdated> = /*@__PURE__*/
+export const LockedChannelsUpdatedSchema: GenMessage<LockedChannelsUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 39);
 
 /**
@@ -1664,7 +1803,8 @@ export type MemberJoined = Message<"bebeberloga.v1.MemberJoined"> & {
  * Describes the message bebeberloga.v1.MemberJoined.
  * Use `create(MemberJoinedSchema)` to create a new message.
  */
-export const MemberJoinedSchema: GenMessage<MemberJoined> = /*@__PURE__*/
+export const MemberJoinedSchema: GenMessage<MemberJoined> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 40);
 
 /**
@@ -1681,7 +1821,8 @@ export type MemberUpdated = Message<"bebeberloga.v1.MemberUpdated"> & {
  * Describes the message bebeberloga.v1.MemberUpdated.
  * Use `create(MemberUpdatedSchema)` to create a new message.
  */
-export const MemberUpdatedSchema: GenMessage<MemberUpdated> = /*@__PURE__*/
+export const MemberUpdatedSchema: GenMessage<MemberUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 41);
 
 /**
@@ -1708,7 +1849,8 @@ export type MemberLeft = Message<"bebeberloga.v1.MemberLeft"> & {
  * Describes the message bebeberloga.v1.MemberLeft.
  * Use `create(MemberLeftSchema)` to create a new message.
  */
-export const MemberLeftSchema: GenMessage<MemberLeft> = /*@__PURE__*/
+export const MemberLeftSchema: GenMessage<MemberLeft> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 42);
 
 /**
@@ -1725,7 +1867,8 @@ export type RoleCreated = Message<"bebeberloga.v1.RoleCreated"> & {
  * Describes the message bebeberloga.v1.RoleCreated.
  * Use `create(RoleCreatedSchema)` to create a new message.
  */
-export const RoleCreatedSchema: GenMessage<RoleCreated> = /*@__PURE__*/
+export const RoleCreatedSchema: GenMessage<RoleCreated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 43);
 
 /**
@@ -1742,7 +1885,8 @@ export type RoleUpdated = Message<"bebeberloga.v1.RoleUpdated"> & {
  * Describes the message bebeberloga.v1.RoleUpdated.
  * Use `create(RoleUpdatedSchema)` to create a new message.
  */
-export const RoleUpdatedSchema: GenMessage<RoleUpdated> = /*@__PURE__*/
+export const RoleUpdatedSchema: GenMessage<RoleUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 44);
 
 /**
@@ -1764,7 +1908,8 @@ export type RoleDeleted = Message<"bebeberloga.v1.RoleDeleted"> & {
  * Describes the message bebeberloga.v1.RoleDeleted.
  * Use `create(RoleDeletedSchema)` to create a new message.
  */
-export const RoleDeletedSchema: GenMessage<RoleDeleted> = /*@__PURE__*/
+export const RoleDeletedSchema: GenMessage<RoleDeleted> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 45);
 
 /**
@@ -1783,7 +1928,8 @@ export type PermissionsUpdated = Message<"bebeberloga.v1.PermissionsUpdated"> & 
  * Describes the message bebeberloga.v1.PermissionsUpdated.
  * Use `create(PermissionsUpdatedSchema)` to create a new message.
  */
-export const PermissionsUpdatedSchema: GenMessage<PermissionsUpdated> = /*@__PURE__*/
+export const PermissionsUpdatedSchema: GenMessage<PermissionsUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 46);
 
 /**
@@ -1800,7 +1946,8 @@ export type InviteCreated = Message<"bebeberloga.v1.InviteCreated"> & {
  * Describes the message bebeberloga.v1.InviteCreated.
  * Use `create(InviteCreatedSchema)` to create a new message.
  */
-export const InviteCreatedSchema: GenMessage<InviteCreated> = /*@__PURE__*/
+export const InviteCreatedSchema: GenMessage<InviteCreated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 47);
 
 /**
@@ -1822,7 +1969,8 @@ export type InviteRevoked = Message<"bebeberloga.v1.InviteRevoked"> & {
  * Describes the message bebeberloga.v1.InviteRevoked.
  * Use `create(InviteRevokedSchema)` to create a new message.
  */
-export const InviteRevokedSchema: GenMessage<InviteRevoked> = /*@__PURE__*/
+export const InviteRevokedSchema: GenMessage<InviteRevoked> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 48);
 
 /**
@@ -1839,7 +1987,8 @@ export type BanAdded = Message<"bebeberloga.v1.BanAdded"> & {
  * Describes the message bebeberloga.v1.BanAdded.
  * Use `create(BanAddedSchema)` to create a new message.
  */
-export const BanAddedSchema: GenMessage<BanAdded> = /*@__PURE__*/
+export const BanAddedSchema: GenMessage<BanAdded> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 49);
 
 /**
@@ -1861,7 +2010,8 @@ export type BanRemoved = Message<"bebeberloga.v1.BanRemoved"> & {
  * Describes the message bebeberloga.v1.BanRemoved.
  * Use `create(BanRemovedSchema)` to create a new message.
  */
-export const BanRemovedSchema: GenMessage<BanRemoved> = /*@__PURE__*/
+export const BanRemovedSchema: GenMessage<BanRemoved> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 50);
 
 /**
@@ -1878,7 +2028,8 @@ export type SoundAdded = Message<"bebeberloga.v1.SoundAdded"> & {
  * Describes the message bebeberloga.v1.SoundAdded.
  * Use `create(SoundAddedSchema)` to create a new message.
  */
-export const SoundAddedSchema: GenMessage<SoundAdded> = /*@__PURE__*/
+export const SoundAddedSchema: GenMessage<SoundAdded> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 51);
 
 /**
@@ -1895,7 +2046,8 @@ export type SoundUpdated = Message<"bebeberloga.v1.SoundUpdated"> & {
  * Describes the message bebeberloga.v1.SoundUpdated.
  * Use `create(SoundUpdatedSchema)` to create a new message.
  */
-export const SoundUpdatedSchema: GenMessage<SoundUpdated> = /*@__PURE__*/
+export const SoundUpdatedSchema: GenMessage<SoundUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 52);
 
 /**
@@ -1924,7 +2076,8 @@ export type SoundRemoved = Message<"bebeberloga.v1.SoundRemoved"> & {
  * Describes the message bebeberloga.v1.SoundRemoved.
  * Use `create(SoundRemovedSchema)` to create a new message.
  */
-export const SoundRemovedSchema: GenMessage<SoundRemoved> = /*@__PURE__*/
+export const SoundRemovedSchema: GenMessage<SoundRemoved> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 53);
 
 /**
@@ -1943,7 +2096,8 @@ export type UserUpdated = Message<"bebeberloga.v1.UserUpdated"> & {
  * Describes the message bebeberloga.v1.UserUpdated.
  * Use `create(UserUpdatedSchema)` to create a new message.
  */
-export const UserUpdatedSchema: GenMessage<UserUpdated> = /*@__PURE__*/
+export const UserUpdatedSchema: GenMessage<UserUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 54);
 
 /**
@@ -1968,7 +2122,8 @@ export type DeviceAdded = Message<"bebeberloga.v1.DeviceAdded"> & {
  * Describes the message bebeberloga.v1.DeviceAdded.
  * Use `create(DeviceAddedSchema)` to create a new message.
  */
-export const DeviceAddedSchema: GenMessage<DeviceAdded> = /*@__PURE__*/
+export const DeviceAddedSchema: GenMessage<DeviceAdded> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 55);
 
 /**
@@ -1985,7 +2140,8 @@ export type DeviceVerified = Message<"bebeberloga.v1.DeviceVerified"> & {
  * Describes the message bebeberloga.v1.DeviceVerified.
  * Use `create(DeviceVerifiedSchema)` to create a new message.
  */
-export const DeviceVerifiedSchema: GenMessage<DeviceVerified> = /*@__PURE__*/
+export const DeviceVerifiedSchema: GenMessage<DeviceVerified> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 56);
 
 /**
@@ -2014,7 +2170,8 @@ export type DeviceRemoved = Message<"bebeberloga.v1.DeviceRemoved"> & {
  * Describes the message bebeberloga.v1.DeviceRemoved.
  * Use `create(DeviceRemovedSchema)` to create a new message.
  */
-export const DeviceRemovedSchema: GenMessage<DeviceRemoved> = /*@__PURE__*/
+export const DeviceRemovedSchema: GenMessage<DeviceRemoved> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 57);
 
 /**
@@ -2034,7 +2191,8 @@ export type IdentityResetRequested = Message<"bebeberloga.v1.IdentityResetReques
  * Describes the message bebeberloga.v1.IdentityResetRequested.
  * Use `create(IdentityResetRequestedSchema)` to create a new message.
  */
-export const IdentityResetRequestedSchema: GenMessage<IdentityResetRequested> = /*@__PURE__*/
+export const IdentityResetRequestedSchema: GenMessage<IdentityResetRequested> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 58);
 
 /**
@@ -2054,7 +2212,8 @@ export type IdentityResetCancelled = Message<"bebeberloga.v1.IdentityResetCancel
  * Describes the message bebeberloga.v1.IdentityResetCancelled.
  * Use `create(IdentityResetCancelledSchema)` to create a new message.
  */
-export const IdentityResetCancelledSchema: GenMessage<IdentityResetCancelled> = /*@__PURE__*/
+export const IdentityResetCancelledSchema: GenMessage<IdentityResetCancelled> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 59);
 
 /**
@@ -2084,7 +2243,8 @@ export type DeviceVerificationMessage = Message<"bebeberloga.v1.DeviceVerificati
  * Describes the message bebeberloga.v1.DeviceVerificationMessage.
  * Use `create(DeviceVerificationMessageSchema)` to create a new message.
  */
-export const DeviceVerificationMessageSchema: GenMessage<DeviceVerificationMessage> = /*@__PURE__*/
+export const DeviceVerificationMessageSchema: GenMessage<DeviceVerificationMessage> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 60);
 
 /**
@@ -2101,7 +2261,8 @@ export type RelationshipUpdated = Message<"bebeberloga.v1.RelationshipUpdated"> 
  * Describes the message bebeberloga.v1.RelationshipUpdated.
  * Use `create(RelationshipUpdatedSchema)` to create a new message.
  */
-export const RelationshipUpdatedSchema: GenMessage<RelationshipUpdated> = /*@__PURE__*/
+export const RelationshipUpdatedSchema: GenMessage<RelationshipUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 61);
 
 /**
@@ -2118,7 +2279,8 @@ export type RelationshipRemoved = Message<"bebeberloga.v1.RelationshipRemoved"> 
  * Describes the message bebeberloga.v1.RelationshipRemoved.
  * Use `create(RelationshipRemovedSchema)` to create a new message.
  */
-export const RelationshipRemovedSchema: GenMessage<RelationshipRemoved> = /*@__PURE__*/
+export const RelationshipRemovedSchema: GenMessage<RelationshipRemoved> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 62);
 
 /**
@@ -2135,7 +2297,8 @@ export type NotificationSettingsUpdated = Message<"bebeberloga.v1.NotificationSe
  * Describes the message bebeberloga.v1.NotificationSettingsUpdated.
  * Use `create(NotificationSettingsUpdatedSchema)` to create a new message.
  */
-export const NotificationSettingsUpdatedSchema: GenMessage<NotificationSettingsUpdated> = /*@__PURE__*/
+export const NotificationSettingsUpdatedSchema: GenMessage<NotificationSettingsUpdated> =
+  /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 63);
 
 /**
@@ -2163,6 +2326,6 @@ export enum Compression {
 /**
  * Describes the enum bebeberloga.v1.Compression.
  */
-export const CompressionSchema: GenEnum<Compression> = /*@__PURE__*/
+export const CompressionSchema: GenEnum<Compression> =
+  /*@__PURE__*/
   enumDesc(file_bebeberloga_v1_gateway, 0);
-

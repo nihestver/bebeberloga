@@ -230,10 +230,12 @@ describe("компоненты используют только токены", 
         if (match[1]) local.add(match[1]);
       }
     }
+    // Переменные, которые выставляют примитивы доступности на всплывающих элементах.
+    const fromPrimitives = new Set(["--trigger-width", "--trigger-anchor-point"]);
     for (const path of styles) {
       for (const match of read(path).matchAll(/var\((--[\w-]+)/g)) {
         const name = match[1] ?? "";
-        const known = vars.has(name.slice(2)) || local.has(name);
+        const known = vars.has(name.slice(2)) || local.has(name) || fromPrimitives.has(name);
         expect(known, `${name} в ${path}`).toBe(true);
       }
     }

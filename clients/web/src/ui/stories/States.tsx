@@ -8,7 +8,8 @@ import { useLayoutEffect, useRef, type ReactNode } from "react";
 import styles from "./States.module.css";
 
 /** Состояния, которые примитивы доступности выставляют data-атрибутами. */
-export type ForcedState = "hovered" | "pressed" | "focused" | "focus-visible";
+export type ForcedState =
+  "hovered" | "pressed" | "focused" | "focus-visible" | "focus-within" | "dragging";
 
 export interface ForcedProps {
   state: ForcedState | ForcedState[];

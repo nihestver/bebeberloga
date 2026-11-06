@@ -1,0 +1,157 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.group[data-orientation="horizontal"] .options {
+  flex-direction: row;
+}
+
+.group[data-orientation="horizontal"] .option {
+  flex: 1;
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.radio {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  /* Кольцо фокуса рисуется вокруг круга (или вокруг карточки) */
+  outline: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.circle {
+  position: relative;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  /* Круг стоит на уровне первой строки заголовка */
+  margin-top: 1px;
+  border: var(--size-border) solid var(--color-muted);
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  transition: border-color var(--duration-fast);
+}
+
+.circle::after {
+  position: absolute;
+  inset: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  content: "";
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity var(--duration-fast),
+    transform var(--duration-fast);
+}
+
+.radio[data-hovered] .circle {
+  border-color: var(--color-text);
+}
+
+.radio[data-selected] .circle {
+  border-width: var(--size-focus-ring);
+  border-color: var(--color-accent);
+}
+
+.radio[data-selected] .circle::after {
+  inset: 3px;
+  opacity: 1;
+  transform: none;
+}
+
+.radio[data-pressed] .circle {
+  border-color: var(--color-accent-pressed);
+}
+
+.radio[data-invalid] .circle {
+  border-color: var(--color-danger);
+}
+
+.radio[data-focus-visible]:not(.card) .circle {
+  outline: var(--size-focus-ring) solid var(--color-accent-2);
+  outline-offset: var(--size-focus-offset);
+}
+
+.radio[data-disabled] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.title {
+  font-weight: var(--font-weight-bold);
+}
+
+.description {
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+}
+
+.icon {
+  color: var(--color-muted);
+}
+
+/* RadioCard */
+.card {
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-m);
+  background: var(--color-panel);
+  transition:
+    background-color var(--duration-fast),
+    border-color var(--duration-fast);
+}
+
+.card .circle {
+  order: 1;
+  margin: 0 0 0 auto;
+}
+
+.card[data-hovered] {
+  background: var(--color-panel-hover);
+}
+
+.card[data-pressed] {
+  background: var(--color-panel-pressed);
+}
+
+.card[data-selected] {
+  border-color: var(--color-accent);
+}
+
+.card[data-selected] .icon {
+  color: var(--color-accent);
+}
+
+.card[data-focus-visible] {
+  outline: var(--size-focus-ring) solid var(--color-accent-2);
+  outline-offset: var(--size-focus-offset);
+}

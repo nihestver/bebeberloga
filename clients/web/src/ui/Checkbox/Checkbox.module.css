@@ -1,0 +1,71 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.field {
+  display: inline-flex;
+}
+
+.checkbox {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  /* Кольцо фокуса рисуется вокруг квадрата */
+  outline: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.box {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: var(--size-border) solid var(--color-muted);
+  border-radius: var(--radius-xs);
+  background: var(--color-bg);
+  color: var(--color-on-accent);
+  transition:
+    background-color var(--duration-fast),
+    border-color var(--duration-fast);
+}
+
+.checkbox[data-hovered] .box {
+  border-color: var(--color-text);
+}
+
+.checkbox[data-selected] .box,
+.checkbox[data-indeterminate] .box {
+  border-color: transparent;
+  background: var(--color-accent);
+}
+
+.checkbox[data-selected][data-hovered] .box,
+.checkbox[data-indeterminate][data-hovered] .box {
+  background: var(--color-accent-hover);
+}
+
+.checkbox[data-pressed] .box {
+  background: var(--color-panel-pressed);
+}
+
+.checkbox[data-selected][data-pressed] .box,
+.checkbox[data-indeterminate][data-pressed] .box {
+  background: var(--color-accent-pressed);
+}
+
+.checkbox[data-invalid] .box {
+  border-color: var(--color-danger);
+}
+
+.checkbox[data-focus-visible] .box {
+  outline: var(--size-focus-ring) solid var(--color-accent-2);
+  outline-offset: var(--size-focus-offset);
+}
+
+.checkbox[data-disabled] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}

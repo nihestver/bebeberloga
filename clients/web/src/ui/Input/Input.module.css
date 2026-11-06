@@ -1,0 +1,175 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.label {
+  color: var(--color-text);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-bold);
+}
+
+.required {
+  color: var(--color-danger);
+}
+
+.description {
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: var(--font-size-small);
+}
+
+/* Рамка поля: высота 40, фон Хвоя, рамка --color-border, радиус --radius-m */
+.control {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  height: var(--size-control-m);
+  padding: 0 var(--space-3);
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-m);
+  outline: none;
+  background: var(--color-bg);
+  transition: border-color var(--duration-fast);
+}
+
+.control[data-size="s"] {
+  height: var(--size-control-s);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-s);
+}
+
+.control[data-hovered] {
+  border-color: var(--color-muted);
+}
+
+/* Фокус — рамка Инеем вместо кольца */
+.control[data-focus-within] {
+  border-color: var(--color-accent-2);
+}
+
+.control[data-invalid] {
+  border-color: var(--color-danger);
+}
+
+.control[data-disabled] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.input,
+.textarea {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+}
+
+.input {
+  height: 100%;
+}
+
+.control[data-size="s"] .input {
+  font-size: var(--font-size-caption);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
+.input[data-disabled],
+.textarea[data-disabled] {
+  cursor: not-allowed;
+}
+
+.affix {
+  color: var(--color-muted);
+}
+
+/* Input/WithAction: кнопка S внутри рамки, справа */
+.withAction .control {
+  padding-right: var(--space-1);
+}
+
+/* Input/Search: крестик виден, только когда есть текст */
+.clear {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--size-control-xs);
+  height: var(--size-control-xs);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.clear[data-hovered] {
+  background: var(--color-panel-hover);
+  color: var(--color-text);
+}
+
+.search[data-empty] .clear {
+  display: none;
+}
+
+.search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+/* Input/Textarea и Input/RichText */
+.multiline {
+  flex-direction: column;
+  gap: var(--space-1);
+  align-items: stretch;
+  height: auto;
+  padding: var(--space-2) var(--space-3);
+}
+
+.textarea {
+  min-height: var(--size-control-m);
+  line-height: var(--font-leading-body);
+  resize: vertical;
+}
+
+.counter {
+  align-self: flex-end;
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.counter[data-low] {
+  color: var(--color-danger);
+}
+
+.toolbar {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  padding-bottom: var(--space-1);
+  border-bottom: var(--size-border) solid var(--color-border);
+}
+
+.toolbarSpacer {
+  flex: 1;
+}
