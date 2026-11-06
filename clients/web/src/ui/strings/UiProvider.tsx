@@ -3,14 +3,22 @@
 
 import { createContext, use, type ReactNode } from "react";
 import { I18nProvider } from "react-aria-components";
-import en from "../../locales/en/ui.json";
-import ru from "../../locales/ru/ui.json";
+import enShortcuts from "../../locales/en/shortcuts.json";
+import enUi from "../../locales/en/ui.json";
+import ruShortcuts from "../../locales/ru/shortcuts.json";
+import ruUi from "../../locales/ru/ui.json";
 
-/** Тексты, встроенные в компоненты дизайн-системы (подписи кнопок, aria-подписи). */
+const ru = { ...ruUi, shortcuts: ruShortcuts };
+const en: typeof ru = { ...enUi, shortcuts: enShortcuts };
+
+/**
+ * Тексты, встроенные в компоненты дизайн-системы (подписи кнопок, aria-подписи), и названия
+ * стандартных сочетаний клавиш (`shortcuts`).
+ */
 export type UiStrings = typeof ru;
 export type UiLocale = "ru" | "en";
 
-const dictionaries: Record<UiLocale, UiStrings> = { ru, en };
+export const uiDictionaries: Record<UiLocale, UiStrings> = { ru, en };
 const bcp47: Record<UiLocale, string> = { ru: "ru-RU", en: "en-US" };
 
 const StringsContext = createContext<UiStrings>(ru);
@@ -29,7 +37,7 @@ export interface UiProviderProps {
 export function UiProvider({ locale = "ru", children }: UiProviderProps) {
   return (
     <I18nProvider locale={bcp47[locale]}>
-      <StringsContext value={dictionaries[locale]}>{children}</StringsContext>
+      <StringsContext value={uiDictionaries[locale]}>{children}</StringsContext>
     </I18nProvider>
   );
 }
