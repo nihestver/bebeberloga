@@ -30,7 +30,8 @@ jobs:
        github.event.workflow_run.event == 'push' &&
        github.event.workflow_run.head_branch == 'main' &&
        github.event.workflow_run.head_repository.full_name == github.repository)
-    runs-on: ubuntu-latest
+    # ubuntu-24.04, а не ubuntu-latest: hurl 8.1 для Linux собран с libxml2.so.2, которой нет в Ubuntu 26.04 (см. ci.yml)
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     environment: test
     permissions:

@@ -164,7 +164,9 @@ jobs:
   deploy:
     needs: changes
     if: needs.changes.outputs.deploy == 'true'
-    runs-on: ubuntu-latest
+    # ubuntu-24.04, а не ubuntu-latest: бинарник hurl 8.1 для Linux собран с libxml2.so.2,
+    # которой нет в Ubuntu 26.04. Вернуть ubuntu-latest, когда hurl выпустит сборку под новую libxml2.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
