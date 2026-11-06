@@ -1,0 +1,43 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ */
+
+.cells {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Ячейка 44×52 с одной цифрой */
+.cell {
+  width: 44px;
+  height: 52px;
+  padding: 0;
+  border: var(--size-border) solid var(--color-border);
+  border-radius: var(--radius-m);
+  outline: none;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-title);
+  text-align: center;
+  caret-color: var(--color-accent-2);
+  transition: border-color var(--duration-fast);
+}
+
+.cell:hover {
+  border-color: var(--color-muted);
+}
+
+.cell:focus {
+  border-color: var(--color-accent-2);
+}
+
+.cells[data-invalid] .cell {
+  border-color: var(--color-danger);
+}
+
+.cell:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
