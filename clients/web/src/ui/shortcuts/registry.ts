@@ -189,8 +189,19 @@ export const systemReserved: Record<"mac" | "other", readonly string[]> = {
     "Ctrl+Esc", // меню «Пуск»
     "Meta+D", // показать рабочий стол
     "Meta+L", // блокировка экрана
+    "Ctrl+Shift+U", // Linux: ввод символа Unicode по коду (IBus, GTK)
+    "Ctrl+Alt+ArrowUp", // Linux: переключение рабочих столов в ряде окружений
+    "Ctrl+Alt+ArrowDown",
   ],
 };
+
+/**
+ * Сочетания, которые браузер не отдаёт странице (веб-доступ, не Electron). Запись как в
+ * SHORTCUTS.md, `Mod` раскрывается по платформе.
+ */
+export const browserReserved: readonly string[] = [
+  "Mod+Shift+N", // новое приватное окно в Chromium
+];
 
 /**
  * Сочетания, которыми в полях ввода двигают курсор и правят текст. Действие с областью `window`
@@ -237,6 +248,17 @@ export const textEditingReserved: Record<"mac" | "other", readonly string[]> = {
 export const knownSystemConflicts: readonly { id: ShortcutId; platform: "mac" | "other" }[] = [
   // Cmd+Option+H на macOS — системное «Скрыть остальные».
   { id: "nav.home", platform: "mac" },
+  // Ctrl+Alt+↑/↓ в ряде окружений Linux переключают рабочие столы.
+  { id: "nav.previousCommunity", platform: "other" },
+  { id: "nav.nextCommunity", platform: "other" },
+  // Ctrl+Shift+U в Linux (IBus, GTK) начинает ввод символа Unicode по коду.
+  { id: "msg.upload", platform: "other" },
+];
+
+/** Расхождения с браузером в веб-доступе: Ctrl/Cmd+Shift+N страница перехватить не может. */
+export const knownBrowserConflicts: readonly { id: ShortcutId; platform: "mac" | "other" }[] = [
+  { id: "nav.createOrJoinCommunity", platform: "mac" },
+  { id: "nav.createOrJoinCommunity", platform: "other" },
 ];
 
 /**

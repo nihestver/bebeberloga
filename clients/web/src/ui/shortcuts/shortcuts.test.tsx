@@ -15,6 +15,8 @@ import {
   type Platform,
 } from "./keys";
 import {
+  browserReserved,
+  knownBrowserConflicts,
   knownSystemConflicts,
   knownTextEditingConflicts,
   scopeInput,
@@ -65,11 +67,41 @@ describe("сочетания клавиш: разбор и сравнение", 
     expect(matchesCombo(key({ code: "KeyK", key: "k", ctrlKey: true }), combo, "other")).toBe(true);
   });
 
-  it("буквы сравниваются по физической клавише: работает в русской раскладке", () => {
+  it("русская раскладка: буква сравнивается по физической клавише", () => {
     const combo = parseCombo("Mod+K");
     expect(matchesCombo(key({ code: "KeyK", key: "л", ctrlKey: true }), combo, "other")).toBe(true);
     const single = parseCombo("R");
     expect(matchesCombo(key({ code: "KeyR", key: "к" }), single, "other")).toBe(true);
+  });
+
+  it("QWERTY: символ и физическая клавиша совпадают", () => {
+    const combo = parseCombo("Mod+K");
+    expect(matchesCombo(key({ code: "KeyK", key: "k", ctrlKey: true }), combo, "other")).toBe(true);
+    expect(
+      matchesCombo(
+        key({ code: "KeyK", key: "K", ctrlKey: true, shiftKey: true }),
+        parseCombo("Mod+Shift+K"),
+        "other",
+      ),
+    ).toBe(true);
+  });
+
+  it("AZERTY и QWERTZ: латинская буква сравнивается по символу на клавише", () => {
+    // На AZERTY клавиша в позиции KeyQ печатает «a»: «Mod+A» — это она, а «Mod+Q» — нет.
+    const azertyA = key({ code: "KeyQ", key: "a", ctrlKey: true });
+    expect(matchesCombo(azertyA, parseCombo("Mod+A"), "other")).toBe(true);
+    expect(matchesCombo(azertyA, parseCombo("Mod+Q"), "other")).toBe(false);
+    // На QWERTZ клавиша в позиции KeyY печатает «z».
+    const qwertzZ = key({ code: "KeyY", key: "z", ctrlKey: true });
+    expect(matchesCombo(qwertzZ, parseCombo("Mod+Z"), "other")).toBe(true);
+    expect(matchesCombo(qwertzZ, parseCombo("Mod+Y"), "other")).toBe(false);
+    // Цифры на AZERTY без Shift печатают знаки: тогда работает физическая клавиша.
+    expect(
+      matchesCombo(key({ code: "Digit1", key: "&", ctrlKey: true }), parseCombo("Mod+1"), "other"),
+    ).toBe(true);
+    expect(
+      matchesCombo(key({ code: "Digit1", key: "1", ctrlKey: true }), parseCombo("Mod+1"), "other"),
+    ).toBe(true);
   });
 
   it("лишний модификатор — другое сочетание", () => {
@@ -102,6 +134,15 @@ describe("сочетания клавиш: разбор и сравнение", 
       code: "KeyM",
       ctrl: true,
       shift: true,
+    });
+    // Записанное на AZERTY сочетание подписывается буквой с клавиши и совпадает с ней же.
+    const recorded = comboFromEvent(key({ code: "KeyQ", key: "a", ctrlKey: true }));
+    expect(recorded).toEqual({ code: "KeyA", ctrl: true });
+    expect(comboLabels(recorded ?? {}, "other")).toEqual(["Ctrl", "A"]);
+    // В русской раскладке — физическая клавиша.
+    expect(comboFromEvent(key({ code: "KeyA", key: "ф", ctrlKey: true }))).toEqual({
+      code: "KeyA",
+      ctrl: true,
     });
   });
 
@@ -199,6 +240,11 @@ describe("реестр сочетаний (SHORTCUTS.md)", () => {
 
   it("с правкой текста в поле ввода расходится только то, что записано в OPEN-QUESTIONS", () => {
     expect(collisions(textEditingReserved, ["any", "inside"])).toEqual(knownTextEditingConflicts);
+  });
+
+  it("с браузером (веб-доступ) расходится только то, что записано в OPEN-QUESTIONS", () => {
+    const reserved = { mac: browserReserved, other: browserReserved };
+    expect(collisions(reserved, ["any", "inside", "outside"])).toEqual(knownBrowserConflicts);
   });
 });
 

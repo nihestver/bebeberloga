@@ -7,11 +7,12 @@
 
 import { execFileSync } from "node:child_process";
 
-/** Список LICENSING.md: MIT, BSD-2/3, Apache-2.0, ISC, MPL-2.0, Zlib, Unlicense, CC0, Unicode, OFL. */
+/** Список LICENSING.md: MIT, BSD-2/3, 0BSD, Apache-2.0, ISC, MPL-2.0, Zlib, Unlicense, CC0, Unicode, OFL. */
 const LISTED = [
   "MIT",
   "BSD-2-Clause",
   "BSD-3-Clause",
+  "0BSD",
   "Apache-2.0",
   "ISC",
   "MPL-2.0",
@@ -22,12 +23,9 @@ const LISTED = [
   "OFL-1.1",
 ];
 
-// Лицензии из дерева зависимостей, которых в списке LICENSING.md пока нет (ADR-0023, «Лицензии
-// транзитивных зависимостей»): все разрешительные. Список здесь — не решение, а перечень того, что
-// ждёт строки в LICENSING.md; новая лицензия вне обоих списков валит проверку.
-/** Попадает в сборку клиента: tslib (через react-aria → aria-hidden); отказ от условий MIT. */
-const PENDING_RUNTIME = ["0BSD"];
-/** Только инструменты разработки (Storybook, Vite), в сборку клиента не попадают. */
+// Лицензии, которых в списке LICENSING.md нет, но которые встречаются только у инструментов
+// разработки (ADR-0023 §6): в сборку клиента не попадают. Список здесь — не решение, а перечень
+// того, что ждёт строки в LICENSING.md; у зависимости сборки такая лицензия валит проверку.
 const PENDING_DEV_ONLY = [
   "BlueOak-1.0.0", // glob, minimatch, minipass, lru-cache, path-scurry
   "CC-BY-4.0", // caniuse-lite: таблицы поддержки браузеров (данные, не код)
@@ -63,7 +61,7 @@ function check(scope, args, allowed) {
   return true;
 }
 
-const runtime = new Set([...LISTED, ...PENDING_RUNTIME]);
+const runtime = new Set(LISTED);
 const everything = new Set([...runtime, ...PENDING_DEV_ONLY]);
 
 const ok = [

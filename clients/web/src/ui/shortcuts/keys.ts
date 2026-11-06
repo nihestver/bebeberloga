@@ -7,8 +7,10 @@
 export type Platform = "mac" | "other";
 
 /**
- * Сочетание клавиш. Буквы, цифры и знаки сравниваются по физической клавише (`code`), а не по
- * символу: «Mod+K» срабатывает и в русской раскладке, где та же клавиша печатает «л».
+ * Сочетание клавиш. Если нажатая клавиша печатает латинскую букву или цифру, сравнение идёт по
+ * символу (`key`): на AZERTY и QWERTZ «Mod+A» — это клавиша с буквой A. Иначе (русская и другие
+ * нелатинские раскладки, знаки) — по физической клавише (`code`): «Mod+K» срабатывает на клавише,
+ * которая печатает «л». В `code` хранится каноническое имя: `KeyK`, `Digit1`, `BracketLeft`.
  */
 export interface KeyCombo {
   /** `Cmd` на macOS, `Ctrl` на Windows и Linux. */
@@ -92,7 +94,17 @@ export function parseCombo(text: string): KeyCombo {
   return combo;
 }
 
-/** Совпадает ли событие с сочетанием: модификаторы — точно, клавиша — по `code` или символу. */
+/**
+ * Каноническое имя клавиши события: латинская буква или цифра — по символу (`KeyA`, `Digit1`),
+ * остальное — физическая клавиша (`code`).
+ */
+export function canonicalCode(event: Pick<KeyEventLike, "code" | "key">): string {
+  if (/^[a-z]$/i.test(event.key)) return `Key${event.key.toUpperCase()}`;
+  if (/^[0-9]$/.test(event.key)) return `Digit${event.key}`;
+  return event.code;
+}
+
+/** Совпадает ли событие с сочетанием: модификаторы — точно, клавиша — по символу или `code`. */
 export function matchesCombo(event: KeyEventLike, combo: KeyCombo, platform: Platform): boolean {
   const mac = platform === "mac";
   const wantCtrl = Boolean(combo.ctrl) || (Boolean(combo.mod) && !mac);
@@ -103,18 +115,19 @@ export function matchesCombo(event: KeyEventLike, combo: KeyCombo, platform: Pla
     // Символ уже учитывает Shift («+» на большинстве раскладок набирается с ним).
     return event.key === combo.key;
   }
-  return event.shiftKey === Boolean(combo.shift) && event.code === combo.code;
+  return event.shiftKey === Boolean(combo.shift) && canonicalCode(event) === combo.code;
 }
 
 const MODIFIER_CODES = /^(Control|Shift|Alt|Meta|OS)(Left|Right)?$/;
 
 /**
  * Сочетание из события — для `KeyRecorder`. Возвращает `null`, пока нажаты только модификаторы.
- * Модификаторы записываются как есть (`ctrl`, `meta`), без обобщённого `mod`.
+ * Модификаторы записываются как есть (`ctrl`, `meta`), без обобщённого `mod`; клавиша — в
+ * каноническом имени, поэтому подпись совпадает с буквой на клавише в любой латинской раскладке.
  */
 export function comboFromEvent(event: KeyEventLike): KeyCombo | null {
   if (!event.code || MODIFIER_CODES.test(event.code)) return null;
-  const combo: KeyCombo = { code: event.code };
+  const combo: KeyCombo = { code: canonicalCode(event) };
   if (event.ctrlKey) combo.ctrl = true;
   if (event.metaKey) combo.meta = true;
   if (event.altKey) combo.alt = true;

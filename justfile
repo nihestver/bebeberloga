@@ -59,7 +59,7 @@ lint-licenses:
     @if [ -f Cargo.toml ]; then cargo deny check; fi
     # собственный модуль под корневым LICENSE (AGPL), go-licenses ищет файл только до server/go.mod — исключаем
     # список разрешённых лицензий — LICENSING.md (GPL/LGPL только через ADR, сюда не входят)
-    @if [ -f server/go.mod ]; then cd server && go-licenses check --ignore github.com/nihestver/bebeberloga/server --allowed_licenses=MIT,BSD-2-Clause,BSD-3-Clause,Apache-2.0,ISC,MPL-2.0,Zlib,Unlicense,CC0-1.0,Unicode-3.0,OFL-1.1 ./...; fi
+    @if [ -f server/go.mod ]; then cd server && go-licenses check --ignore github.com/nihestver/bebeberloga/server --allowed_licenses=MIT,BSD-2-Clause,BSD-3-Clause,0BSD,Apache-2.0,ISC,MPL-2.0,Zlib,Unlicense,CC0-1.0,Unicode-3.0,OFL-1.1 ./...; fi
     # npm: лицензии всех зависимостей клиента по тому же списку (clients/web/scripts/check-licenses.mjs)
     @if [ -f clients/web/package.json ]; then cd clients/web && pnpm check-licenses; fi
 

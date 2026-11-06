@@ -33,7 +33,6 @@ CC0 или общественное достояние, Creative Commons с пр
 | `brand/bebeberloga-wordmark-for-light.svg` | Участники Bebeberloga | Оригинальная работа для проекта | LicenseRef-Bebeberloga-Brand | Надпись для светлого фона |
 | `brand/favicon.svg` | Участники Bebeberloga | Оригинальная работа для проекта | LicenseRef-Bebeberloga-Brand | Вкладка браузера |
 | `brand/favicon.ico` | Участники Bebeberloga | Растровая версия `favicon.svg` | LicenseRef-Bebeberloga-Brand | Вкладка браузера, мелкие размеры |
-| `design/icons/bold.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Иконка «жирный» панели форматирования |
 | `design/icons/soundboard.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Иконка soundboard: динамик со звёздочкой |
 | `design/avatars/bear.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «медведь» (docs/protocol/AVATARS.md) |
 | `design/avatars/fox.svg` | @nihestver | Оригинальная работа для проекта | CC-BY-SA-4.0 | Встроенный аватар «лиса» (docs/protocol/AVATARS.md) |
