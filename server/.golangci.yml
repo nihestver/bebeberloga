@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# golangci-lint v2 (версия — mise.toml). Сгенерированный код (gen/) не проверяется:
+# его правят через контракт и `just gen`.
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errorlint
+    - exhaustive
+    - gocritic
+    - gosec
+    - misspell
+    - noctx
+    - nolintlint
+    - revive
+    - sloglint
+    - unconvert
+    - unparam
+    - wastedassign
+  settings:
+    errcheck:
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+    errorlint:
+      errorf: true
+    exhaustive:
+      default-signifies-exhaustive: true
+    gosec:
+      excludes:
+        - G104 # необработанные ошибки проверяет errcheck
+    revive:
+      rules:
+        - name: exported
+          arguments: [checkPrivateReceivers, disableStutteringCheck]
+        - name: package-comments
+        - name: unused-parameter
+        - name: context-as-argument
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+  exclusions:
+    generated: lax
+    paths:
+      - gen/
+    rules:
+      # В тестах допустимы http.Get без контекста и фиксированные адреса.
+      - path: _test\.go
+        linters: [gosec, noctx]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/nihestver/bebeberloga
+  exclusions:
+    paths:
+      - gen/

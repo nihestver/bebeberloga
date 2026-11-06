@@ -5,7 +5,7 @@
 ## 1. Соглашения
 
 - База: `https://<инстанс>/api/v1`. Версия в пути; несовместимые изменения — новый префикс.
-- Аутентификация: `Authorization: Bearer <access_token>`. Токен выдаёт `POST /auth/login`, живёт `expires_in` секунд, обновляется `POST /auth/refresh`. Без входа доступны: `GET /instance`, регистрация, статус и подтверждение email, вход, восстановление пароля, `GET /users/availability`, `GET /invites/{code}`.
+- Аутентификация: `Authorization: Bearer <access_token>`. Токен выдаёт `POST /auth/login`, живёт `expires_in` секунд, обновляется `POST /auth/refresh`. Без входа доступны: `GET /instance`, `GET /health`, регистрация, статус и подтверждение email, вход, восстановление пароля, `GET /users/availability`, `GET /invites/{code}`.
 - Неподтверждённое устройство (`DEVICE_VERIFICATION_UNVERIFIED`) может: читать свой аккаунт и устройства, публиковать свои ключи и KeyPackage, запрашивать подтверждение, получать зашифрованный ключ идентичности для восстановления, принимать приглашения в сообщества (без доступа к группам). Остальные запросы к содержимому каналов — `DEVICE_UNVERIFIED`.
 - JSON — форма protojson с именами полей как в `.proto` (`snake_case`): время — RFC 3339 в UTC, байты — base64, enum — строковые имена значений Protobuf (`CHANNEL_TYPE_TEXT`, `ERROR_CODE_PERMISSION_DENIED`), 64-битные целые в телах — строки (`"epoch": "17"`), в параметрах пути и запроса — числа. Неизвестные поля в запросах игнорируются; в ответах могут появляться новые поля — клиент их терпит.
 - Схемы с `x-proto-message`/`x-proto-enum` в коде заменяются типами, сгенерированными из Protobuf (`x-go-type` для Go; импорт `*_pb` для TS, ADR-0017 п. 2). Схемы без этой пометки — тела запросов и обёртки списков, они есть только в REST.
@@ -13,7 +13,7 @@
 - Идемпотентность: `PUT`/`DELETE` идемпотентны; `POST /channels/{id}/messages` идемпотентен по клиентскому `id` сообщения: повтор с тем же `id` и тем же телом возвращает 201 с тем же результатом, с другим телом — `MESSAGE_EXISTS`.
 - Тела запросов — `application/json`, кроме загрузки звуков (`multipart/form-data`) и аудио звука (`audio/ogg`). Вложения сообщений не проходят через API: они загружаются напрямую в хранилище по presigned URL.
 - Частота запросов ограничивается по пользователю и по IP; при превышении — `RATE_LIMITED` с `retry_after_ms` и заголовком `Retry-After`.
-- Каждый ответ с ошибкой — объект `Error` (ниже). Успешные ответы без тела — `204`.
+- Каждый ответ с ошибкой — объект `Error` (ниже). Успешные ответы без тела — `204`. Единственное исключение — `GET /health`: при недоступной зависимости он отвечает `503` с тем же телом `HealthStatus`, что и `200`, без `Retry-After` — мониторингу нужен список зависимостей, а не код ошибки.
 
 ## 2. Ошибки
 
@@ -108,7 +108,7 @@
 
 | Группа | Методы | Назначение |
 |---|---|---|
-| Инстанс | `GET /instance`, `GET /gateway` | Политика регистрации, лимиты, адрес шлюза |
+| Инстанс | `GET /instance`, `GET /gateway`, `GET /health` | Политика регистрации, лимиты, адрес шлюза; состояние сервера и зависимостей для smoke-тестов и мониторинга (`200`, при недоступной зависимости `503`; тело — `HealthStatus`) |
 | Регистрация и вход | `POST /auth/register`, `GET /auth/register/status`, `POST /auth/email/verify`, `POST /auth/email/resend`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout` | FLOWS/01, FLOWS/02 |
 | Пароль и email | `POST /auth/password/forgot`, `POST /auth/password/reset`, `POST /auth/password/change`, `POST /auth/email/change`, `POST /auth/email/change/confirm` | Смена пароля завершает остальные сессии, устройства и ключи остаются; смена email — с подтверждением на новый адрес (OPEN-QUESTIONS №2) |
 | Профиль | `GET/PATCH/DELETE /users/me`, `GET /users/availability`, `GET /users/{id}`, `GET /users/{id}/devices` | Имя, аватар из набора, «о себе», цвет баннера; вкладка «Безопасность» чужого профиля (только открытые данные устройств) |

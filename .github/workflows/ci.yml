@@ -33,6 +33,7 @@ jobs:
             go:
               - 'server/**'
               - 'proto/**'
+              - 'docs/protocol/openapi.yaml'
               - 'mise.toml'
             rust:
               - 'crypto-core/**'
@@ -77,31 +78,18 @@ jobs:
       - name: OpenAPI contract
         run: just openapi
 
+  # Интеграционные тесты поднимают Postgres, Valkey и NATS сами через testcontainers (Docker есть в ubuntu-latest).
   go:
     needs: changes
     if: needs.changes.outputs.go == 'true'
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env: { POSTGRES_PASSWORD: test, POSTGRES_DB: bebeberloga }
-        ports: ['5432:5432']
-        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
-      valkey:
-        image: valkey/valkey:8
-        ports: ['6379:6379']
-      nats:
-        image: nats:2
-        ports: ['4222:4222']
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v5
       - uses: extractions/setup-just@v4
+      - name: generated code is up to date
+        run: just gen-check
       - run: just lint-go test-go
-        env:
-          DATABASE_URL: postgres://postgres:test@localhost:5432/bebeberloga?sslmode=disable
-          VALKEY_URL: redis://localhost:6379
-          NATS_URL: nats://localhost:4222
 
   rust:
     needs: changes
