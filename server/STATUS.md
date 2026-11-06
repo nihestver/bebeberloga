@@ -56,3 +56,5 @@
 - Prometheus-метрики — в `admin` (B16).
 - Добавить `just lint-licenses` в CI (вместе с `reuse`, `cargo deny`): нужен `go-licenses` в образе — mise или `go install` в job.
 - Доверенный прокси для `X-Forwarded-For` (адрес клиента для rate limit и журнала) — вместе с B06.
+- Подкоманда `healthcheck` (запрос к своему `/api/v1/health` с кодом выхода) — для `healthcheck` контейнера в Compose: в образе distroless нет оболочки и `curl` (`deploy/STATUS.md`, решение владельца 2026-11-06 — в B17 ч.1 без неё).
+- Когда `migrate` реализована — вызвать её в `deploy/compose/docker-compose.yml` перед `server` (сейчас не вызывается).

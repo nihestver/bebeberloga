@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Контекст сборки server/Dockerfile — корень репозитория, но образу нужен только код сервера.
+# Всё остальное (клиенты, документация, спайки, .git) в сборку не попадает.
+*
+!server/
+server/Dockerfile
+server/Dockerfile.dockerignore
+server/**/*.md
+server/**/*_test.go
+# локальные секреты и временные файлы разработки внутри server/ — тоже нет
+server/**/.env
+server/**/.env.*
+server/**/*.pem
+server/**/*.key
+server/tmp/
