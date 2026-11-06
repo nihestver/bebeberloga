@@ -32,7 +32,7 @@ lint-rust:
     @if [ -f Cargo.toml ]; then cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings; else echo "skip: Cargo.toml ещё нет"; fi
 
 lint-web:
-    @if [ -f clients/web/package.json ]; then cd clients/web && pnpm lint && pnpm typecheck; else echo "skip: clients/web/package.json ещё нет (B09); до него в clients/web только сгенерированные типы"; fi
+    @if [ -f clients/web/package.json ]; then cd clients/web && pnpm lint && pnpm typecheck; else echo "skip: clients/web/package.json ещё нет"; fi
 
 # buf breaking сравнивает с main только когда там уже есть .proto (иначе buf падает на пустом модуле)
 lint-proto:
@@ -60,6 +60,8 @@ lint-licenses:
     # собственный модуль под корневым LICENSE (AGPL), go-licenses ищет файл только до server/go.mod — исключаем
     # список разрешённых лицензий — LICENSING.md (GPL/LGPL только через ADR, сюда не входят)
     @if [ -f server/go.mod ]; then cd server && go-licenses check --ignore github.com/nihestver/bebeberloga/server --allowed_licenses=MIT,BSD-2-Clause,BSD-3-Clause,Apache-2.0,ISC,MPL-2.0,Zlib,Unlicense,CC0-1.0,Unicode-3.0,OFL-1.1 ./...; fi
+    # npm: лицензии всех зависимостей клиента по тому же списку (clients/web/scripts/check-licenses.mjs)
+    @if [ -f clients/web/package.json ]; then cd clients/web && pnpm check-licenses; fi
 
 test-go:
     @if [ -f server/go.mod ]; then cd server && go test -race ./...; else echo "skip: server/go.mod ещё нет"; fi
@@ -72,7 +74,7 @@ test-rust:
     @if [ -f Cargo.toml ]; then cargo test --workspace; else echo "skip: Cargo.toml ещё нет"; fi
 
 test-web:
-    @if [ -f clients/web/package.json ]; then cd clients/web && pnpm test; else echo "skip: clients/web/package.json ещё нет (B09)"; fi
+    @if [ -f clients/web/package.json ]; then cd clients/web && pnpm test; else echo "skip: clients/web/package.json ещё нет"; fi
 
 # init-env.sh: пароли вписаны и случайны, файл закрыт от чужих, существующий .env не перезаписывается,
 # а docker-compose.yml собирается с одним лишь созданным .env (в .env.example есть все обязательные переменные)
@@ -132,6 +134,10 @@ dev-web:
 dev-desktop:
     cd clients/desktop && pnpm dev
 
+# Storybook дизайн-системы (clients/web/src/ui): http://localhost:6006
+storybook:
+    cd clients/web && pnpm storybook
+
 # --- образ и стек из рабочего дерева ----------------------------------------
 
 # версия сборки из рабочего дерева: dev-<ревизия>[-dirty]; без git (копия на стенде агента) — dev-unknown
@@ -155,7 +161,8 @@ compose-smoke port="18089":
 
 # --- кодогенерация ----------------------------------------------------------
 
-# buf generate → sqlc → oapi-codegen (go tool); результат коммитится, CI проверяет свежесть (gen-check)
+# buf generate → sqlc → oapi-codegen (go tool) → дизайн-токены (design/tokens → clients/web/src/ui/tokens.*);
+# результат коммитится, CI проверяет свежесть (gen-check; токены — ещё и тестом в test-web)
 gen:
     @if [ -d proto ]; then buf generate; fi
     @if [ -f server/sqlc.yaml ]; then cd server && sqlc generate; else echo "skip: server/sqlc.yaml ещё нет"; fi
@@ -164,7 +171,7 @@ gen:
 
 # сгенерированный код не отстал от контракта (ADR-0017 п. 5)
 gen-check: gen
-    @if git status --porcelain -- server/gen clients/web/src/gen | grep .; then echo "сгенерированный код отстал от контракта: закоммить файлы выше (just gen)"; exit 1; fi
+    @if git status --porcelain -- server/gen clients/web/src/gen clients/web/src/ui/tokens.css clients/web/src/ui/tokens.ts | grep .; then echo "сгенерированный код отстал от контракта: закоммить файлы выше (just gen)"; exit 1; fi
 
 # контракт REST — docs/protocol/openapi.yaml (пишется руками, код генерируется из него)
 openapi:

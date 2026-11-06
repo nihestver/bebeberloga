@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: CC0-1.0
+#
+# Prettier запускают lefthook (из корня) и `pnpm lint` в clients/web (с --ignore-path на этот файл).
+
+# сгенерированный код (just gen): форматирует генератор, а не prettier
+clients/web/src/gen/
+server/gen/
+
+# сборки
+storybook-static/
+dist/
+
+# lock-файлы
+pnpm-lock.yaml
+
+# написаны руками со своим выравниванием до появления prettier в репозитории
+docs/protocol/openapi.yaml
+deploy/
+.vscode/

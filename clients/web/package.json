@@ -1,0 +1,60 @@
+{
+  "name": "@bebeberloga/web",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Bebeberloga: общий интерфейс web- и desktop-клиента",
+  "license": "GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception",
+  "type": "module",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "gen": "node scripts/gen-tokens.mjs",
+    "lint": "eslint . && prettier --check . --ignore-path ../../.prettierignore --ignore-path ../../.gitignore",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "storybook": "storybook dev -p 6006 --no-open",
+    "build-storybook": "storybook build",
+    "check-licenses": "node scripts/check-licenses.mjs"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "2.17.0",
+    "@fontsource/jetbrains-mono": "5.3.0",
+    "@fontsource/nunito": "5.3.0",
+    "@fontsource/unbounded": "5.3.0",
+    "lucide-react": "1.70.0",
+    "qr": "0.7.2",
+    "react": "19.3.1",
+    "react-aria-components": "1.22.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@storybook/addon-a11y": "10.6.6",
+    "@storybook/react-vite": "10.6.6",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.8",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "axe-core": "4.14.0",
+    "eslint": "10.14.0",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-storybook": "10.6.6",
+    "globals": "17.14.0",
+    "jsdom": "31.0.0",
+    "jsqr": "1.4.0",
+    "prettier": "3.9.10",
+    "storybook": "10.6.6",
+    "style-dictionary": "5.8.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vite": "8.3.6",
+    "vitest": "5.1.0"
+  }
+}

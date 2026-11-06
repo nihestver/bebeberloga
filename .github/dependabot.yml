@@ -44,9 +44,15 @@ updates:
   #   groups: { cargo: { patterns: ["*"] } }
   #   commit-message: { prefix: "chore(deps)" }
 
-  # С B8/B9 (появится clients/web/package.json):
-  # - package-ecosystem: "npm"
-  #   directory: "/clients/web"
-  #   schedule: { interval: "weekly" }
-  #   groups: { npm: { patterns: ["*"] } }
-  #   commit-message: { prefix: "chore(deps)" }
+  # Версии в clients/web/package.json закреплены точно; мажорные обновления — отдельными PR с прогоном
+  # тестов клавиатуры и доступности (ADR-0023).
+  - package-ecosystem: "npm"
+    directory: "/clients/web"
+    schedule:
+      interval: "weekly"
+    groups:
+      npm:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    commit-message:
+      prefix: "chore(deps)"
