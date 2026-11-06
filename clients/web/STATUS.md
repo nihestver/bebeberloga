@@ -27,71 +27,71 @@
 
 Истории: `just storybook` → http://localhost:6006 (путь в колонке «История» — раздел и история).
 
-| Компонент | Файл (`src/ui/…`) | История |
-|---|---|---|
-| `Button/Primary` … `/Link` | `Button/Button.tsx` (`Button variant`) | Button → Primary, Secondary, Danger, DangerOutline, Link |
-| `Button/Icon` | `Button/Button.tsx` (`IconButton`) | Button → Icon |
-| `Button/IconToggle` | `Button/Button.tsx` (`IconToggleButton`) | Button → IconToggle |
-| `Button/Split` | `Button/SplitButton.tsx` | Button → Split |
-| `Button/Pill` | `Button/Button.tsx` (`Button variant="pill"`) | Button → Pill |
-| `Button/Hangup` | `Button/Button.tsx` (`HangupButton`) | Button → Hangup |
-| `Input/Text` | `Input/Input.tsx` (`TextInput`) | Input → Text |
-| `Input/WithAction` | `Input/Input.tsx` (`ActionInput`) | Input → WithAction |
-| `Input/Search` | `Input/Input.tsx` (`SearchInput`) | Input → Search |
-| `Input/Textarea` | `Input/Input.tsx` (`Textarea`) | Input → Textarea |
-| `Input/RichText` | `Input/Input.tsx` (`RichTextInput`) | Input → RichText |
-| `Input/ChannelName` | `Input/Input.tsx` (`ChannelNameInput`, `normalizeChannelName`) | Input → ChannelName |
-| `Select` | `Select/Select.tsx` | Select → Default, WithSearch |
-| `Toggle` | `Toggle/Toggle.tsx` | Toggle → Default |
-| `Checkbox` | `Checkbox/Checkbox.tsx` | Checkbox → Default |
-| `Radio` | `Radio/Radio.tsx` (`Radio`) | Radio → Radio |
-| `RadioGroup` | `Radio/Radio.tsx` (`RadioGroup`) | Radio → RadioGroup |
-| `RadioCard` | `Radio/Radio.tsx` (`RadioCard`) | Radio → RadioCard |
-| `TriState` | `SegmentedControl/SegmentedControl.tsx` (`TriState`) | TriState → Default |
-| `Slider` | `Slider/Slider.tsx` (`Slider`) | Slider → Default |
-| `Slider/Threshold` | `Slider/Slider.tsx` (`ThresholdSlider`) | Slider → Threshold |
-| `LevelMeter` | `Slider/Slider.tsx` (`LevelMeter`) | Slider → LevelMeter |
-| `KeyRecorder` | `KeyRecorder/KeyRecorder.tsx` | KeyRecorder → Default |
-| `Kbd` | `Kbd/Kbd.tsx` (`Kbd`, `KeyComboView`, `ShortcutKeys`) | Kbd → Default, Registry |
-| `ColorSwatches` | `ColorSwatches/ColorSwatches.tsx` | ColorSwatches → Default |
-| `SegmentedControl` | `SegmentedControl/SegmentedControl.tsx` | SegmentedControl → Default |
-| `Tabs` | `Tabs/Tabs.tsx` | Tabs → Default |
-| `Chip` | `Chip/Chip.tsx` (`ChipGroup`) | Chip → Default |
-| `Tooltip`, `Tooltip/Success` | `Tooltip/Tooltip.tsx` (`Tooltip`, `useSuccessTooltip`) | Tooltip → Default, Success |
-| `Menu/Context` | `Menu/Menu.tsx` (`ContextMenu`, `MenuItem`, `MenuSection`, `MenuSeparator`, `Submenu`) | Menu → Context, Scrolling |
-| `Menu/Context` с быстрыми реакциями | `Menu/Menu.tsx` (`QuickReactions`) | Menu → ContextQuickReactions |
-| `Menu/Popover` | `Menu/Menu.tsx` (`PopoverMenu`) | Menu → Popover |
-| `Popover/Panel` | `Popover/PopoverPanel.tsx` | Popover → Panel |
-| `Modal/S`, `/M`, `/L` | `Modal/Modal.tsx` (`Modal size`) | Modal → S, M, L, LWide, SplitFooter |
-| `Modal/Confirm` | `Modal/Modal.tsx` (`ConfirmModal`) | Modal → Confirm |
-| `Overlay/Settings` | `Modal/Modal.tsx` (`SettingsOverlay`) | Overlay → Settings |
-| `Modal/Settings` | `Modal/Modal.tsx` (`SettingsModal`) | Modal → Settings |
-| `CallToast` | `CallToast/CallToast.tsx` | CallToast → Default |
-| `MiniPlayer` | `MiniPlayer/MiniPlayer.tsx` | MiniPlayer → Default |
-| `Toast` | `Toast/Toast.tsx` (`ToastRegion`, `showToast`) | Toast → Default |
-| `SaveBar` | `Banner/Banner.tsx` (`SaveBar`) | SaveBar → Default |
-| `Banner` | `Banner/Banner.tsx` (`Banner`) | Banner → Default |
-| `Avatar`, `/Status`, `/Speaking`, `/Typing` | `Avatar/Avatar.tsx`, `Avatar/builtin.ts` | Avatar → Sizes, BuiltIn, Tones, Status, Speaking, Typing |
-| `CommunityIcon` | `Avatar/Avatar.tsx` (`CommunityIcon`) | Avatar → CommunityIcon |
-| `Badge/Count` | `Badge/Badge.tsx` (`CountBadge`, `formatCount`) | Badge → Count |
-| `Badge/Pill` | `Badge/Badge.tsx` (`PillBadge`) | Badge → Pill |
-| `Badge/Live` | `Badge/Badge.tsx` (`LiveBadge`) | Badge → Live |
-| `UnreadPip` | `Badge/Badge.tsx` (`UnreadPip`) | Indicators → UnreadPip |
-| `E2EEBadge` | `Badge/Badge.tsx` (`E2EEBadge`) | Indicators → E2EEBadge |
-| `ListRow` | `List/List.tsx` (`ListRow` в `RowList`) | List → ListRow |
-| `SectionHeader` | `List/List.tsx` | List → SectionHeader |
-| `Divider`, `/Date`, `/New` | `List/List.tsx` (`Divider variant`) | List → Divider |
-| `EmptyState` | `EmptyState/EmptyState.tsx` (+ `SleepingBear`, `SearchingBear`) | EmptyState → Default |
-| `ProgressBar` | `Progress/Progress.tsx` | Progress → ProgressBar |
-| `QRCode` | `QR/QRCode.tsx` | QR → QRCode |
-| `QRScanner` | `QR/QRScanner.tsx` | QR → QRScanner, QRScannerDenied |
-| `PasswordStrength` | `Progress/Progress.tsx` | Progress → PasswordStrength |
-| `CodeInput` | `CodeInput/CodeInput.tsx` | CodeInput → Default |
-| `WaveformTrimmer` | `WaveformTrimmer/WaveformTrimmer.tsx` | WaveformTrimmer → Default |
-| `Skeleton` | `Progress/Progress.tsx` (`Skeleton`, `SkeletonText`) | Progress → Skeleton |
-| `Card` | `Card/Card.tsx` (`Card`, `LinkCard`) | Card → Default |
-| `Table` | `Card/Card.tsx` (`Table`) | Card → Table |
-| Иконки (§7) | `icons/icons.ts`, `icons/Icon.tsx`, `design/icons/` | — (используются в историях) |
+| Компонент                                   | Файл (`src/ui/…`)                                                                      | История                                                  |
+| ------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `Button/Primary` … `/Link`                  | `Button/Button.tsx` (`Button variant`)                                                 | Button → Primary, Secondary, Danger, DangerOutline, Link |
+| `Button/Icon`                               | `Button/Button.tsx` (`IconButton`)                                                     | Button → Icon                                            |
+| `Button/IconToggle`                         | `Button/Button.tsx` (`IconToggleButton`)                                               | Button → IconToggle                                      |
+| `Button/Split`                              | `Button/SplitButton.tsx`                                                               | Button → Split                                           |
+| `Button/Pill`                               | `Button/Button.tsx` (`Button variant="pill"`)                                          | Button → Pill                                            |
+| `Button/Hangup`                             | `Button/Button.tsx` (`HangupButton`)                                                   | Button → Hangup                                          |
+| `Input/Text`                                | `Input/Input.tsx` (`TextInput`)                                                        | Input → Text                                             |
+| `Input/WithAction`                          | `Input/Input.tsx` (`ActionInput`)                                                      | Input → WithAction                                       |
+| `Input/Search`                              | `Input/Input.tsx` (`SearchInput`)                                                      | Input → Search                                           |
+| `Input/Textarea`                            | `Input/Input.tsx` (`Textarea`)                                                         | Input → Textarea                                         |
+| `Input/RichText`                            | `Input/Input.tsx` (`RichTextInput`)                                                    | Input → RichText                                         |
+| `Input/ChannelName`                         | `Input/Input.tsx` (`ChannelNameInput`, `normalizeChannelName`)                         | Input → ChannelName                                      |
+| `Select`                                    | `Select/Select.tsx`                                                                    | Select → Default, WithSearch                             |
+| `Toggle`                                    | `Toggle/Toggle.tsx`                                                                    | Toggle → Default                                         |
+| `Checkbox`                                  | `Checkbox/Checkbox.tsx`                                                                | Checkbox → Default                                       |
+| `Radio`                                     | `Radio/Radio.tsx` (`Radio`)                                                            | Radio → Radio                                            |
+| `RadioGroup`                                | `Radio/Radio.tsx` (`RadioGroup`)                                                       | Radio → RadioGroup                                       |
+| `RadioCard`                                 | `Radio/Radio.tsx` (`RadioCard`)                                                        | Radio → RadioCard                                        |
+| `TriState`                                  | `SegmentedControl/SegmentedControl.tsx` (`TriState`)                                   | TriState → Default                                       |
+| `Slider`                                    | `Slider/Slider.tsx` (`Slider`)                                                         | Slider → Default                                         |
+| `Slider/Threshold`                          | `Slider/Slider.tsx` (`ThresholdSlider`)                                                | Slider → Threshold                                       |
+| `LevelMeter`                                | `Slider/Slider.tsx` (`LevelMeter`)                                                     | Slider → LevelMeter                                      |
+| `KeyRecorder`                               | `KeyRecorder/KeyRecorder.tsx`                                                          | KeyRecorder → Default                                    |
+| `Kbd`                                       | `Kbd/Kbd.tsx` (`Kbd`, `KeyComboView`, `ShortcutKeys`)                                  | Kbd → Default, Registry                                  |
+| `ColorSwatches`                             | `ColorSwatches/ColorSwatches.tsx`                                                      | ColorSwatches → Default                                  |
+| `SegmentedControl`                          | `SegmentedControl/SegmentedControl.tsx`                                                | SegmentedControl → Default                               |
+| `Tabs`                                      | `Tabs/Tabs.tsx`                                                                        | Tabs → Default                                           |
+| `Chip`                                      | `Chip/Chip.tsx` (`ChipGroup`)                                                          | Chip → Default                                           |
+| `Tooltip`, `Tooltip/Success`                | `Tooltip/Tooltip.tsx` (`Tooltip`, `useSuccessTooltip`)                                 | Tooltip → Default, Success                               |
+| `Menu/Context`                              | `Menu/Menu.tsx` (`ContextMenu`, `MenuItem`, `MenuSection`, `MenuSeparator`, `Submenu`) | Menu → Context, Scrolling                                |
+| `Menu/Context` с быстрыми реакциями         | `Menu/Menu.tsx` (`QuickReactions`)                                                     | Menu → ContextQuickReactions                             |
+| `Menu/Popover`                              | `Menu/Menu.tsx` (`PopoverMenu`)                                                        | Menu → Popover                                           |
+| `Popover/Panel`                             | `Popover/PopoverPanel.tsx`                                                             | Popover → Panel                                          |
+| `Modal/S`, `/M`, `/L`                       | `Modal/Modal.tsx` (`Modal size`)                                                       | Modal → S, M, L, LWide, SplitFooter                      |
+| `Modal/Confirm`                             | `Modal/Modal.tsx` (`ConfirmModal`)                                                     | Modal → Confirm                                          |
+| `Overlay/Settings`                          | `Modal/Modal.tsx` (`SettingsOverlay`)                                                  | Overlay → Settings                                       |
+| `Modal/Settings`                            | `Modal/Modal.tsx` (`SettingsModal`)                                                    | Modal → Settings                                         |
+| `CallToast`                                 | `CallToast/CallToast.tsx`                                                              | CallToast → Default                                      |
+| `MiniPlayer`                                | `MiniPlayer/MiniPlayer.tsx`                                                            | MiniPlayer → Default                                     |
+| `Toast`                                     | `Toast/Toast.tsx` (`ToastRegion`, `showToast`)                                         | Toast → Default                                          |
+| `SaveBar`                                   | `Banner/Banner.tsx` (`SaveBar`)                                                        | SaveBar → Default                                        |
+| `Banner`                                    | `Banner/Banner.tsx` (`Banner`)                                                         | Banner → Default                                         |
+| `Avatar`, `/Status`, `/Speaking`, `/Typing` | `Avatar/Avatar.tsx`, `Avatar/builtin.ts`                                               | Avatar → Sizes, BuiltIn, Tones, Status, Speaking, Typing |
+| `CommunityIcon`                             | `Avatar/Avatar.tsx` (`CommunityIcon`)                                                  | Avatar → CommunityIcon                                   |
+| `Badge/Count`                               | `Badge/Badge.tsx` (`CountBadge`, `formatCount`)                                        | Badge → Count                                            |
+| `Badge/Pill`                                | `Badge/Badge.tsx` (`PillBadge`)                                                        | Badge → Pill                                             |
+| `Badge/Live`                                | `Badge/Badge.tsx` (`LiveBadge`)                                                        | Badge → Live                                             |
+| `UnreadPip`                                 | `Badge/Badge.tsx` (`UnreadPip`)                                                        | Indicators → UnreadPip                                   |
+| `E2EEBadge`                                 | `Badge/Badge.tsx` (`E2EEBadge`)                                                        | Indicators → E2EEBadge                                   |
+| `ListRow`                                   | `List/List.tsx` (`ListRow` в `RowList`)                                                | List → ListRow                                           |
+| `SectionHeader`                             | `List/List.tsx`                                                                        | List → SectionHeader                                     |
+| `Divider`, `/Date`, `/New`                  | `List/List.tsx` (`Divider variant`)                                                    | List → Divider                                           |
+| `EmptyState`                                | `EmptyState/EmptyState.tsx` (+ `SleepingBear`, `SearchingBear`)                        | EmptyState → Default                                     |
+| `ProgressBar`                               | `Progress/Progress.tsx`                                                                | Progress → ProgressBar                                   |
+| `QRCode`                                    | `QR/QRCode.tsx`                                                                        | QR → QRCode                                              |
+| `QRScanner`                                 | `QR/QRScanner.tsx`                                                                     | QR → QRScanner, QRScannerDenied                          |
+| `PasswordStrength`                          | `Progress/Progress.tsx`                                                                | Progress → PasswordStrength                              |
+| `CodeInput`                                 | `CodeInput/CodeInput.tsx`                                                              | CodeInput → Default                                      |
+| `WaveformTrimmer`                           | `WaveformTrimmer/WaveformTrimmer.tsx`                                                  | WaveformTrimmer → Default                                |
+| `Skeleton`                                  | `Progress/Progress.tsx` (`Skeleton`, `SkeletonText`)                                   | Progress → Skeleton                                      |
+| `Card`                                      | `Card/Card.tsx` (`Card`, `LinkCard`)                                                   | Card → Default                                           |
+| `Table`                                     | `Card/Card.tsx` (`Table`)                                                              | Card → Table                                             |
+| Иконки (§7)                                 | `icons/icons.ts`, `icons/Icon.tsx`, `design/icons/`                                    | — (используются в историях)                              |
 
 Состояния из §2 («обычное, наведение, нажатие, фокус, неактивное, загрузка, ошибка») показаны
 рядом: помощник `stories/States.tsx` ставит data-атрибуты, которыми примитивы отмечают состояния,
@@ -102,9 +102,8 @@
 - **Аватары и собственные иконки лежат в `design/avatars/` и `design/icons/`**, а не в
   `clients/web/src/ui/avatars/`, как написано в промпте: решение владельца при одобрении плана —
   ими будут пользоваться и мобильные клиенты. Web-клиент берёт их при сборке (алиас `@design`,
-  `import.meta.glob … ?raw`). Лицензия и авторство — по `LICENSING.md` и `ATTRIBUTION.md`;
-  REUSE-аннотация для этих каталогов меняется отдельной PR владельца (до неё `design/**`
-  формально под Apache-2.0, строки ATTRIBUTION уже говорят CC-BY-SA-4.0).
+  `import.meta.glob … ?raw`). Лицензия и авторство — CC BY-SA 4.0, автор nihestver: `LICENSING.md`,
+  `NOTICE` и `REUSE.toml` (PR #20 владельца) и построчно `ATTRIBUTION.md`.
 - **Список id аватаров — контракт** (`docs/protocol/AVATARS.md`): `User.avatar_id` передаётся между
   клиентами. Неизвестный id показывается запасным `bear`. Тон фона закреплён за аватаром
   (OPEN-QUESTIONS №25).
@@ -158,6 +157,5 @@
   контраста и a11y в браузере, Electron.
 - После ответов контура A: OPEN-QUESTIONS №22–№29 (формула цветов, образцы, белая подложка QR, фон
   аватара, символы имени канала, счётчик «1K+», конфликты сочетаний, авторство в «О программе»).
-- Когда владелец поменяет REUSE.toml/LICENSING.md для `design/avatars` и `design/icons` — rebase на main.
 - Глобальные сочетания (PTT, свои сочетания) — desktop-оболочка B09; реестр уже знает о них
   (`userAssigned`).
