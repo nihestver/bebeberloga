@@ -32,7 +32,7 @@ lint-rust:
     @if [ -f Cargo.toml ]; then cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings; else echo "skip: Cargo.toml ещё нет"; fi
 
 lint-web:
-    @if [ -d clients/web ]; then cd clients/web && pnpm lint && pnpm typecheck; else echo "skip: clients/web ещё нет"; fi
+    @if [ -f clients/web/package.json ]; then cd clients/web && pnpm lint && pnpm typecheck; else echo "skip: clients/web/package.json ещё нет (B09); до него в clients/web только сгенерированные типы"; fi
 
 # buf breaking сравнивает с main только когда там уже есть .proto (иначе buf падает на пустом модуле)
 lint-proto:
@@ -41,7 +41,9 @@ lint-proto:
 lint-licenses:
     reuse lint
     @if [ -f Cargo.toml ]; then cargo deny check; fi
-    @if [ -f server/go.mod ]; then cd server && go-licenses check ./...; fi
+    # собственный модуль под корневым LICENSE (AGPL), go-licenses ищет файл только до server/go.mod — исключаем
+    # список разрешённых лицензий — LICENSING.md (GPL/LGPL только через ADR, сюда не входят)
+    @if [ -f server/go.mod ]; then cd server && go-licenses check --ignore github.com/nihestver/bebeberloga/server --allowed_licenses=MIT,BSD-2-Clause,BSD-3-Clause,Apache-2.0,ISC,MPL-2.0,Zlib,Unlicense,CC0-1.0,Unicode-3.0,OFL-1.1 ./...; fi
 
 test-go:
     @if [ -f server/go.mod ]; then cd server && go test -race ./...; else echo "skip: server/go.mod ещё нет"; fi
@@ -50,7 +52,7 @@ test-rust:
     @if [ -f Cargo.toml ]; then cargo test --workspace; else echo "skip: Cargo.toml ещё нет"; fi
 
 test-web:
-    @if [ -d clients/web ]; then cd clients/web && pnpm test; else echo "skip: clients/web ещё нет"; fi
+    @if [ -f clients/web/package.json ]; then cd clients/web && pnpm test; else echo "skip: clients/web/package.json ещё нет (B09)"; fi
 
 # --- локальная среда --------------------------------------------------------
 
@@ -77,11 +79,16 @@ dev-desktop:
 
 # --- кодогенерация ----------------------------------------------------------
 
+# buf generate → sqlc → oapi-codegen (go tool); результат коммитится, CI проверяет свежесть (gen-check)
 gen:
     @if [ -d proto ]; then buf generate; fi
-    @if [ -f server/go.mod ]; then cd server && sqlc generate; fi
+    @if [ -f server/sqlc.yaml ]; then cd server && sqlc generate; else echo "skip: server/sqlc.yaml ещё нет"; fi
     @if [ -f server/go.mod ] && [ -f docs/protocol/openapi.yaml ]; then cd server && go generate ./...; fi
     @if [ -f clients/web/package.json ]; then cd clients/web && pnpm run --if-present gen; fi
+
+# сгенерированный код не отстал от контракта (ADR-0017 п. 5)
+gen-check: gen
+    @if git status --porcelain -- server/gen clients/web/src/gen | grep .; then echo "сгенерированный код отстал от контракта: закоммить файлы выше (just gen)"; exit 1; fi
 
 # контракт REST — docs/protocol/openapi.yaml (пишется руками, код генерируется из него)
 openapi:
