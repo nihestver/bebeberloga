@@ -1,0 +1,136 @@
+{
+  "font": {
+    "heading": {
+      "$type": "fontFamily",
+      "$value": "\"Unbounded\", system-ui, sans-serif",
+      "$description": "Логотип и короткие заголовки (BRAND «Шрифты»)"
+    },
+    "body": {
+      "$type": "fontFamily",
+      "$value": "\"Nunito\", system-ui, sans-serif",
+      "$description": "Основной текст, подзаголовки, кнопки"
+    },
+    "mono": {
+      "$type": "fontFamily",
+      "$value": "\"JetBrains Mono\", ui-monospace, monospace",
+      "$description": "Коды безопасности, ключ восстановления, клавиши, код в сообщениях"
+    },
+    "size": {
+      "heading": { "$type": "dimension", "$value": "28px", "$description": "Unbounded 600" },
+      "title": {
+        "$type": "dimension",
+        "$value": "20px",
+        "$description": "Nunito 700: заголовки окон"
+      },
+      "body": { "$type": "dimension", "$value": "16px", "$description": "Основной текст и кнопки" },
+      "caption": {
+        "$type": "dimension",
+        "$value": "14px",
+        "$description": "Подписи полей, подсказки"
+      },
+      "small": {
+        "$type": "dimension",
+        "$value": "12px",
+        "$description": "Пояснения, Kbd, заголовки секций"
+      },
+      "micro": { "$type": "dimension", "$value": "10px", "$description": "Бейджи заглавными" }
+    },
+    "weight": {
+      "regular": { "$type": "fontWeight", "$value": 400 },
+      "heading": { "$type": "fontWeight", "$value": 600 },
+      "bold": { "$type": "fontWeight", "$value": 700 }
+    },
+    "leading": {
+      "tight": { "$type": "number", "$value": 1.2 },
+      "body": { "$type": "number", "$value": 1.4 }
+    }
+  },
+  "radius": {
+    "xs": { "$type": "dimension", "$value": "6px", "$description": "Checkbox (COMPONENTS §3)" },
+    "s": { "$type": "dimension", "$value": "8px", "$description": "Мелкие элементы" },
+    "m": { "$type": "dimension", "$value": "12px", "$description": "Кнопки и поля" },
+    "l": { "$type": "dimension", "$value": "20px", "$description": "Карточки" },
+    "full": { "$type": "dimension", "$value": "999px", "$description": "Капсулы и круги" }
+  },
+  "space": {
+    "1": { "$type": "dimension", "$value": "4px" },
+    "2": { "$type": "dimension", "$value": "8px" },
+    "3": { "$type": "dimension", "$value": "12px" },
+    "4": { "$type": "dimension", "$value": "16px" },
+    "5": { "$type": "dimension", "$value": "24px" },
+    "6": { "$type": "dimension", "$value": "32px" }
+  },
+  "size": {
+    "control-m": {
+      "$type": "dimension",
+      "$value": "40px",
+      "$description": "Кнопки и поля, размер M"
+    },
+    "control-s": {
+      "$type": "dimension",
+      "$value": "32px",
+      "$description": "Кнопки, поиск в шапках, пункт меню"
+    },
+    "control-xs": {
+      "$type": "dimension",
+      "$value": "24px",
+      "$description": "Малая кнопка-иконка, Chip"
+    },
+    "icon": {
+      "$type": "dimension",
+      "$value": "20px",
+      "$description": "Иконка интерфейса (COMPONENTS §7)"
+    },
+    "icon-s": { "$type": "dimension", "$value": "18px", "$description": "Иконка пункта меню" },
+    "icon-xs": {
+      "$type": "dimension",
+      "$value": "14px",
+      "$description": "Иконка в капсулах и бейджах"
+    },
+    "border": { "$type": "dimension", "$value": "1px" },
+    "focus-ring": {
+      "$type": "dimension",
+      "$value": "2px",
+      "$description": "Кольцо фокуса с клавиатуры"
+    },
+    "focus-offset": {
+      "$type": "dimension",
+      "$value": "2px",
+      "$description": "Отступ кольца фокуса"
+    }
+  },
+  "opacity": {
+    "disabled": { "$type": "number", "$value": 0.5, "$description": "Неактивные элементы" }
+  },
+  "z": {
+    "rail": { "$type": "number", "$value": 10 },
+    "popover": { "$type": "number", "$value": 100 },
+    "modal": { "$type": "number", "$value": 200 },
+    "toast": { "$type": "number", "$value": 300 },
+    "tooltip": { "$type": "number", "$value": 400 }
+  },
+  "duration": {
+    "fast": {
+      "$type": "duration",
+      "$value": "120ms",
+      "$description": "При prefers-reduced-motion — 0"
+    },
+    "base": {
+      "$type": "duration",
+      "$value": "200ms",
+      "$description": "При prefers-reduced-motion — 0"
+    },
+    "loop": {
+      "$type": "duration",
+      "$value": "1200ms",
+      "$description": "Период зацикленных анимаций: спиннер, мерцание Skeleton, пульс кольца; при prefers-reduced-motion — 0"
+    }
+  },
+  "shadow": {
+    "popover": {
+      "$type": "shadow",
+      "$value": "0 8px 24px rgb(0 0 0 / 40%)",
+      "$description": "Только у всплывающих элементов (BRAND: интерфейс плоский)"
+    }
+  }
+}

@@ -1,0 +1,211 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-Bebeberloga-AppStore-exception
+ *
+ * Сгенерировано из design/tokens (pnpm gen). Не править руками.
+ */
+
+:root,
+:root[data-theme="dark"] {
+  /* font */
+  /* Логотип и короткие заголовки (BRAND «Шрифты») */
+  --font-heading: "Unbounded", system-ui, sans-serif;
+  /* Основной текст, подзаголовки, кнопки */
+  --font-body: "Nunito", system-ui, sans-serif;
+  /* Коды безопасности, ключ восстановления, клавиши, код в сообщениях */
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* Unbounded 600 */
+  --font-size-heading: 28px;
+  /* Nunito 700: заголовки окон */
+  --font-size-title: 20px;
+  /* Основной текст и кнопки */
+  --font-size-body: 16px;
+  /* Подписи полей, подсказки */
+  --font-size-caption: 14px;
+  /* Пояснения, Kbd, заголовки секций */
+  --font-size-small: 12px;
+  /* Бейджи заглавными */
+  --font-size-micro: 10px;
+  --font-weight-regular: 400;
+  --font-weight-heading: 600;
+  --font-weight-bold: 700;
+  --font-leading-tight: 1.2;
+  --font-leading-body: 1.4;
+
+  /* radius */
+  /* Checkbox (COMPONENTS §3) */
+  --radius-xs: 6px;
+  /* Мелкие элементы */
+  --radius-s: 8px;
+  /* Кнопки и поля */
+  --radius-m: 12px;
+  /* Карточки */
+  --radius-l: 20px;
+  /* Капсулы и круги */
+  --radius-full: 999px;
+
+  /* space */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* size */
+  /* Кнопки и поля, размер M */
+  --size-control-m: 40px;
+  /* Кнопки, поиск в шапках, пункт меню */
+  --size-control-s: 32px;
+  /* Малая кнопка-иконка, Chip */
+  --size-control-xs: 24px;
+  /* Иконка интерфейса (COMPONENTS §7) */
+  --size-icon: 20px;
+  /* Иконка пункта меню */
+  --size-icon-s: 18px;
+  /* Иконка в капсулах и бейджах */
+  --size-icon-xs: 14px;
+  --size-border: 1px;
+  /* Кольцо фокуса с клавиатуры */
+  --size-focus-ring: 2px;
+  /* Отступ кольца фокуса */
+  --size-focus-offset: 2px;
+
+  /* opacity */
+  /* Неактивные элементы */
+  --opacity-disabled: 0.5;
+
+  /* z */
+  --z-rail: 10;
+  --z-popover: 100;
+  --z-modal: 200;
+  --z-toast: 300;
+  --z-tooltip: 400;
+
+  /* duration */
+  /* При prefers-reduced-motion — 0 */
+  --duration-fast: 120ms;
+  /* При prefers-reduced-motion — 0 */
+  --duration-base: 200ms;
+  /* Период зацикленных анимаций: спиннер, мерцание Skeleton, пульс кольца; при prefers-reduced-motion — 0 */
+  --duration-loop: 1200ms;
+
+  /* shadow */
+  /* Только у всплывающих элементов (BRAND: интерфейс плоский) */
+  --shadow-popover: 0 8px 24px rgb(0 0 0 / 40%);
+
+  /* color */
+  /* Брусника */
+  --color-swatch-1: #e8a0a0;
+  /* Брусника + Морошка, 50 % */
+  --color-swatch-2: #e8b594;
+  /* Морошка */
+  --color-swatch-3: #e8c987;
+  /* Морошка + Шалфей, 50 % */
+  --color-swatch-4: #c2c79b;
+  /* Шалфей */
+  --color-swatch-5: #9cc5ae;
+  /* Шалфей + Иней, 50 % */
+  --color-swatch-6: #91c2c6;
+  /* Иней */
+  --color-swatch-7: #86bedd;
+  /* Иней + Брусника, 1/3 */
+  --color-swatch-8: #a7b4c9;
+  /* Иней + Брусника, 2/3 */
+  --color-swatch-9: #c7aab4;
+  /* Лишайник */
+  --color-swatch-10: #a9b8b2;
+  /* Образец 1 + Туман, 40 % */
+  --color-swatch-11: #eac1bf;
+  /* Образец 2 + Туман, 40 % */
+  --color-swatch-12: #eacdb8;
+  /* Образец 3 + Туман, 40 % */
+  --color-swatch-13: #ead9b0;
+  /* Образец 4 + Туман, 40 % */
+  --color-swatch-14: #d4d8bc;
+  /* Образец 5 + Туман, 40 % */
+  --color-swatch-15: #bdd7c8;
+  /* Образец 6 + Туман, 40 % */
+  --color-swatch-16: #b6d5d6;
+  /* Образец 7 + Туман, 40 % */
+  --color-swatch-17: #b0d3e4;
+  /* Образец 8 + Туман, 40 % */
+  --color-swatch-18: #c3cdd8;
+  /* Образец 9 + Туман, 40 % */
+  --color-swatch-19: #d7c7cb;
+  /* Образец 10 + Туман, 40 % */
+  --color-swatch-20: #c5cfca;
+  /* Основной фон */
+  --color-bg: #1e2b2a;
+  /* Панели и карточки */
+  --color-panel: #2b3b39;
+  /* Главные кнопки, индикатор говорящего */
+  --color-accent: #9cc5ae;
+  /* Ссылки, второй акцент, кольцо фокуса */
+  --color-accent-2: #86bedd;
+  /* Основной текст */
+  --color-text: #eef2ee;
+  /* Второстепенный текст */
+  --color-muted: #a9b8b2;
+  /* Ошибки и удаление */
+  --color-danger: #e8a0a0;
+  /* «Подключение…», «отошёл», устройство не подтверждено */
+  --color-warning: #e8c987;
+  /* Текст на заливках Шалфеем, Инеем, Брусникой, Морошкой */
+  --color-on-accent: #1e2b2a;
+  /* Фон рейла сообществ, сцены звонка, просмотра изображений, подсказок */
+  --color-bg-deep: #172020;
+  /* Наведение на строку списка */
+  --color-panel-hover: #384745;
+  /* Выбранная строка, активная вкладка */
+  --color-panel-active: #445351;
+  /* Нажатие на кнопку с заливкой Панелью */
+  --color-panel-pressed: #283736;
+  /* Разделители и рамки полей */
+  --color-border: rgb(169 184 178 / 16%);
+  /* Затемнение под модальными окнами */
+  --color-overlay: rgb(30 43 42 / 70%);
+  /* Фон сообщения, где упомянули меня; мягкая подсветка Инеем */
+  --color-mention-bg: rgb(134 190 221 / 12%);
+  /* Полоса слева у такого сообщения */
+  --color-mention-bar: #86bedd;
+  /* Статус «в сети», «подключено», говорящий */
+  --color-success: #9cc5ae;
+  /* Метка «В ЭФИРЕ» */
+  --color-live: #e8a0a0;
+  /* Наведение на заливку Шалфеем (+6 % светлоты) */
+  --color-accent-hover: #a2c8b3;
+  /* Нажатие на заливку Шалфеем (−6 % светлоты) */
+  --color-accent-pressed: #93b9a4;
+  /* Наведение на ссылку */
+  --color-accent-2-hover: #8dc2df;
+  /* Нажатие на ссылку */
+  --color-accent-2-pressed: #7eb3d0;
+  /* Наведение на заливку Брусникой */
+  --color-danger-hover: #e9a6a6;
+  /* Нажатие на заливку Брусникой */
+  --color-danger-pressed: #da9696;
+  /* Шалфей 20 %: включённый «позитивный» переключатель, сегмент «разрешить» */
+  --color-success-soft: rgb(156 197 174 / 20%);
+  /* Брусника 20 %: включённый «опасный» переключатель, сегмент «запретить» */
+  --color-danger-soft: rgb(232 160 160 / 20%);
+  /* Морошка 20 %: фон предупреждающей полосы */
+  --color-warning-soft: rgb(232 201 135 / 20%);
+  /* Шалфей 30 %: зона выше порога активации голоса */
+  --color-success-zone: rgb(156 197 174 / 30%);
+  /* Брусника 30 %: зона ниже порога активации голоса */
+  --color-danger-zone: rgb(232 160 160 / 30%);
+  /* Подложка QR-кода: самый светлый цвет палитры (OPEN-QUESTIONS: «белая подложка») */
+  --color-qr-bg: #eef2ee;
+  /* Модули QR-кода */
+  --color-qr-fg: #1e2b2a;
+}
+
+/* Анимации отключены: все длительности равны нулю (COMPONENTS.md §8). */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-loop: 0ms;
+  }
+}
