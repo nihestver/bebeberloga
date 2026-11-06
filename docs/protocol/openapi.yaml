@@ -95,6 +95,31 @@ paths:
                 $ref: '#/components/schemas/InstanceInfo'
         default:
           $ref: '#/components/responses/Error'
+  /health:
+    get:
+      tags: [instance]
+      summary: Состояние сервера
+      description: |
+        Сервер жив, его версия и состояние зависимостей (`postgres`, `valkey`, `nats`).
+        Доступно без входа. Все настроенные зависимости доступны — `200`, хотя бы одна недоступна — `503`;
+        тело в обоих случаях одно. Текстов ошибок в ответе нет — подробности остаются в журнале сервера.
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Все настроенные зависимости доступны
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Хотя бы одна настроенная зависимость недоступна
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        default:
+          $ref: '#/components/responses/Error'
   /gateway:
     get:
       tags: [instance]
@@ -3351,6 +3376,28 @@ components:
         - ERROR_CODE_SOUND_SLOTS_FULL
 
     # --- инстанс -------------------------------------------------------------
+    HealthState:
+      type: string
+      x-proto-enum: bebeberloga.v1.HealthState
+      x-go-type: bebeberlogav1.HealthState
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      enum: [HEALTH_STATE_UNSPECIFIED, HEALTH_STATE_OK, HEALTH_STATE_DOWN, HEALTH_STATE_NOT_CONFIGURED]
+      description: OK — доступна; DOWN — настроена, но недоступна; NOT_CONFIGURED — адрес не задан, проверка не выполнялась.
+    HealthStatus:
+      type: object
+      x-proto-message: bebeberloga.v1.HealthStatus
+      x-go-type: bebeberlogav1.HealthStatus
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [status, version, checks]
+      properties:
+        status:
+          allOf: [{ $ref: '#/components/schemas/HealthState' }]
+          description: HEALTH_STATE_OK — все настроенные зависимости доступны (HTTP 200); HEALTH_STATE_DOWN — хотя бы одна недоступна (HTTP 503).
+        version: { type: string, description: 'Версия сервера, как `InstanceInfo.server_version`.' }
+        checks:
+          type: object
+          description: Состояние по каждой зависимости — `postgres`, `valkey`, `nats`.
+          additionalProperties: { $ref: '#/components/schemas/HealthState' }
     InstanceInfo:
       type: object
       x-proto-message: bebeberloga.v1.InstanceInfo

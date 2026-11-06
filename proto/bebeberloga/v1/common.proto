@@ -124,6 +124,29 @@ message InstanceInfo {
   repeated ExternalSenderKeyRotation external_sender_rotations = 9;
 }
 
+// Состояние зависимости инстанса в ответе `GET /health`.
+enum HealthState {
+  HEALTH_STATE_UNSPECIFIED = 0;
+  // Доступна и отвечает.
+  HEALTH_STATE_OK = 1;
+  // Настроена, но недоступна или не ответила за отведённое время.
+  HEALTH_STATE_DOWN = 2;
+  // Адрес не задан в конфигурации; проверка не выполнялась.
+  HEALTH_STATE_NOT_CONFIGURED = 3;
+}
+
+// Ответ `GET /health`: сервер жив, его версия и состояние зависимостей. Доступен без входа;
+// текстов ошибок не содержит — подробности остаются в журнале сервера.
+message HealthStatus {
+  // HEALTH_STATE_OK — все настроенные зависимости доступны (HTTP 200);
+  // HEALTH_STATE_DOWN — хотя бы одна недоступна (HTTP 503).
+  HealthState status = 1;
+  // Версия сервера, как `InstanceInfo.server_version`.
+  string version = 2;
+  // Состояние по каждой зависимости: `postgres`, `valkey`, `nats`.
+  map<string, HealthState> checks = 3;
+}
+
 // Замена ключа external sender инстанса: новый ключ, подписанный старым (CRYPTO.md §2.12).
 message ExternalSenderKeyRotation {
   bytes old_key = 1;
