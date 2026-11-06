@@ -90,7 +90,7 @@ flowchart LR
 | B5 | Сервер: MLS Delivery Service | [`B05-server-mls.md`](B05-server-mls.md) | 1 | B2, B4 | не начат |
 | B6 | Сервер: messaging, gateway, files, push | [`B06-server-messaging.md`](B06-server-messaging.md) | 1 | B4, B5 | не начат |
 | B7 | Сервер: media, звонки, саундборд | [`B07-server-media.md`](B07-server-media.md) | 2 | B4, B5 | не начат |
-| B8 | Дизайн-система | [`B08-design-system.md`](B08-design-system.md) | 0–1 | A3 | не начат |
+| B8 | Дизайн-система | [`B08-design-system.md`](B08-design-system.md) | 0–1 | A3 | в работе (ветка `feat/B08-design-system`) |
 | B9 | Клиент: каркас, вход, устройства, ЛС | [`B09-client-shell-dm.md`](B09-client-shell-dm.md) | 1 | B1, B3, B6, B8 | не начат |
 | B10 | Клиент: серверы, каналы, роли | [`B10-communities.md`](B10-communities.md) | 3 | B4, B6, B9 | не начат |
 | B11 | Клиент: голос, камера, саундборд | [`B11-voice-soundboard.md`](B11-voice-soundboard.md) | 2 | B7, B9 | не начат |
