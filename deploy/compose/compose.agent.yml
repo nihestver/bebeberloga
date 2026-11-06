@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Стенд агента на тест-сервере (Compose-проект bb-agent, docs/dev/WORKFLOW.md, «Стенд агента»)
+# и стек для проверки в CI. Отличия от docker-compose.yml:
+#   - образ сервера собирается из рабочего дерева и называется иначе, чем образ из GHCR:
+#     тест-стенд bb-test живёт на том же Docker, его тег :main затирать нельзя;
+#   - наружу один порт — HTTP 18080 (без TLS); 80 и 443 заняты тест-стендом;
+#   - жёсткие лимиты памяти: на сервере 2 ГБ без swap, рядом работает тест-стенд.
+#
+#   just remote-up        # на тест-сервере
+#   just compose-smoke    # локально и в CI: поднять, прогнать smoke-тесты, убрать
+#
+# Нужен Docker Compose 2.24.4+ (тег !override).
+
+services:
+  server:
+    image: ${BB_AGENT_SERVER_IMAGE:-bb-agent/server:local}
+    build:
+      context: ../..
+      dockerfile: server/Dockerfile
+      args:
+        VERSION: ${BB_VERSION:-dev-agent}
+    mem_limit: 128m
+
+  postgres:
+    mem_limit: 256m
+
+  valkey:
+    mem_limit: 64m
+
+  nats:
+    mem_limit: 96m
+
+  caddy:
+    environment:
+      BB_SITE_ADDRESS: ":80"
+    ports: !override
+      # адрес публикации меняет just compose-smoke: 127.0.0.1:18089, чтобы не занимать порт стенда
+      - "${BB_AGENT_HTTP_PUBLISH:-18080}:80"
+    mem_limit: 64m
+
+  # Порты стенда агента для B07: LiveKit — 17881/tcp и 40000–40999/udp, coturn — 13478/udp.

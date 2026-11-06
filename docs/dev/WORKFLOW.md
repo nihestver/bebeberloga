@@ -14,7 +14,7 @@
 
 ## Принципы
 
-1. **Одна команда на действие.** Всё, что запускает агент, — рецепты `just` (`just test`, `just lint`, `just deploy-test`). CI и задачи VSCodium вызывают те же рецепты.
+1. **Одна команда на действие.** Всё, что запускает агент, — рецепты `just` (`just test`, `just lint`, `just remote-up`). CI и задачи VSCodium вызывают те же рецепты.
 2. **Проверка за агентом автоматическая.** Форматирование и clean-room-фильтр — hooks Claude Code; линтеры, тесты, лицензии, ссылки — CI. `CLAUDE.md` советует, hooks и CI гарантируют.
 3. **Один промпт — одна сессия — одна ветка — один PR.** Между промптами `/clear`. Исследование и ревью — субагентами.
 4. **Тест-сервер — копия прода**: тот же Docker Compose, что получат администраторы; деплой — из CI после merge в `main`.
@@ -65,12 +65,11 @@ VSCodium берёт расширения из [Open VSX](https://open-vsx.org); 
 | `/prompt B01` | Выполнить готовый промпт: проверка зависимостей → ветка → план (стоп) → реализация с тестами → STATUS.md → ревью субагентами |
 | `/pr [описание]` | Коммиты по Conventional Commits с DCO, `just lint test`, push (с подтверждением), PR по шаблону |
 | `/review-cleanroom <каталог>` | Ревью модуля субагентом `cleanroom-reviewer` |
-| `/deploy-test` | Выкатить `main` на тест-сервер и прогнать smoke-тесты |
 | `/module` | Старое имя `/prompt` |
 
 ### Проверка настройки
 
-1. Открой папку в VSCodium, запусти Claude Code; `/hooks` — три hook-а (PreToolUse, PostToolUse, SessionStart); `/agents` — три субагента; `/` — скиллы `next`, `prompt`, `pr`, `review-cleanroom`, `deploy-test`.
+1. Открой папку в VSCodium, запусти Claude Code; `/hooks` — три hook-а (PreToolUse, PostToolUse, SessionStart); `/agents` — три субагента; `/` — скиллы `next`, `prompt`, `pr`, `review-cleanroom`.
 2. Попроси: «создай файл `server/internal/tmp.go` с типом `Guild`» — hook заблокирует запись и сошлётся на глоссарий.
 3. Попроси: «прочитай docs/PLAN.md» — получишь отказ по правилу deny. Это ограждение, а не изоляция: скрипт или `grep -r` по всему репозиторию план всё равно увидит. Полная изоляция — держать план вне репозитория (см. «Контур A»).
 4. `/next` — таблица промптов, первым предложит B01 и спайки.
@@ -84,9 +83,9 @@ VSCodium берёт расширения из [Open VSX](https://open-vsx.org); 
 
 ## Локальная среда
 
-`deploy/compose/docker-compose.yml` (появится в B17 часть 1) — тот же файл, что у администраторов: server, postgres:16, valkey:8, nats с JetStream, minio, livekit, coturn, caddy. `compose.dev.yml` открывает порты наружу и выключает `server` — его запускаешь через `just dev-server` с hot reload.
+`deploy/compose/docker-compose.yml` — тот же файл, что у администраторов: server, postgres, valkey, nats с JetStream, caddy. S3-хранилище (Garage, [ADR-0022](../adr/0022-s3-storage-garage.md)) добавит B06, livekit и coturn — B07. `compose.dev.yml` открывает порты хранилищ на `127.0.0.1` и выключает `server` и `caddy`: сервер запускаешь через `just dev-server` с hot reload. Подробности — [`deploy/README.md`](../../deploy/README.md).
 
-Цикл: `just dev-up` → `just dev-server` → `just dev-web` → `just dev-desktop` (Electron подключается к Vite). В VSCodium — задачи «dev: …». Переменные — в `.env.example` (коммитится) и `.env` (нет).
+Цикл: `just dev-up` → `just dev-server` → `just dev-web` → `just dev-desktop` (Electron подключается к Vite). В VSCodium — задачи «dev: …». Переменные — в `deploy/compose/.env.example` (коммитится) и `deploy/compose/.env` (нет); `.env` со случайными паролями создаёт `deploy/compose/init-env.sh` при первом `just dev-up`.
 
 ## Тест-сервер
 
@@ -116,7 +115,9 @@ Host bb-test
 
 Для CI — отдельный ключ: `ssh-keygen -t ed25519 -f ~/.ssh/bebeberloga_ci -C ci` → публичная часть на сервер, приватная — в GitHub Secret `TEST_SSH_KEY`, `ssh-keyscan test.bebeberloga.org` — в `TEST_KNOWN_HOSTS`, `test.bebeberloga.org` — в `TEST_SSH_HOST`; secrets кладутся в environment `test` репозитория. Адрес для smoke-тестов — переменная (не секрет) `TEST_BASE_URL` того же environment; без неё используется `https://test.bebeberloga.org`.
 
-Claude Code выполняет на сервере только `just deploy-test`, `just smoke-test`, `just test-logs` (через `Bash(just *)`); любой другой `ssh` спросит подтверждение. Для проверок до merge у агента свой стенд на том же сервере — следующий раздел.
+Первая настройка самого стенда (файлы Compose, `.env`, видимость образа в GHCR) — [`deploy/README.md`](../../deploy/README.md#тест-сервер-первая-настройка).
+
+Тест-стенд выкатывают CI и владелец — из терминала, командой `just deploy-test`; Claude Code его не выкатывает (`CLAUDE.md`), отдельного скилла для выкатки нет. На тест-стенде агенту доступны только `just smoke-test` и `just test-logs` (через `Bash(just *)`); любой другой `ssh` спросит подтверждение. Для проверок до merge у агента свой стенд на том же сервере — следующий раздел.
 
 ## Стенд агента
 
@@ -143,8 +144,9 @@ ufw allow 18080/tcp && ufw allow 17881/tcp && ufw allow 13478/udp && ufw allow 4
 |---|---|
 | `just remote-sync` | Копирует рабочее дерево на сервер (rsync); без `.git`, секретов, сборок и `docs/PLAN.md` — список в `tools/dev/remote-sync.exclude` |
 | `just remote <рецепт>` | Синхронизирует и запускает рецепт `just` на сервере: `just remote test-go`, `just remote test-rust` |
-| `just remote-up` / `remote-ps` / `remote-logs [svc]` / `remote-down` | Стенд `bb-agent`: `docker-compose.yml` + `compose.agent.yml` (появится в B17 ч.1) |
-| `just remote-check` | Процессор, память, диск, Docker, mise на сервере |
+| `just remote-up` / `remote-ps` / `remote-logs [svc]` / `remote-down` | Стенд `bb-agent`: `docker-compose.yml` + `compose.agent.yml`; образ сервера собирается на сервере из копии дерева |
+| `just remote-check` | Процессор, память, диск, версии Docker, Compose и buildx, mise на сервере |
+| `just compose-smoke` | Там, где запущен: собрать образ, поднять стек проектом `bb-smoke` (`127.0.0.1:18089`), прогнать smoke-тесты, убрать стек. Этот же рецепт — job `deploy` в CI |
 
 Порты стендов не пересекаются (уточняются в B7):
 
@@ -154,15 +156,15 @@ ufw allow 18080/tcp && ufw allow 17881/tcp && ufw allow 13478/udp && ufw allow 4
 | LiveKit | 7881/tcp, 50000–60000/udp | 17881/tcp, 40000–40999/udp |
 | coturn | 3478/udp | 13478/udp |
 
-Postgres, Valkey, NATS и MinIO наружу не публикуются ни в одном стенде. Секреты стенда агента — в `.env` на сервере (`rsync` их не перезаписывает и не удаляет).
+Postgres, Valkey и NATS наружу не публикуются ни в одном стенде. Секреты стенда агента — в `deploy/compose/.env` на сервере: файл создаёт `init-env.sh` при первом `just remote-up`, `rsync` его не перезаписывает и не удаляет. У контейнеров стенда агента жёсткие лимиты памяти (`compose.agent.yml`, в сумме 608 МБ), у тест-стенда — `BB_MEM_*` в его `.env` (столько же). Лимит — потолок для сервиса, а не резерв: сборка образа и `just remote compose-smoke` в него не входят, поэтому на сервере с 2 ГБ нужен swap-файл ([`deploy/README.md`](../../deploy/README.md#тест-сервер-первая-настройка)).
 
 Рецепты `just remote*` проходят без подтверждения через `Bash(just *)`; произвольный `ssh` по-прежнему спрашивает.
 
 ## CI/CD (GitHub Actions)
 
-- [`ci.yml`](../../.github/workflows/ci.yml) — на каждый PR, push в `main` и вручную (`workflow_dispatch`): `cleanroom` (фильтр, `reuse lint`, реестр ассетов `ATTRIBUTION.md`, shellcheck), `docs` (внутренние ссылки в markdown), `go`, `rust` (три ОС), `web`, `proto` — по затронутым каталогам. Новый push в ветку PR отменяет её прошлый прогон; прогоны `main` не отменяются, чтобы `deploy-test.yml` получил результат каждого коммита.
-- [`deploy-test.yml`](../../.github/workflows/deploy-test.yml) — после зелёного CI на `main`: образ сервера в GHCR → выкатка на тест-сервер → smoke-тесты. Заработает после B17 часть 1 (`server/Dockerfile`).
-- [`dependabot.yml`](../../.github/dependabot.yml) — раз в неделю одна сводная PR на экосистему с сообщением `ci(deps): …` / `chore(deps): …`. Сейчас только GitHub Actions; блоки `gomod`, `cargo` и `npm` раскомментируются вместе с B4, B3 и B8/B9. В Dependabot-коммитах нет `Signed-off-by`: DCO проверяет только локальный lefthook.
+- [`ci.yml`](../../.github/workflows/ci.yml) — на каждый PR, push в `main` и вручную (`workflow_dispatch`): `cleanroom` (фильтр, `reuse lint`, реестр ассетов `ATTRIBUTION.md`, shellcheck), `docs` (внутренние ссылки в markdown), `go`, `rust` (три ОС), `web`, `proto`, `deploy` (образ сервера и Compose-стек: сборка, запуск, smoke-тесты) — по затронутым каталогам. Новый push в ветку PR отменяет её прошлый прогон; прогоны `main` не отменяются, чтобы `deploy-test.yml` получил результат каждого коммита.
+- [`deploy-test.yml`](../../.github/workflows/deploy-test.yml) — после зелёного CI от push в `main` этого репозитория: образ сервера (amd64, arm64) в GHCR → выкатка на тест-сервер того коммита, который проверил CI, → smoke-тесты и сверка версии. Выкатывается только текущая вершина `main`; без секретов environment `test` прогон пропускается.
+- [`dependabot.yml`](../../.github/dependabot.yml) — раз в неделю одна сводная PR на экосистему с сообщением `ci(deps): …` / `chore(deps): …`. Сейчас GitHub Actions и образы в `deploy/compose/` (версии закреплены, мажорные обновления PostgreSQL и Valkey отключены); блоки `gomod`, `cargo` и `npm` раскомментируются вместе с B4, B3 и B8/B9. В Dependabot-коммитах нет `Signed-off-by`: DCO проверяет только локальный lefthook.
 - `release.yml` — на тег `v*` (B17 часть 2). Практики, которые туда закладываются: один источник версии; черновик GitHub Release с `SHA256SUMS`, SBOM и подписями cosign, который человек проверяет и публикует сам; секреты подписи — в environment `release`, доступном только тегам `v*`; без секретов сборка проходит неподписанной с предупреждением, чтобы собирались и форки.
 - Claude в PR (по желанию): `/install-github-app` в Claude Code, токен подписки — секрет `CLAUDE_CODE_OAUTH_TOKEN`; ограничь `--max-turns 15` и `timeout-minutes: 20`.
 - Защита `main` (Settings → Branches): обязательный PR, одна обязательная проверка `ci-ok` (она ждёт все остальные jobs и считает пропущенные по фильтру путей успешными), squash-merge, линейная история.

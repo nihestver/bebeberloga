@@ -6,3 +6,4 @@ node = "22"
 pnpm = "9"
 golangci-lint = "2"
 buf = "1"
+hurl = "8"            # smoke-тесты REST (tools/api/smoke): just smoke-test, just compose-smoke

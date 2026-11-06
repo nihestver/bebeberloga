@@ -1,8 +1,9 @@
 name: deploy-test
 
-# После зелёного ci на main: собрать образ сервера, выложить в GHCR,
-# выкатить на тест-сервер по SSH и прогнать smoke-тесты.
-# Включается, когда появятся server/Dockerfile и секреты TEST_SSH_KEY, TEST_KNOWN_HOSTS, TEST_SSH_HOST, TEST_BASE_URL.
+# После зелёного ci на main: собрать образ сервера (amd64 и arm64), выложить в GHCR,
+# выкатить тест-стенд по SSH и прогнать smoke-тесты.
+# Первичная настройка сервера, секретов environment `test` и видимости пакета — deploy/README.md.
+# Пока секретов нет (в том числе в форках), сборка и выкатка пропускаются.
 
 on:
   workflow_run:
@@ -11,30 +12,72 @@ on:
     types: [completed]
   workflow_dispatch:
 
-concurrency:
-  group: deploy-test
-  cancel-in-progress: false
+# Выкатки идут по одной и не отменяют друг друга.
+concurrency: deploy-test
+
+permissions: {}
 
 jobs:
   build-and-deploy:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
+    # Выкатывается только зелёный ci от push в main этого репозитория. Фильтр `branches` у workflow_run
+    # сравнивает лишь имя ветки, и ему подходит PR из форка с веткой main: такой прогон получил бы
+    # секреты стенда. Поэтому событие, ветка и репозиторий исходного прогона проверяются явно.
+    # Ручной запуск — только с main.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    # ubuntu-24.04, а не ubuntu-latest: hurl 8.1 для Linux собран с libxml2.so.2, которой нет в Ubuntu 26.04 (см. ci.yml)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     environment: test
     permissions:
       contents: read
       packages: write
+    env:
+      # Коммит, который проверил ci, а не тот, что оказался в main к моменту запуска.
+      REVISION: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.REVISION }}
+          persist-credentials: false
 
+      # Выкатывается только текущая вершина main. ci старого коммита может завершиться позже нового
+      # (или его перезапустили) — такой прогон откатил бы стенд назад. Его пропускаем: стенд обновит
+      # прогон более нового коммита.
       - name: check prerequisites
         id: pre
+        env:
+          HOST: ${{ secrets.TEST_SSH_HOST }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [ -f server/Dockerfile ] && [ -n "${{ secrets.TEST_SSH_HOST }}" ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
+          head="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)"
+          if [ -z "$HOST" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "server/Dockerfile или секреты тест-сервера ещё не настроены — деплой пропущен"
+            echo "::notice::Секреты тест-сервера не настроены (deploy/README.md) — сборка и выкатка пропущены"
+          elif [ "$head" != "$REVISION" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::В main уже ${head::12} — выкатка ${REVISION::12} пропущена, стенд обновит прогон более нового коммита"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - if: steps.pre.outputs.ready == 'true'
+        name: image metadata
+        id: meta
+        run: |
+          {
+            echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/server"
+            echo "version=dev-${REVISION::12}"
+            echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_OUTPUT"
+
+      - if: steps.pre.outputs.ready == 'true'
+        uses: docker/setup-buildx-action@v4
 
       - if: steps.pre.outputs.ready == 'true'
         uses: docker/login-action@v4
@@ -43,16 +86,32 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Тег :main — то, что тянет тест-стенд; тег-ревизия — для отката (BB_SERVER_IMAGE в .env на сервере).
       - if: steps.pre.outputs.ready == 'true'
         uses: docker/build-push-action@v7
         with:
           context: .
           file: server/Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
           tags: |
-            ghcr.io/${{ github.repository }}/server:main
-            ghcr.io/${{ github.repository }}/server:${{ github.sha }}
+            ${{ steps.meta.outputs.image }}:main
+            ${{ steps.meta.outputs.image }}:${{ env.REVISION }}
+          labels: |
+            org.opencontainers.image.revision=${{ env.REVISION }}
+            org.opencontainers.image.version=${{ steps.meta.outputs.version }}
+            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
+          annotations: |
+            index:org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            index:org.opencontainers.image.revision=${{ env.REVISION }}
+            index:org.opencontainers.image.licenses=AGPL-3.0-or-later
 
+      - if: steps.pre.outputs.ready == 'true'
+        uses: extractions/setup-just@v4
+
+      # Тот же рецепт, что запускает разработчик: файлы Compose из ревизии git, затем pull и up на сервере.
       - if: steps.pre.outputs.ready == 'true'
         name: deploy over ssh
         env:
@@ -60,16 +119,42 @@ jobs:
           KNOWN: ${{ secrets.TEST_KNOWN_HOSTS }}
           HOST: ${{ secrets.TEST_SSH_HOST }}
         run: |
-          install -m 600 /dev/null key && printf '%s\n' "$KEY" > key
-          printf '%s\n' "$KNOWN" > known_hosts
-          ssh -i key -o UserKnownHostsFile=known_hosts deploy@"$HOST" \
-            'cd ~/bebeberloga && docker compose pull && docker compose up -d --remove-orphans && docker compose ps'
+          install -d -m 700 ~/.ssh
+          install -m 600 /dev/null ~/.ssh/bb_test_key
+          printf '%s\n' "$KEY" > ~/.ssh/bb_test_key
+          printf '%s\n' "$KNOWN" > ~/.ssh/bb_test_known_hosts
+          cat >> ~/.ssh/config <<EOF
+          Host bb-test
+            HostName $HOST
+            User deploy
+            IdentityFile ~/.ssh/bb_test_key
+            IdentitiesOnly yes
+            UserKnownHostsFile ~/.ssh/bb_test_known_hosts
+            StrictHostKeyChecking yes
+          EOF
+          just deploy-test "$REVISION"
+
+      - if: steps.pre.outputs.ready == 'true'
+        uses: jdx/mise-action@v5
+        with:
+          install_args: hurl
 
       - if: steps.pre.outputs.ready == 'true'
         name: smoke tests
         env:
           BASE_URL: ${{ vars.TEST_BASE_URL || 'https://test.bebeberloga.org' }}
+        run: just smoke-test "$BASE_URL"
+
+      # Smoke-тесты прошли бы и на старом контейнере — проверяем, что отвечает именно эта сборка.
+      - if: steps.pre.outputs.ready == 'true'
+        name: deployed version
+        env:
+          BASE_URL: ${{ vars.TEST_BASE_URL || 'https://test.bebeberloga.org' }}
+          VERSION: ${{ steps.meta.outputs.version }}
         run: |
-          curl -sSL https://github.com/Orange-OpenSource/hurl/releases/latest/download/hurl-x86_64-unknown-linux-gnu.tar.gz \
-            | tar xz --strip-components=2 -C /usr/local/bin --wildcards '*/bin/hurl'
-          hurl --test --retry 10 --retry-interval 3000 --variable base_url="$BASE_URL" tools/api/smoke/*.hurl
+          got="$(curl -fsS --retry 5 --retry-delay 3 "$BASE_URL/api/v1/health" | jq -r .version)"
+          if [ "$got" != "$VERSION" ]; then
+            echo "::error::На стенде версия $got, ожидалась $VERSION (в .env на сервере закреплён BB_SERVER_IMAGE?)"
+            exit 1
+          fi
+          echo "На стенде $got"

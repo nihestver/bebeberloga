@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Локальная разработка: из docker-compose.yml поднимаются только хранилища, их порты открыты
+# на 127.0.0.1. Сервер запускается с хоста (`just dev-server`, hot reload), поэтому server и
+# caddy убраны под профиль full и по умолчанию не стартуют.
+#
+#   just dev-up       # PostgreSQL, Valkey, NATS
+#   just dev-server   # сервер с адресами и паролями из deploy/compose/.env
+#
+# Порты меняются переменными BB_DEV_*_PORT, если стандартные заняты.
+
+services:
+  server:
+    profiles:
+      - full
+
+  caddy:
+    profiles:
+      - full
+
+  postgres:
+    ports:
+      - "127.0.0.1:${BB_DEV_POSTGRES_PORT:-5432}:5432"
+
+  valkey:
+    ports:
+      - "127.0.0.1:${BB_DEV_VALKEY_PORT:-6379}:6379"
+
+  nats:
+    ports:
+      - "127.0.0.1:${BB_DEV_NATS_PORT:-4222}:4222"
+
+networks:
+  # Из внутренней сети Docker порты не публикует — для разработки она обычная.
+  backend:
+    internal: false

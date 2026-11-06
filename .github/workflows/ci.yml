@@ -23,6 +23,7 @@ jobs:
       rust: ${{ steps.filter.outputs.rust }}
       web: ${{ steps.filter.outputs.web }}
       proto: ${{ steps.filter.outputs.proto }}
+      deploy: ${{ steps.filter.outputs.deploy }}
     steps:
       - uses: actions/checkout@v7
       - id: filter
@@ -48,6 +49,14 @@ jobs:
               - 'mise.toml'
             proto:
               - 'proto/**'
+            deploy:
+              - 'server/**'
+              - 'deploy/**'
+              - 'tools/api/smoke/**'
+              - 'justfile'
+              - 'mise.toml'
+              - '.github/workflows/ci.yml'
+              - '.github/workflows/deploy-test.yml'
 
   # Clean-room фильтр, лицензионные заголовки и реестр ассетов — на каждый PR, без исключений.
   cleanroom:
@@ -90,6 +99,8 @@ jobs:
       - name: generated code is up to date
         run: just gen-check
       - run: just lint-go test-go
+      # образ сервера собирается под amd64 и arm64 (deploy-test.yml) — кросс-сборку проверяем до merge
+      - run: just build-cross
 
   rust:
     needs: changes
@@ -148,11 +159,32 @@ jobs:
           push: false
           pr_comment: false
 
+  # Образ сервера и Compose-стек из рабочего дерева: сборка образа, запуск всех сервисов (оверлей стенда
+  # агента), smoke-тесты через Caddy. Ловит поломку Dockerfile и Compose до merge, а не на тест-сервере.
+  deploy:
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true'
+    # ubuntu-24.04, а не ubuntu-latest: бинарник hurl 8.1 для Linux собран с libxml2.so.2,
+    # которой нет в Ubuntu 26.04. Вернуть ubuntu-latest, когда hurl выпустит сборку под новую libxml2.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+        with:
+          install_args: hurl
+      - uses: extractions/setup-just@v4
+      # shellcheck есть в образе ubuntu-latest; если его не окажется, шаг упадёт, а не пропустится
+      - name: shellcheck
+        run: shellcheck -S warning deploy/compose/*.sh
+      - run: just lint-deploy test-deploy
+      - run: just compose-smoke
+
   # Единственная обязательная проверка для защиты main: пропущенные по фильтру путей jobs считаются успехом,
   # упавшие или отменённые — провалом. Так защита ветки не зависит от того, какие jobs запускались.
   ci-ok:
     if: always()
-    needs: [changes, cleanroom, docs, go, rust, web, proto]
+    needs: [changes, cleanroom, docs, go, rust, web, proto, deploy]
     runs-on: ubuntu-latest
     steps:
       - name: all required jobs passed or skipped

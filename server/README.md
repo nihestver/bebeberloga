@@ -16,6 +16,7 @@ Go-сервер для self-hosted развёртывания: один бина
 | `internal/buildinfo` | Версия сборки |
 | `gen/bebeberloga/v1` | Protobuf-типы (`buf generate` из `proto/`) — не править руками |
 | `gen/api` | Обработчики REST из `docs/protocol/openapi.yaml` (`oapi-codegen`) — не править руками |
+| `Dockerfile`, `Dockerfile.dockerignore` | Образ сервера: статический бинарник на distroless, пользователь без прав root |
 
 Пакеты `internal/{identity,community,messaging,mls,gateway,media,files,push,admin}` появятся по промптам B04–B07 и B16.
 
@@ -27,6 +28,8 @@ go build -ldflags "-X github.com/nihestver/bebeberloga/server/internal/buildinfo
 ./bebeberloga-server serve --config config.yaml
 curl -s localhost:8080/api/v1/health
 ```
+
+Образ Docker — `server/Dockerfile` (контекст сборки — корень репозитория): `just image` собирает его из рабочего дерева, запуск всего стека — `deploy/README.md`. В образе нет `.git`, поэтому версию передаёт сборка: `--build-arg VERSION=…`.
 
 Без `-ldflags` версия берётся из сведений о сборке Go (`dev-<ревизия>`). Остановка — SIGINT или SIGTERM, открытые соединения завершаются в пределах `http.shutdown_timeout`.
 

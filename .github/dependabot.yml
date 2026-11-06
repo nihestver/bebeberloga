@@ -13,6 +13,23 @@ updates:
     commit-message:
       prefix: "ci(deps)"
 
+  # Образы в deploy/compose/ закреплены по версии; патчи и минорные версии приходят сводной PR.
+  # Мажорные версии PostgreSQL (нужен pg_upgrade) и Valkey (ADR-0002) меняются только осознанно.
+  - package-ecosystem: "docker-compose"
+    directory: "/deploy/compose"
+    schedule:
+      interval: "weekly"
+    groups:
+      compose:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "valkey/valkey"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: "chore(deps)"
+
   # С B4 (появится server/go.mod):
   # - package-ecosystem: "gomod"
   #   directory: "/server"

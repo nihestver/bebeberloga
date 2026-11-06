@@ -99,7 +99,7 @@ flowchart LR
 | B14 | Android-клиент | — | после 1.0 | B1, B3, B8 | после 1.0 |
 | B15 | iOS-клиент | — | после 1.0 | B14 | после 1.0 |
 | B16 | Админ-CLI и конфигурация | [`B16-admin.md`](B16-admin.md) | 4 | B4, B6 | не начат |
-| B17 | DevOps: образ, Compose, релизы | [`B17-devops.md`](B17-devops.md) | 0 (ч.1), 5 (ч.2) | B4 ч.0 (для ч.1) | не начат |
+| B17 | DevOps: образ, Compose, релизы | [`B17-devops.md`](B17-devops.md) | 0 (ч.1), 5 (ч.2) | B4 ч.0 (для ч.1) | ч.1 — готово, PR #18 |
 | B18 | Тест-план и security review | [`B18-test-security.md`](B18-test-security.md) | 2–5 | все | не начат |
 | B19 | Документация | [`B19-docs.md`](B19-docs.md) | 5 | B16, B17 | не начат |
 | B20 | Bot SDK и webhook-мост | — | после 1.0 | B1, B3 | после 1.0 |
