@@ -8,6 +8,7 @@
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { stableJson } from "./json.mjs";
+import { summarize } from "./summarize.mjs";
 
 const root = join(import.meta.dirname, "..", "results");
 const raw = join(root, "raw");
@@ -125,9 +126,48 @@ const bundleKB = existsSync(assets)
     )
   : undefined;
 
+// LiveKit в Docker и нативный: прогоны лежат отдельно (results/raw/livekit-docker), чтобы не попадать
+// в основную сводку; env.json — среда Docker на момент замера.
+const dockerDir = join(raw, "livekit-docker");
+const livekitDockerVsNative = existsSync(dockerDir)
+  ? {
+      environment: JSON.parse(readFileSync(join(dockerDir, "env.json"), "utf8")),
+      runs: readdirSync(dockerDir)
+        .filter((f) => /^(docker|native)-.*\.json$/.test(f))
+        .sort()
+        .map((f) => {
+          const run = JSON.parse(readFileSync(join(dockerDir, f), "utf8"));
+          const r = summarize(run);
+          const inbound =
+            run.viewer.stats.at(-1)?.video.find((x) => x.type === "inbound-rtp") ?? {};
+          return {
+            livekit: f.startsWith("docker-") ? "docker" : "native",
+            preset: r.preset,
+            codec: r.codec,
+            e2ee: r.e2ee,
+            measuredAt: r.measuredAt,
+            durationS: r.durationS,
+            sent: r.sent,
+            sentFps: r.sentFps,
+            frames: run.viewer.frames.length,
+            latencyMeanMs: r.latencyMeanMs,
+            latencyP50Ms: r.latencyMs.p50,
+            latencyP95Ms: r.latencyMs.p95,
+            latencyMaxMs: r.latencyMs.max,
+            jitterBufferMs: r.jitterBufferMs,
+            // с момента подписки зрителя, включая прогрев
+            nackCount: inbound.nackCount ?? null,
+            packetsLost: inbound.packetsLost ?? null,
+            freezes: r.freezes,
+          };
+        }),
+    }
+  : undefined;
+
 const facts = {
   note: "Создано scripts/facts.mjs из results/raw; руками не править.",
   bundleKB,
+  livekitDockerVsNative,
   macos: {
     probe: probe(read("mac-probe.json")),
     withoutPermission: {
