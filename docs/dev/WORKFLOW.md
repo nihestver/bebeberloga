@@ -24,14 +24,25 @@
 ## Инструменты на macOS
 
 ```bash
-brew install git gh jq just lefthook mise colima docker docker-compose hurl buf \
+brew install git gh jq just lefthook mise hurl buf \
              protobuf reuse lychee shellcheck
 brew install --cask vscodium
 brew install --cask bruno            # ручная отладка API; коллекция хранится в git
 mise install                         # версии Go, Rust, Node, pnpm, golangci-lint v2 из mise.toml
 lefthook install                     # git-хуки: clean room, форматирование, Conventional Commits, DCO
-colima start --cpu 4 --memory 8      # Docker без Docker Desktop
 ```
+
+Docker на Mac — любой из двух вариантов:
+
+- **Docker Desktop** (`brew install --cask docker-desktop`) — проверено: 4.99.0 (Docker Engine 29.9.3), 2026-11-11; локально проходят интеграционные тесты на testcontainers и `just compose-smoke`.
+- **colima** — свободная альтернатива, в проекте не проверялась:
+
+  ```bash
+  brew install colima docker docker-compose
+  colima start --cpu 4 --memory 8
+  ```
+
+Серверная часть проверяется на тест-сервере (`just remote …`) и в CI: там обычный Docker на Linux.
 
 Добавь `eval "$(mise activate zsh)"` в `~/.zshrc`, чтобы версии из `mise.toml` подхватывались в терминале VSCodium. Claude Code CLI нужен для `claude` в терминале и для GitHub Action (`claude setup-token`); установка — по [официальной инструкции](https://code.claude.com/docs/en/setup).
 
