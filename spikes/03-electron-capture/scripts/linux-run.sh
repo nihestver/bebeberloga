@@ -6,7 +6,7 @@
 # (сеанс, PipeWire, портал, недостающие библиотеки), затем запускает спайк в режиме linux.
 # S3_ELECTRON — путь к бинарнику electron, если он не в node_modules (перенос без npm).
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 mode="${1:-wayland}"
 tag="${2:-linux-$mode}"
 electron="${S3_ELECTRON:-node_modules/electron/dist/electron}"

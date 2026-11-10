@@ -4,7 +4,7 @@
 #
 # Запуск Electron со сторожем: scripts/run.sh <секунд> [аргументы electron]. Режим — в S3_MODE.
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 limit="$1"; shift
 env -u ELECTRON_RUN_AS_NODE npx electron . "$@" &
 pid=$!
