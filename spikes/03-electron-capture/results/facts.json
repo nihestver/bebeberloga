@@ -1,0 +1,1216 @@
+{
+  "note": "Создано scripts/facts.mjs из results/raw; руками не править.",
+  "bundleKB": {
+    "clock.js": 1,
+    "livekit-client.e2ee.worker.js": 96,
+    "modulepreload-polyfill.js": 1,
+    "room.js": 522,
+    "streamer.js": 10,
+    "strip.js": 1,
+    "viewer.js": 2
+  },
+  "macos": {
+    "probe": {
+      "permAtStart": {
+        "screen": "granted",
+        "osVersion": "26.4.1",
+        "packaged": false
+      },
+      "perm": {
+        "screen": "granted",
+        "osVersion": "26.4.1",
+        "packaged": false
+      },
+      "windows": {
+        "tookMs": 419,
+        "count": 13,
+        "emptyThumbnails": 0,
+        "withoutIcon": 0,
+        "withoutName": 0
+      },
+      "screens": {
+        "tookMs": 70,
+        "count": 1,
+        "emptyThumbnails": 0,
+        "withoutIcon": 1,
+        "withoutName": 0
+      },
+      "capture": {
+        "window": {
+          "tookMs": 2373,
+          "videoWidth": 1280,
+          "videoHeight": 720,
+          "meanLuma": 89,
+          "video": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "width": 1280,
+              "height": 720,
+              "frameRate": 30,
+              "displaySurface": "window",
+              "deviceId": "window:N:0"
+            }
+          },
+          "audio": null
+        },
+        "screen": {
+          "tookMs": 2237,
+          "videoWidth": 1112,
+          "videoHeight": 720,
+          "meanLuma": 61,
+          "video": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "width": 1112,
+              "height": 720,
+              "frameRate": 30,
+              "displaySurface": "monitor",
+              "deviceId": "screen:N:0"
+            }
+          },
+          "audio": null
+        }
+      },
+      "codecs": {
+        "h264": {
+          "encodeHw": true,
+          "encodeSw": true,
+          "decodeHw": true,
+          "decodeSw": true
+        },
+        "h264-high": {
+          "encodeHw": true,
+          "encodeSw": true,
+          "decodeHw": true,
+          "decodeSw": true
+        },
+        "hevc": {
+          "encodeHw": true,
+          "encodeSw": true,
+          "decodeHw": true,
+          "decodeSw": false
+        },
+        "vp9": {
+          "encodeHw": false,
+          "encodeSw": true,
+          "decodeHw": true,
+          "decodeSw": true
+        },
+        "av1": {
+          "encodeHw": false,
+          "encodeSw": true,
+          "decodeHw": true,
+          "decodeSw": true
+        }
+      },
+      "encoders": {
+        "h264 по умолчанию": {
+          "candidates": 7,
+          "encoder": "VideoToolbox",
+          "hw": true,
+          "size": "1920×1080",
+          "fps": 58,
+          "codec": "video/H264",
+          "fmtp": "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42001f",
+          "limit": "none"
+        },
+        "h264 motion": {
+          "candidates": 7,
+          "encoder": "VideoToolbox",
+          "hw": true,
+          "size": "1280×720",
+          "fps": 57,
+          "codec": "video/H264",
+          "fmtp": "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42001f",
+          "limit": "bandwidth"
+        },
+        "h264 motion L1T1": {
+          "candidates": 7,
+          "encoder": "VideoToolbox",
+          "hw": true,
+          "size": "1280×720",
+          "fps": 58,
+          "mode": "L1T1",
+          "codec": "video/H264",
+          "fmtp": "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42001f",
+          "limit": "bandwidth"
+        },
+        "h264 motion L1T3": {
+          "candidates": 7,
+          "encoder": "OpenH264",
+          "hw": false,
+          "size": "480×270",
+          "fps": 57,
+          "mode": "L1T3",
+          "codec": "video/H264",
+          "fmtp": "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42001f",
+          "limit": "bandwidth"
+        },
+        "h264 detail": {
+          "candidates": 7,
+          "encoder": "VideoToolbox",
+          "hw": true,
+          "size": "1920×1080",
+          "fps": 57,
+          "codec": "video/H264",
+          "fmtp": "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42001f",
+          "limit": "none"
+        },
+        "h264 42e01f motion": {
+          "candidates": 2,
+          "encoder": "OpenH264",
+          "hw": false,
+          "size": "480×270",
+          "fps": 58,
+          "mode": "L1T1",
+          "codec": "video/H264",
+          "fmtp": "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f",
+          "limit": "bandwidth"
+        },
+        "h264 640c motion": {
+          "candidates": 0,
+          "encoder": "libvpx",
+          "hw": false,
+          "size": "480×270",
+          "fps": 58,
+          "mode": "L1T1",
+          "codec": "video/VP8",
+          "limit": "bandwidth"
+        },
+        "h265 motion": {
+          "candidates": 1,
+          "encoder": "VideoToolbox",
+          "hw": true,
+          "size": "1280×720",
+          "fps": 57,
+          "codec": "video/H265",
+          "fmtp": "level-id=180;profile-id=1;tier-flag=0;tx-mode=SRST",
+          "limit": "bandwidth"
+        }
+      }
+    },
+    "withoutPermission": {
+      "packagedFirstLaunch": {
+        "perm": {
+          "screen": "denied",
+          "osVersion": "26.4.1",
+          "packaged": true
+        },
+        "windows": {
+          "tookMs": 0,
+          "error": "Failed to get sources.",
+          "count": 0,
+          "emptyThumbnails": 0,
+          "withoutIcon": 0,
+          "withoutName": 0
+        },
+        "screens": {
+          "tookMs": 0,
+          "error": "Failed to get sources.",
+          "count": 0,
+          "emptyThumbnails": 0,
+          "withoutIcon": 0,
+          "withoutName": 0
+        },
+        "capture": {
+          "window": {
+            "error": "AbortError: Invalid capture constraints",
+            "tookMs": 1
+          },
+          "screen": {
+            "error": "AbortError: Invalid capture constraints",
+            "tookMs": 0
+          }
+        },
+        "codecs": {
+          "h264": {
+            "encodeHw": true,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": true
+          },
+          "h264-high": {
+            "encodeHw": true,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": true
+          },
+          "hevc": {
+            "encodeHw": true,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": false
+          },
+          "vp9": {
+            "encodeHw": false,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": true
+          },
+          "av1": {
+            "encodeHw": false,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": true
+          }
+        }
+      },
+      "neverRequested": {
+        "permAtStart": {
+          "screen": "denied",
+          "osVersion": "26.4.1",
+          "packaged": true
+        },
+        "perm": {
+          "screen": "denied",
+          "osVersion": "26.4.1",
+          "packaged": true
+        },
+        "windows": {
+          "tookMs": 0,
+          "error": "Failed to get sources.",
+          "count": 0,
+          "emptyThumbnails": 0,
+          "withoutIcon": 0,
+          "withoutName": 0
+        },
+        "screens": {
+          "tookMs": 0,
+          "error": "Failed to get sources.",
+          "count": 0,
+          "emptyThumbnails": 0,
+          "withoutIcon": 0,
+          "withoutName": 0
+        },
+        "capture": {
+          "window": {
+            "error": "AbortError: Invalid capture constraints",
+            "tookMs": 1
+          },
+          "screen": {
+            "error": "AbortError: Invalid capture constraints",
+            "tookMs": 0
+          }
+        },
+        "codecs": {
+          "h264": {
+            "encodeHw": true,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": true
+          },
+          "h264-high": {
+            "encodeHw": true,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": true
+          },
+          "hevc": {
+            "encodeHw": true,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": false
+          },
+          "vp9": {
+            "encodeHw": false,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": true
+          },
+          "av1": {
+            "encodeHw": false,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": true
+          }
+        }
+      },
+      "afterRebuildWithToggleOn": {
+        "permAtStart": {
+          "screen": "denied",
+          "osVersion": "26.4.1",
+          "packaged": true
+        },
+        "perm": {
+          "screen": "denied",
+          "osVersion": "26.4.1",
+          "packaged": true
+        },
+        "windows": {
+          "tookMs": 0,
+          "error": "Failed to get sources.",
+          "count": 0,
+          "emptyThumbnails": 0,
+          "withoutIcon": 0,
+          "withoutName": 0
+        },
+        "screens": {
+          "tookMs": 0,
+          "error": "Failed to get sources.",
+          "count": 0,
+          "emptyThumbnails": 0,
+          "withoutIcon": 0,
+          "withoutName": 0
+        },
+        "capture": {
+          "window": {
+            "error": "AbortError: Invalid capture constraints",
+            "tookMs": 1
+          },
+          "screen": {
+            "error": "AbortError: Invalid capture constraints",
+            "tookMs": 0
+          }
+        },
+        "codecs": {
+          "h264": {
+            "encodeHw": true,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": true
+          },
+          "h264-high": {
+            "encodeHw": true,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": true
+          },
+          "hevc": {
+            "encodeHw": true,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": false
+          },
+          "vp9": {
+            "encodeHw": false,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": true
+          },
+          "av1": {
+            "encodeHw": false,
+            "encodeSw": true,
+            "decodeHw": true,
+            "decodeSw": true
+          }
+        }
+      }
+    },
+    "systemPicker": {
+      "handlerCalls": 0,
+      "result": {
+        "error": "AbortError: Timeout starting video source",
+        "tookMs": 10003
+      }
+    },
+    "audioFromTerminal": {
+      "loopback": {
+        "start": {
+          "tookMs": 218,
+          "video": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "width": 1280,
+              "height": 720,
+              "frameRate": 30,
+              "displaySurface": "monitor",
+              "deviceId": "screen:N:0"
+            }
+          },
+          "audio": {
+            "readyState": "ended",
+            "muted": false,
+            "settings": {
+              "channelCount": 2,
+              "sampleRate": 48000,
+              "autoGainControl": false,
+              "echoCancellation": false,
+              "noiseSuppression": false,
+              "deviceId": "loopback"
+            }
+          }
+        },
+        "silence": {
+          "readyState": "ended",
+          "peakRms": 0,
+          "tone440dB": null,
+          "events": []
+        },
+        "ownTone": {
+          "readyState": "ended",
+          "peakRms": 0,
+          "tone440dB": null,
+          "events": []
+        },
+        "external": {
+          "readyState": "ended",
+          "peakRms": 0,
+          "tone440dB": null,
+          "events": []
+        }
+      },
+      "published": {
+        "started": {
+          "video": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "width": 1280,
+              "height": 720,
+              "frameRate": 30,
+              "displaySurface": "window",
+              "deviceId": "window:N:0"
+            }
+          },
+          "audio": {
+            "readyState": "ended",
+            "muted": false,
+            "settings": {
+              "channelCount": 2,
+              "sampleRate": 48000,
+              "autoGainControl": false,
+              "echoCancellation": false,
+              "noiseSuppression": false,
+              "deviceId": "loopback"
+            }
+          }
+        },
+        "hadAudioTrack": false,
+        "roomEvents": [
+          "15342 encryption viewer true",
+          "15722 encryption streamer true",
+          "15767 subscribed screen_share encrypted=true"
+        ],
+        "samples": 0,
+        "bytesReceived": null,
+        "totalAudioEnergy": null,
+        "maxAudioLevel": 0,
+        "audioCodec": null
+      }
+    },
+    "audioPackaged": {
+      "loopback": {
+        "start": {
+          "tookMs": 1874,
+          "video": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "width": 1112,
+              "height": 720,
+              "frameRate": 30,
+              "displaySurface": "monitor",
+              "deviceId": "screen:N:0"
+            }
+          },
+          "audio": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "channelCount": 2,
+              "sampleRate": 48000,
+              "autoGainControl": false,
+              "echoCancellation": false,
+              "noiseSuppression": false,
+              "deviceId": "loopback"
+            }
+          }
+        },
+        "silence": {
+          "readyState": "live",
+          "peakRms": 0,
+          "tone440dB": null,
+          "events": []
+        },
+        "ownTone": {
+          "readyState": "live",
+          "peakRms": 0.14156,
+          "tone440dB": -28,
+          "events": []
+        },
+        "external": {
+          "readyState": "live",
+          "peakRms": 0.06673,
+          "tone440dB": -30,
+          "events": []
+        }
+      },
+      "loopbackWithMute": {
+        "start": {
+          "tookMs": 92,
+          "video": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "width": 1280,
+              "height": 720,
+              "frameRate": 30,
+              "displaySurface": "monitor",
+              "deviceId": "screen:N:0"
+            }
+          },
+          "audio": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "channelCount": 2,
+              "sampleRate": 48000,
+              "autoGainControl": false,
+              "echoCancellation": false,
+              "noiseSuppression": false,
+              "deviceId": "loopbackWithMute"
+            }
+          }
+        },
+        "silence": {
+          "readyState": "live",
+          "peakRms": 0,
+          "tone440dB": null,
+          "events": []
+        },
+        "ownTone": {
+          "readyState": "live",
+          "peakRms": 0.14156,
+          "tone440dB": -28,
+          "events": []
+        },
+        "external": {
+          "readyState": "live",
+          "peakRms": 0.06599,
+          "tone440dB": -30,
+          "events": []
+        }
+      },
+      "published": {
+        "started": {
+          "video": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "width": 1280,
+              "height": 720,
+              "frameRate": 30,
+              "displaySurface": "window",
+              "deviceId": "window:N:0"
+            }
+          },
+          "audio": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "channelCount": 2,
+              "sampleRate": 48000,
+              "autoGainControl": false,
+              "echoCancellation": false,
+              "noiseSuppression": false,
+              "deviceId": "loopback"
+            }
+          }
+        },
+        "hadAudioTrack": true,
+        "roomEvents": [
+          "29650 encryption viewer true",
+          "29970 encryption streamer true",
+          "30007 encryption streamer true",
+          "30015 subscribed screen_share_audio encrypted=true",
+          "30015 subscribed screen_share encrypted=true"
+        ],
+        "samples": 8,
+        "bytesReceived": 81336,
+        "totalAudioEnergy": 0,
+        "maxAudioLevel": 0,
+        "audioCodec": {
+          "id": "CIT01_111_minptime=10;stereo=1;useinbandfec=1",
+          "timestamp": 1794339640522.228,
+          "type": "codec",
+          "channels": 2,
+          "clockRate": 48000,
+          "mimeType": "audio/opus",
+          "payloadType": 111,
+          "sdpFmtpLine": "minptime=10;stereo=1;useinbandfec=1",
+          "transportId": "T01"
+        }
+      }
+    },
+    "permissionWait": [
+      {
+        "relaunchedBySystem": false,
+        "grantedWithoutRestart": null,
+        "timeline": [
+          {
+            "at": "2026-11-10T18:51:00.999Z",
+            "status": "denied",
+            "sourcesListed": false,
+            "error": "Failed to get sources."
+          }
+        ]
+      },
+      {
+        "relaunchedBySystem": true,
+        "grantedWithoutRestart": null,
+        "timeline": [
+          {
+            "at": "2026-11-10T18:51:33.043Z",
+            "status": "denied",
+            "sourcesListed": false,
+            "error": "Failed to get sources."
+          }
+        ]
+      },
+      {
+        "relaunchedBySystem": true,
+        "grantedWithoutRestart": null,
+        "timeline": [
+          {
+            "at": "2026-11-10T18:51:50.719Z",
+            "status": "denied",
+            "sourcesListed": false,
+            "error": "Failed to get sources."
+          }
+        ]
+      },
+      {
+        "relaunchedBySystem": true,
+        "grantedWithoutRestart": false,
+        "timeline": [
+          {
+            "at": "2026-11-10T18:52:05.085Z",
+            "status": "denied",
+            "sourcesListed": false,
+            "error": "Failed to get sources."
+          }
+        ]
+      },
+      {
+        "relaunchedBySystem": false,
+        "grantedWithoutRestart": null,
+        "timeline": [
+          {
+            "at": "2026-11-10T19:36:26.854Z",
+            "status": "denied",
+            "sourcesListed": false,
+            "error": "Failed to get sources."
+          }
+        ]
+      },
+      {
+        "relaunchedBySystem": false,
+        "grantedWithoutRestart": null,
+        "timeline": [
+          {
+            "at": "2026-11-10T19:37:36.457Z",
+            "status": "denied",
+            "sourcesListed": false,
+            "error": "Failed to get sources."
+          }
+        ]
+      },
+      {
+        "relaunchedBySystem": true,
+        "grantedWithoutRestart": false,
+        "timeline": [
+          {
+            "at": "2026-11-10T19:39:58.673Z",
+            "status": "granted",
+            "sourcesListed": true
+          }
+        ]
+      }
+    ]
+  },
+  "linux": [
+    {
+      "ozone": "wayland",
+      "session": {
+        "type": "wayland",
+        "desktop": "KDE"
+      },
+      "environment": [
+        "Linux 6.12.74+deb13+1-arm64 aarch64",
+        "os: Debian GNU/Linux 13 (trixie)",
+        "session: wayland desktop: KDE wayland: wayland-0 x11: :1",
+        "pipewire: pipewire Compiled with libpipewire 1.4.2 Linked with libpipewire 1.4.2",
+        "wireplumber: wireplumber Compiled with libwireplumber 0.5.8 Linked with libwireplumber 0.5.8",
+        "libpipewire-0.3-0",
+        "libpipewire-0.3-0t64 1.4.2-1",
+        "libpipewire-0.3-common 1.4.2-1",
+        "libpipewire-0.3-modules 1.4.2-1",
+        "pipewire 1.4.2-1",
+        "pipewire-bin 1.4.2-1",
+        "pipewire-media-session",
+        "pipewire-pulse 1.4.2-1",
+        "xdg-desktop-portal 1.20.3+ds-1",
+        "xdg-desktop-portal-backend",
+        "xdg-desktop-portal-gnome",
+        "xdg-desktop-portal-gtk 1.15.3-1",
+        "xdg-desktop-portal-kde 6.3.5-1",
+        "pulse server: Server Name: PulseAudio (on PipeWire 1.4.2)",
+        "userns: 1",
+        "missing libs:",
+        "нет",
+        "electron: v45.2.3"
+      ],
+      "list": {
+        "tookMs": 14040,
+        "sources": [
+          {
+            "id": "window:1:0:s",
+            "nameEmpty": true,
+            "kind": "window",
+            "thumbnailEmpty": false,
+            "hasIcon": false
+          }
+        ]
+      },
+      "capture": {
+        "tookMs": 2354,
+        "videoWidth": 1280,
+        "videoHeight": 688,
+        "meanLuma": 27,
+        "video": {
+          "readyState": "live",
+          "muted": false,
+          "settings": {
+            "width": 1280,
+            "height": 688,
+            "frameRate": 30,
+            "displaySurface": "window",
+            "deviceId": "window:N:0:s"
+          }
+        },
+        "audio": null
+      },
+      "audio": {
+        "start": {
+          "tookMs": 102,
+          "video": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "width": 1280,
+              "height": 720,
+              "frameRate": 30,
+              "displaySurface": "window",
+              "deviceId": "window:N:0:s"
+            }
+          },
+          "audio": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "channelCount": 2,
+              "sampleRate": 48000,
+              "autoGainControl": false,
+              "echoCancellation": false,
+              "noiseSuppression": false,
+              "deviceId": "loopback"
+            }
+          }
+        },
+        "external": {
+          "readyState": "live",
+          "peakRms": 0.06844,
+          "tone440dB": -81,
+          "events": []
+        }
+      },
+      "publishedRuns": [],
+      "listAgain": {
+        "tookMs": 11928,
+        "sources": [
+          {
+            "id": "window:4:0:s",
+            "nameEmpty": true,
+            "kind": "window",
+            "thumbnailEmpty": false,
+            "hasIcon": false
+          }
+        ]
+      },
+      "hardwareCodecs": {
+        "h264": {
+          "encodeHw": false,
+          "decodeHw": false
+        },
+        "h264-high": {
+          "encodeHw": false,
+          "decodeHw": false
+        },
+        "hevc": {
+          "encodeHw": false,
+          "decodeHw": false
+        },
+        "vp9": {
+          "encodeHw": false,
+          "decodeHw": false
+        },
+        "av1": {
+          "encodeHw": false,
+          "decodeHw": false
+        }
+      }
+    },
+    {
+      "ozone": "wayland",
+      "session": {
+        "type": "wayland",
+        "desktop": "KDE"
+      },
+      "environment": [
+        "Linux 6.12.74+deb13+1-arm64 aarch64",
+        "os: Debian GNU/Linux 13 (trixie)",
+        "session: wayland desktop: KDE wayland: wayland-0 x11: :1",
+        "pipewire: pipewire Compiled with libpipewire 1.4.2 Linked with libpipewire 1.4.2",
+        "wireplumber: wireplumber Compiled with libwireplumber 0.5.8 Linked with libwireplumber 0.5.8",
+        "libpipewire-0.3-0",
+        "libpipewire-0.3-0t64 1.4.2-1",
+        "libpipewire-0.3-common 1.4.2-1",
+        "libpipewire-0.3-modules 1.4.2-1",
+        "pipewire 1.4.2-1",
+        "pipewire-bin 1.4.2-1",
+        "pipewire-media-session",
+        "pipewire-pulse 1.4.2-1",
+        "xdg-desktop-portal 1.20.3+ds-1",
+        "xdg-desktop-portal-backend",
+        "xdg-desktop-portal-gnome",
+        "xdg-desktop-portal-gtk 1.15.3-1",
+        "xdg-desktop-portal-kde 6.3.5-1",
+        "pulse server: Server Name: PulseAudio (on PipeWire 1.4.2)",
+        "userns: 1",
+        "missing libs:",
+        "нет",
+        "electron: v45.2.3"
+      ],
+      "list": {
+        "tookMs": 16030,
+        "sources": [
+          {
+            "id": "window:1:0:s",
+            "nameEmpty": true,
+            "kind": "window",
+            "thumbnailEmpty": false,
+            "hasIcon": false
+          }
+        ]
+      },
+      "capture": {
+        "tookMs": 2253,
+        "videoWidth": 1280,
+        "videoHeight": 720,
+        "meanLuma": 51,
+        "video": {
+          "readyState": "live",
+          "muted": false,
+          "settings": {
+            "width": 1280,
+            "height": 720,
+            "frameRate": 30,
+            "displaySurface": "window",
+            "deviceId": "window:N:0:s"
+          }
+        },
+        "audio": null
+      },
+      "audio": {
+        "start": {
+          "tookMs": 57,
+          "video": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "width": 1280,
+              "height": 720,
+              "frameRate": 30,
+              "displaySurface": "window",
+              "deviceId": "window:N:0:s"
+            }
+          },
+          "audio": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "channelCount": 2,
+              "sampleRate": 48000,
+              "autoGainControl": false,
+              "echoCancellation": false,
+              "noiseSuppression": false,
+              "deviceId": "loopback"
+            }
+          }
+        },
+        "external": {
+          "readyState": "live",
+          "peakRms": 0.06844,
+          "tone440dB": -82,
+          "events": []
+        }
+      },
+      "publishedRuns": ["linux-wayland-130324-window-1080p60-h264-e2ee.json"],
+      "listAgain": {
+        "tookMs": 18036,
+        "sources": [
+          {
+            "id": "window:5:0:s",
+            "nameEmpty": true,
+            "kind": "window",
+            "thumbnailEmpty": false,
+            "hasIcon": false
+          }
+        ]
+      },
+      "hardwareCodecs": {
+        "h264": {
+          "encodeHw": false,
+          "decodeHw": false
+        },
+        "h264-high": {
+          "encodeHw": false,
+          "decodeHw": false
+        },
+        "hevc": {
+          "encodeHw": false,
+          "decodeHw": false
+        },
+        "vp9": {
+          "encodeHw": false,
+          "decodeHw": false
+        },
+        "av1": {
+          "encodeHw": false,
+          "decodeHw": false
+        }
+      }
+    },
+    {
+      "ozone": "wayland",
+      "session": {
+        "type": "wayland",
+        "desktop": "KDE"
+      },
+      "environment": [
+        "Linux 6.12.74+deb13+1-arm64 aarch64",
+        "os: Debian GNU/Linux 13 (trixie)",
+        "session: wayland desktop: KDE wayland: wayland-0 x11: :1",
+        "pipewire: pipewire Compiled with libpipewire 1.4.2 Linked with libpipewire 1.4.2",
+        "wireplumber: wireplumber Compiled with libwireplumber 0.5.8 Linked with libwireplumber 0.5.8",
+        "libpipewire-0.3-0",
+        "libpipewire-0.3-0t64 1.4.2-1",
+        "libpipewire-0.3-common 1.4.2-1",
+        "libpipewire-0.3-modules 1.4.2-1",
+        "pipewire 1.4.2-1",
+        "pipewire-bin 1.4.2-1",
+        "pipewire-media-session",
+        "pipewire-pulse 1.4.2-1",
+        "xdg-desktop-portal 1.20.3+ds-1",
+        "xdg-desktop-portal-backend",
+        "xdg-desktop-portal-gnome",
+        "xdg-desktop-portal-gtk 1.15.3-1",
+        "xdg-desktop-portal-kde 6.3.5-1",
+        "pulse server: Server Name: PulseAudio (on PipeWire 1.4.2)",
+        "userns: 1",
+        "missing libs:",
+        "нет",
+        "electron: v45.2.3"
+      ],
+      "list": {
+        "tookMs": 42098,
+        "sources": [
+          {
+            "id": "window:1:0:s",
+            "nameEmpty": true,
+            "kind": "window",
+            "thumbnailEmpty": false,
+            "hasIcon": false
+          }
+        ]
+      },
+      "capture": {
+        "tookMs": 2240,
+        "videoWidth": 1280,
+        "videoHeight": 720,
+        "meanLuma": 54,
+        "video": {
+          "readyState": "live",
+          "muted": false,
+          "settings": {
+            "width": 1280,
+            "height": 720,
+            "frameRate": 30,
+            "displaySurface": "window",
+            "deviceId": "window:N:0:s"
+          }
+        },
+        "audio": null
+      },
+      "audio": {
+        "start": {
+          "tookMs": 93,
+          "video": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "width": 1280,
+              "height": 720,
+              "frameRate": 30,
+              "displaySurface": "window",
+              "deviceId": "window:N:0:s"
+            }
+          },
+          "audio": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "channelCount": 2,
+              "sampleRate": 48000,
+              "autoGainControl": false,
+              "echoCancellation": false,
+              "noiseSuppression": false,
+              "deviceId": "loopback"
+            }
+          }
+        },
+        "external": {
+          "readyState": "live",
+          "peakRms": 0.06844,
+          "tone440dB": -81,
+          "events": []
+        }
+      },
+      "publishedRuns": []
+    },
+    {
+      "ozone": "x11",
+      "session": {
+        "type": "wayland",
+        "desktop": "KDE"
+      },
+      "environment": [
+        "Linux 6.12.74+deb13+1-arm64 aarch64",
+        "os: Debian GNU/Linux 13 (trixie)",
+        "session: wayland desktop: KDE wayland: wayland-0 x11: :1",
+        "pipewire: pipewire Compiled with libpipewire 1.4.2 Linked with libpipewire 1.4.2",
+        "wireplumber: wireplumber Compiled with libwireplumber 0.5.8 Linked with libwireplumber 0.5.8",
+        "libpipewire-0.3-0",
+        "libpipewire-0.3-0t64 1.4.2-1",
+        "libpipewire-0.3-common 1.4.2-1",
+        "libpipewire-0.3-modules 1.4.2-1",
+        "pipewire 1.4.2-1",
+        "pipewire-bin 1.4.2-1",
+        "pipewire-media-session",
+        "pipewire-pulse 1.4.2-1",
+        "xdg-desktop-portal 1.20.3+ds-1",
+        "xdg-desktop-portal-backend",
+        "xdg-desktop-portal-gnome",
+        "xdg-desktop-portal-gtk 1.15.3-1",
+        "xdg-desktop-portal-kde 6.3.5-1",
+        "pulse server: Server Name: PulseAudio (on PipeWire 1.4.2)",
+        "userns: 1",
+        "missing libs:",
+        "нет",
+        "electron: v45.2.3"
+      ],
+      "list": {
+        "tookMs": 17903,
+        "sources": [
+          {
+            "id": "window:2:0:s",
+            "nameEmpty": true,
+            "kind": "window",
+            "thumbnailEmpty": false,
+            "hasIcon": false
+          }
+        ]
+      },
+      "capture": {
+        "tookMs": 19019,
+        "videoWidth": 1280,
+        "videoHeight": 688,
+        "meanLuma": 32,
+        "video": {
+          "readyState": "live",
+          "muted": false,
+          "settings": {
+            "width": 1280,
+            "height": 688,
+            "frameRate": 30,
+            "displaySurface": "window",
+            "deviceId": "window:N:0:s"
+          }
+        },
+        "audio": null
+      },
+      "audio": {
+        "start": {
+          "tookMs": 95,
+          "video": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "width": 1280,
+              "height": 720,
+              "frameRate": 30,
+              "displaySurface": "window",
+              "deviceId": "window:N:0:s"
+            }
+          },
+          "audio": {
+            "readyState": "live",
+            "muted": false,
+            "settings": {
+              "channelCount": 2,
+              "sampleRate": 48000,
+              "autoGainControl": false,
+              "echoCancellation": false,
+              "noiseSuppression": false,
+              "deviceId": "loopback"
+            }
+          }
+        },
+        "external": {
+          "readyState": "live",
+          "peakRms": 0.06844,
+          "tone440dB": -84,
+          "events": []
+        }
+      },
+      "publishedRuns": [],
+      "listAgain": {
+        "tookMs": 8030,
+        "sources": [
+          {
+            "id": "window:5:0:s",
+            "nameEmpty": true,
+            "kind": "window",
+            "thumbnailEmpty": false,
+            "hasIcon": false
+          }
+        ]
+      },
+      "hardwareCodecs": {
+        "h264": {
+          "encodeHw": false,
+          "decodeHw": false
+        },
+        "h264-high": {
+          "encodeHw": false,
+          "decodeHw": false
+        },
+        "hevc": {
+          "encodeHw": false,
+          "decodeHw": false
+        },
+        "vp9": {
+          "encodeHw": false,
+          "decodeHw": false
+        },
+        "av1": {
+          "encodeHw": false,
+          "decodeHw": false
+        }
+      }
+    }
+  ]
+}

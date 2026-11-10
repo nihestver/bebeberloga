@@ -1,0 +1,22 @@
+{
+  "name": "s3-electron-capture",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Спайк S3: захват экрана в Electron (Chromium-путь стрима) с публикацией в LiveKit и E2EE",
+  "license": "Apache-2.0",
+  "main": "dist/main/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.main.json && vite build",
+    "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "livekit-client": "2.23.0"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "@types/node": "22.20.5",
+    "electron": "45.2.3",
+    "typescript": "6.0.3",
+    "vite": "8.3.6"
+  }
+}

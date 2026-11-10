@@ -1,0 +1,72 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Рецепты спайка S3. Запускать из spikes/03-electron-capture. Спайк — отдельный npm-проект
+# и в корневые `just lint`/`just test` не входит. Нужен Node 22 (mise) и livekit-server в bin/.
+
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+# ELECTRON_RUN_AS_NODE снимается: с ней electron стартует как обычный node без модуля electron
+electron := "env -u ELECTRON_RUN_AS_NODE npx electron ."
+
+default: check
+
+check: lint test
+
+install:
+    npm ci --no-audit --no-fund
+    npx install-electron
+
+# livekit-server в bin/ (Linux — релиз с GitHub, macOS — бутылка Homebrew без установки)
+livekit:
+    scripts/fetch-livekit.sh
+
+lint:
+    npm run typecheck
+
+build:
+    npm run build
+
+# разбор полосы с меткой времени: кодирование ↔ декодирование, сводка по сохранённым прогонам
+test:
+    node --test "scripts/*.test.mjs"
+
+# ручной режим: сетка источников, клик по карточке запускает стрим, зритель — в соседнем окне
+run: build
+    {{electron}}
+
+# матрица замеров: S3_PRESETS, S3_SOURCES, S3_E2EE, S3_CODECS, S3_SIMULCAST, S3_DURATION (с), S3_TAG
+matrix: build
+    S3_MODE=matrix {{electron}}
+
+# снимок разрешений ОС, списка источников и пробного захвата → results/raw/<тег>-probe.json
+probe: build
+    S3_MODE=probe {{electron}}
+
+# системный звук через getDisplayMedia → results/raw/<тег>-audio.json
+audio: build
+    S3_MODE=audio {{electron}}
+
+# упакованное приложение ждёт разрешения «Запись экрана» (до 30 минут), затем проверяет захват и системный звук;
+# запуск через open(1): так разрешения macOS проверяются у самого приложения, а не у терминала
+permwait:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # второй экземпляр не запускается: оба начали бы проверку звука одновременно
+    if pgrep -f 'S3Capture.app/Contents/MacOS/S3Capture' >/dev/null; then
+      echo "S3Capture уже запущено и ждёт: включи S3Capture.app в «Системные настройки → Конфиденциальность и безопасность → Запись экрана и системного звука»"
+      exit 0
+    fi
+    open -n -W -a "$PWD/out/S3Capture-darwin-arm64/S3Capture.app" --env S3_MODE=permwait --env S3_TAG=mac-packaged --env S3_OUT="$PWD/results/raw" --env S3_LIVEKIT_BIN="$PWD/bin/livekit-server" --env S3_WAIT=1800
+
+# сводная таблица по results/raw → results/summary.md и results/summary.json
+summary:
+    node scripts/summarize.mjs
+
+# очищенная сводка фактов (разрешения, энкодеры, звук, пикер, Linux) из results/raw → results/facts.json
+facts:
+    node scripts/facts.mjs
+
+# упакованное приложение (out/) с NSAudioCaptureUsageDescription в Info.plist и размеры сборки
+package: build
+    node scripts/package.mjs

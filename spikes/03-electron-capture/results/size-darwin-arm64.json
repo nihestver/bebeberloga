@@ -1,0 +1,10 @@
+{
+  "platform": "darwin",
+  "arch": "arm64",
+  "totalMB": 257.6,
+  "appBundleMB": 252.3,
+  "frameworksMB": 251.3,
+  "appAsarMB": 0.7,
+  "localesMB": 0,
+  "zipMB": 114.1
+}

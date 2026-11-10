@@ -1,0 +1,53 @@
+<!doctype html>
+<!--
+SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+SPDX-License-Identifier: Apache-2.0
+-->
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>S3 стример</title>
+    <style>
+      body { margin: 0; font: 13px system-ui, sans-serif; background: #14181c; color: #dfe6e2; }
+      header, footer { display: flex; gap: 8px; align-items: center; padding: 8px 12px; flex-wrap: wrap; }
+      button, select { font: inherit; padding: 4px 10px; }
+      button.on { outline: 2px solid #7fae8c; }
+      #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; padding: 0 12px; max-height: 46vh; overflow: auto; }
+      .card { background: #1d2329; border: 0; color: inherit; text-align: left; padding: 6px; cursor: pointer; }
+      .card img.thumb { width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: #000; display: block; }
+      .card .t { display: flex; gap: 6px; align-items: center; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .card .t img { width: 16px; height: 16px; }
+      #empty { padding: 24px; text-align: center; }
+      pre { margin: 0; padding: 8px 12px; white-space: pre-wrap; font: 11px ui-monospace, monospace; color: #9fb0a6; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <button id="tab-window" class="on">Приложения</button>
+      <button id="tab-screen">Весь экран</button>
+      <button id="system">Выбрать через систему</button>
+      <span id="perm"></span>
+    </header>
+    <div id="empty" hidden>
+      <p id="empty-text"></p>
+      <button id="open-settings" hidden>Открыть настройки системы</button>
+    </div>
+    <div id="grid"></div>
+    <footer>
+      <select id="preset">
+        <option value="1080p60">Плавность · 1080p · 60 к/с</option>
+        <option value="1080p30">Баланс · 1080p · 30 к/с</option>
+        <option value="720p30">Экономия · 720p · 30 к/с</option>
+      </select>
+      <select id="audio">
+        <option value="none">Без звука стрима</option>
+        <option value="loopback">Системный звук</option>
+        <option value="loopbackWithMute">Системный звук, локально заглушить</option>
+      </select>
+      <label><input type="checkbox" id="e2ee" checked disabled /> E2EE кадров (в ручном режиме всегда)</label>
+      <button id="stop" disabled>Остановить стрим</button>
+    </footer>
+    <pre id="status"></pre>
+    <script type="module" src="./streamer.ts"></script>
+  </body>
+</html>
