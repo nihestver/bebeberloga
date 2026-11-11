@@ -74,13 +74,11 @@ body:
     id: report
     attributes:
       label: Отчёт / Report
-      description: Перетащите сюда файл .zip из «Сохранить отчёт». / Drop the .zip from Save report here.
-    validations:
-      required: true
+      description: Перетащите сюда файл .zip из «Сохранить отчёт». Нужен всегда, кроме случаев, когда приложение не устанавливается. / Drop the .zip from Save report here. Required unless the app fails to install.
   - type: checkboxes
     id: consent
     attributes:
       label: Проверка / Check
       options:
-        - label: Я посмотрел отчёт в предпросмотре и согласен, что он будет опубликован. / I reviewed the report and agree it will be public.
+        - label: Если я приложил отчёт, я посмотрел его в предпросмотре и согласен, что он будет опубликован. / If I attached a report, I reviewed it and agree it will be public.
           required: true
