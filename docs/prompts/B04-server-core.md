@@ -10,7 +10,7 @@ Go-бэкендер в проекте Bebeberloga. Действуют прави
 - docs/spec/ARCHITECTURE.md §5
 - docs/spec/PERMISSIONS.md (вычисление прав — §3; пресеты — §2)
 - docs/spec/FLOWS/01-register.md, 03-create-community.md, 04-invite-join.md, 05-dm.md, 10-moderation.md
-- docs/adr/0002, 0003, 0005, 0013, 0015
+- docs/adr/0002, 0003, 0005, 0013, 0015, 0025
 - server/STATUS.md, если есть
 
 ## Задача
