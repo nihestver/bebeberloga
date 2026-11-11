@@ -1,0 +1,76 @@
+# Форма «Совместимость» (ADR-0025 п. 10): записи сводятся в таблицу docs/compat/ (B18).
+name: Совместимость / Compatibility
+description: Как Bebeberloga работает на вашем железе — даже если всё в порядке. / How Bebeberloga works on your hardware, even if everything is fine.
+labels: ["compat"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Запустите «Настройки → Диагностика → Проверить систему», затем «Сохранить отчёт» и приложите файл ниже. Файл станет публичным: проверьте его в предпросмотре.
+
+        Run Settings → Diagnostics → Check system, then Save report, and attach the file below. The file will be public — check it in the preview first.
+  - type: input
+    id: version
+    attributes:
+      label: Версия Bebeberloga / Version
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: ОС и сборка / OS and build
+      placeholder: Windows 11 23H2 (22631.4460)
+    validations:
+      required: true
+  - type: input
+    id: cpu
+    attributes:
+      label: Процессор / CPU
+    validations:
+      required: true
+  - type: input
+    id: gpu
+    attributes:
+      label: Видеокарта и версия драйвера / GPU and driver version
+      description: Если видеокарт две — обе, и какая выводит изображение. / If there are two GPUs, list both and which one drives the display.
+    validations:
+      required: true
+  - type: checkboxes
+    id: tried
+    attributes:
+      label: Что проверили / What you tried
+      options:
+        - label: Стрим окна или приложения со звуком / Window or app stream with app audio
+        - label: Стрим всего экрана / Full-screen stream
+        - label: Просмотр чужого стрима / Watching a stream
+        - label: Голос / Voice
+        - label: Камера / Camera
+  - type: dropdown
+    id: result
+    attributes:
+      label: Итог / Result
+      options:
+        - Всё работает / Everything works
+        - Работает с проблемами / Works with issues
+        - Не работает / Does not work
+    validations:
+      required: true
+  - type: textarea
+    id: problems
+    attributes:
+      label: Что не так / What went wrong
+      description: Если всё работает — оставьте пустым. / Leave empty if everything works.
+  - type: textarea
+    id: report
+    attributes:
+      label: Отчёт / Report
+      description: Перетащите сюда файл .zip из «Сохранить отчёт». / Drop the .zip from Save report here.
+    validations:
+      required: true
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Проверка / Check
+      options:
+        - label: Я посмотрел отчёт в предпросмотре и согласен, что он будет опубликован. / I reviewed the report and agree it will be public.
+          required: true

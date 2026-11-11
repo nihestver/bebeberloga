@@ -16,7 +16,7 @@ DevOps-инженер в проекте Bebeberloga. Действуют прав
 2. `deploy/compose/docker-compose.yml` (server, postgres:16, valkey:8, nats с JetStream, minio, caddy; livekit и coturn — заглушками до B7) и `compose.dev.yml`; `compose.agent.yml` — стенд агента на тест-сервере (проект `bb-agent`, порты — `docs/dev/WORKFLOW.md`, «Стенд агента»); `.env.example`; `Caddyfile` для `test.bebeberloga.org`.
 3. Инструкция первичной настройки тест-сервера в `deploy/README.md`; `just deploy-test` и `just smoke-test` проходят с заглушкой `/api/v1/health`.
 
-**Часть 2 (фаза 5):** Helm-чарт, `release.yml` (goreleaser, cargo-dist, electron-builder для трёх ОС, SBOM, cosign), воспроизводимые сборки клиентов и публикация хэшей.
+**Часть 2 (фаза 5):** Helm-чарт, `release.yml` (goreleaser, cargo-dist, electron-builder для трёх ОС, SBOM, cosign), воспроизводимые сборки клиентов и публикация хэшей; символы каждой сборки клиента и media-engine сохраняются вместе с релизом, но не попадают в поставку; коммит и идентификатор сборки зашиты в бинарники; проверка, что в сборках нет зашитых адресов приёма отчётов (ADR-0025 п. 7–8).
 
 ## Критерии готовности
 - [ ] Часть 1: после merge в main тест-сервер обновляется автоматически, smoke-тесты зелёные.

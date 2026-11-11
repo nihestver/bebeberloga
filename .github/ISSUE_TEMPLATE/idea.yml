@@ -1,0 +1,21 @@
+# Форма «Предложение». Проект пишется по методу clean room: описания — только своими словами.
+name: Предложение / Idea
+description: Чего не хватает и зачем. / What is missing and why.
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Опишите сценарий своими словами. Не прикладывайте скриншоты и тексты других приложений и не ссылайтесь на них: проект пишется по методу clean room (`CONTRIBUTING.md`).
+
+        Describe the scenario in your own words. Please do not attach or reference screenshots or texts of other apps: the project follows a clean-room process (`CONTRIBUTING.md`).
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Что хотите сделать и зачем / What you want to do and why
+    validations:
+      required: true
+  - type: textarea
+    id: now
+    attributes:
+      label: Как это приходится делать сейчас / How you do it today
