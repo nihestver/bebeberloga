@@ -1,0 +1,6 @@
+# Формы issue (ADR-0025 п. 7): пустые issue выключены, уязвимости — только приватно (SECURITY.md).
+blank_issues_enabled: false
+contact_links:
+  - name: Уязвимость / Security vulnerability
+    url: https://github.com/nihestver/bebeberloga/security/advisories/new
+    about: Сообщайте приватно, не в публичный issue (SECURITY.md). / Report privately, not in a public issue.

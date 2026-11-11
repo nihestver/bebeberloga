@@ -1,0 +1,86 @@
+# Форма «Ошибка» (ADR-0025 п. 7). Без файла отчёта бот ставит метку needs-report (B18).
+name: Ошибка / Bug
+description: Что-то работает не так или приложение закрылось с ошибкой. / Something is broken or the app crashed.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Приложите отчёт:** «Настройки → Диагностика → Сохранить отчёт» (если приложение не запускается — ключ `--save-report <путь>`).
+        Файл станет публичным: проверьте его в окне предпросмотра. В отчёте нет сообщений, названий и ключей.
+        Уязвимости — не сюда, а приватно, по `SECURITY.md`. Описывайте поведение своими словами, без сравнения с другими приложениями и без их скриншотов (`CONTRIBUTING.md`).
+
+        **Attach a report:** Settings → Diagnostics → Save report (or run the app with `--save-report <path>`). The file will be public — check it in the preview first.
+  - type: textarea
+    id: what
+    attributes:
+      label: Что произошло / What happened
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Как повторить / Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Что ожидали / Expected behaviour
+  - type: input
+    id: version
+    attributes:
+      label: Версия Bebeberloga / Version
+      description: Внизу левой колонки настроек. / Bottom of the settings sidebar.
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: ОС / OS
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS
+        - Linux
+        - Веб-клиент / Web client
+        - Другое / Other
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Где / Area
+      options:
+        - Стрим / Stream
+        - Голос и камера / Voice and camera
+        - Саундборд / Soundboard
+        - Сообщения / Messages
+        - Вход, устройства, ключи / Sign-in, devices, keys
+        - Установка и обновление / Install and update
+        - Другое / Other
+    validations:
+      required: true
+  - type: input
+    id: gpu
+    attributes:
+      label: Видеокарта и версия драйвера / GPU and driver version
+      description: Нужно для проблем со стримом, камерой и звонками. / Needed for stream, camera and call issues.
+  - type: textarea
+    id: report
+    attributes:
+      label: Отчёт / Report
+      description: Перетащите сюда файл .zip из «Сохранить отчёт». / Drop the .zip from Save report here.
+    validations:
+      required: true
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Проверка / Check
+      options:
+        - label: Я посмотрел отчёт в предпросмотре и согласен, что он будет опубликован. / I reviewed the report and agree it will be public.
+          required: true
