@@ -96,6 +96,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
       - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+      # just gen-check перегенерирует и клиентские файлы (дизайн-токены), скрипту нужны зависимости clients/web
+      - if: hashFiles('clients/web/package.json') != ''
+        run: cd clients/web && pnpm install --frozen-lockfile
       - name: generated code is up to date
         run: just gen-check
       - run: just lint-go test-go
