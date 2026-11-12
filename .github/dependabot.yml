@@ -31,12 +31,16 @@ updates:
     commit-message:
       prefix: "chore(deps)"
 
-  # С B4 (появится server/go.mod):
-  # - package-ecosystem: "gomod"
-  #   directory: "/server"
-  #   schedule: { interval: "weekly" }
-  #   groups: { go: { patterns: ["*"] } }
-  #   commit-message: { prefix: "chore(deps)" }
+  # Go-модуль сервера: прямые зависимости одной сводной PR. Версию Go задаёт mise.toml, не Dependabot.
+  - package-ecosystem: "gomod"
+    directory: "/server"
+    schedule:
+      interval: "weekly"
+    groups:
+      go:
+        patterns: ["*"]
+    commit-message:
+      prefix: "chore(deps)"
 
   # С B3 (появится Cargo.toml в корне):
   # - package-ecosystem: "cargo"
