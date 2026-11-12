@@ -3,6 +3,7 @@
 # на каталоге без манифеста Dependabot падает. Спайки (spikes/) одноразовые и не обновляются.
 version: 2
 updates:
+  # Actions закреплены полным SHA с версией в комментарии; Dependabot обновляет оба.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
