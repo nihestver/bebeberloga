@@ -16,6 +16,11 @@ context pack — [`CLAUDE.md`](CLAUDE.md). Любой другой агент р
 - **Не вливай PR и не пушь в `main`**: `gh pr merge`, merge через `gh api` и `git push` в `main`
   запрещены. PR вливает владелец на GitHub
   ([защита `main`](docs/dev/WORKFLOW.md#защита-main-и-релизных-тегов)).
+- **Новая задача — новая ветка от свежего `origin/main`.** После merge ветка на GitHub удаляется;
+  во влитую ветку не коммить и не пушь.
+- **Actions — только по SHA**: `uses: owner/action@<40 символов> # v1.2.3`. Action по тегу
+  не запустится.
+- **Теги `v*` и релизы не создавай** — их выпускает владелец.
 - **Запретный список** из [`docs/spec/GLOSSARY.md`](docs/spec/GLOSSARY.md): перед записью файла
   проверь его `.claude/hooks/cleanroom-guard.sh --files <файл>`; после правок — `just cleanroom`.
 - **Форматирование** после записи: `gofmt`, `rustfmt`, `buf format`, `prettier` — как в
