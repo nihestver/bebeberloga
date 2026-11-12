@@ -12,7 +12,10 @@ context pack — [`CLAUDE.md`](CLAUDE.md). Любой другой агент р
 - **Не открывай** сайты, документацию, клиенты и репозитории стороннего продукта, аналог которого
   строится. Работай только по `docs/` (кроме `docs/PLAN.md`), RFC и документации open-source
   библиотек ([`docs/cleanroom/POLICY.md`](docs/cleanroom/POLICY.md)).
-- **Спрашивай человека** перед `ssh`, `git push`, `gh pr merge` и `docker compose down`.
+- **Спрашивай человека** перед `ssh`, `git push` и `docker compose down`.
+- **Не вливай PR и не пушь в `main`**: `gh pr merge`, merge через `gh api` и `git push` в `main`
+  запрещены. PR вливает владелец на GitHub
+  ([защита `main`](docs/dev/WORKFLOW.md#защита-main-и-релизных-тегов)).
 - **Запретный список** из [`docs/spec/GLOSSARY.md`](docs/spec/GLOSSARY.md): перед записью файла
   проверь его `.claude/hooks/cleanroom-guard.sh --files <файл>`; после правок — `just cleanroom`.
 - **Форматирование** после записи: `gofmt`, `rustfmt`, `buf format`, `prettier` — как в

@@ -62,7 +62,7 @@ VSCodium берёт расширения из [Open VSX](https://open-vsx.org); 
 | Файл | Что делает |
 |---|---|
 | [`CLAUDE.md`](../../CLAUDE.md) | Context pack контура B: источники правды, clean room, правила интерфейса и кода, инварианты E2EE, порядок работы |
-| [`.claude/settings.json`](../../.claude/settings.json) | `allow` — рутинные команды без подтверждений (`just`, `go`, `cargo`, `pnpm`, `buf`, `git` без push, `gh pr create/view/list`); `ask` — всё, что уходит наружу (`ssh`, `git push`, `gh pr merge`, `docker compose down`); `deny` — секреты, сайты стороннего продукта, `docs/PLAN.md` (в том числе через `git show/log/diff`); hooks ниже |
+| [`.claude/settings.json`](../../.claude/settings.json) | `allow` — рутинные команды без подтверждений (`just`, `go`, `cargo`, `pnpm`, `buf`, `git` без push, `gh pr create/view/list`); `ask` — всё, что уходит наружу (`ssh`, `git push`, `docker compose down`); `deny` — merge PR (`gh pr merge`, `gh api` с `merge`), `git push` в `main`, секреты, сайты стороннего продукта, `docs/PLAN.md` (в том числе через `git show/log/diff`); hooks ниже |
 | [`.claude/hooks/cleanroom-guard.sh`](../../.claude/hooks/cleanroom-guard.sh) | Перед каждой записью файла блокирует слова из запретного списка: уровень 1 — во всём репозитории (кроме самого списка, `docs/cleanroom/` и плана), уровень 2 — в коде, `spikes/`, `tests/` и `docs/protocol/`, кроме `clients/*/src/locales/` (ADR-0014). Тот же скрипт — в lefthook, `just cleanroom` и CI |
 | [`.claude/hooks/format.sh`](../../.claude/hooks/format.sh) | После каждой записи форматирует файл (gofmt, rustfmt, buf, prettier) |
 | [`.claude/agents/`](../../.claude/agents) | `cleanroom-reviewer` — независимое ревью на заимствования и соответствие спецификации; `security-reviewer` — инварианты E2EE; `spec-analyst` — контур A для правок `docs/spec/` без `CLAUDE.md` контура B |
@@ -178,7 +178,23 @@ Postgres, Valkey и NATS наружу не публикуются ни в одн
 - [`dependabot.yml`](../../.github/dependabot.yml) — раз в неделю одна сводная PR на экосистему с сообщением `ci(deps): …` / `chore(deps): …`. Сейчас GitHub Actions и образы в `deploy/compose/` (версии закреплены, мажорные обновления PostgreSQL и Valkey отключены); блоки `gomod`, `cargo` и `npm` раскомментируются вместе с B4, B3 и B8/B9. В Dependabot-коммитах нет `Signed-off-by`: DCO проверяет только локальный lefthook.
 - `release.yml` — на тег `v*` (B17 часть 2). Практики, которые туда закладываются: один источник версии; черновик GitHub Release с `SHA256SUMS`, SBOM и подписями cosign, который человек проверяет и публикует сам; секреты подписи — в environment `release`, доступном только тегам `v*`; без секретов сборка проходит неподписанной с предупреждением, чтобы собирались и форки.
 - Claude в PR (по желанию): `/install-github-app` в Claude Code, токен подписки — секрет `CLAUDE_CODE_OAUTH_TOKEN`; ограничь `--max-turns 15` и `timeout-minutes: 20`.
-- Защита `main` (Settings → Branches): обязательный PR, одна обязательная проверка `ci-ok` (она ждёт все остальные jobs и считает пропущенные по фильтру путей успешными), squash-merge, линейная история.
+- Защита `main` и тегов `v*` — rulesets (Settings → Rules → Rulesets), раздел ниже.
+
+### Защита `main` и релизных тегов
+
+Настройки живут в GitHub; здесь — что они гарантируют.
+
+| Ruleset | Цель | Правила | Обход |
+|---|---|---|---|
+| `main: история и CI` | `main` | Запрет удаления и force push, линейная история, обязательная проверка `ci-ok` (она ждёт все остальные jobs и считает пропущенные по фильтру путей успешными) | Нет ни у кого |
+| `main: approve владельца` | `main` | Только через PR; один approve от владельца кода (`CODEOWNERS`); новые коммиты сбрасывают approve; approve последнего push; все обсуждения закрыты | Repository admin, только для PR |
+| `теги v*: создание` | теги `v*` | Создаёт тег только тот, у кого есть обход | Repository admin |
+| `теги v*: неизменяемость` | теги `v*` | Запрет переноса и удаления | Нет ни у кого |
+
+- Автор не может одобрить собственный PR, поэтому владелец вливает свои PR через обход. Красный `ci-ok` обход не снимает. PR остальных авторов, включая Dependabot и приложение Claude, ждут approve владельца.
+- Способ слияния один — squash (Settings → General).
+- Аварийный случай (GitHub Actions недоступен, а влить нужно): владелец на время переводит ruleset в Disabled и возвращает Active.
+- Claude Code работает с ключами владельца, и GitHub не отличает его от админа. Поэтому merge и push в `main` запрещены ему в `.claude/settings.json`. Это ограждение, а не изоляция: правило ловит обычную форму команды.
 
 ## Тестирование API
 
@@ -213,7 +229,7 @@ Postgres, Valkey и NATS наружу не публикуются ни в одн
 
 ## Чего не делать
 
-- Не запускать агента с `--dangerously-skip-permissions` и не убирать `ssh` и `git push` из `ask`.
+- Не запускать агента с `--dangerously-skip-permissions`, не убирать `ssh` и `git push` из `ask`, а merge PR и push в `main` — из `deny`.
 - Не держать секреты в репозитории и не разрешать чтение `.env`.
 - Не открывать в сессиях Claude Code сторонние продукты, их сайты и документацию API.
 - Не давать Claude Code читать `docs/PLAN.md` и не вставлять из него текст в промпты.
