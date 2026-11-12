@@ -45,11 +45,17 @@
     "ask": [
       "Bash(ssh *)",
       "Bash(git push *)",
-      "Bash(gh pr merge *)",
       "Bash(docker compose down *)"
     ],
     "deny": [
       "Bash(just deploy-test *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh api *merge*)",
+      "Bash(git push * main)",
+      "Bash(git push * main *)",
+      "Bash(git push *:main)",
+      "Bash(git push *:main *)",
+      "Bash(git push *refs/heads/main*)",
       "Bash(rm -rf *)",
       "Read(./.env)",
       "Read(./.env.local)",

@@ -125,7 +125,7 @@ Bebeberloga с первого дня разрабатывается вместе
 | Промпты | [`docs/prompts/`](docs/prompts/README.md) | Один промпт — один модуль, одна ветка и один PR |
 | Субагенты | [`.claude/agents/`](.claude/agents) | `cleanroom-reviewer`, `security-reviewer`, `spec-analyst` |
 | Hooks | [`.claude/hooks/`](.claude/hooks) | Не дают записать слова из запретного списка, форматируют файлы |
-| Права | [`.claude/settings.json`](.claude/settings.json) | `ssh` и `git push` — только с подтверждения; секреты и рабочий план аналитиков закрыты |
+| Права | [`.claude/settings.json`](.claude/settings.json) | `ssh` и `git push` — только с подтверждения; merge PR и push в `main` запрещены; секреты и рабочий план аналитиков закрыты |
 
 Состояние длинной задачи хранится в `STATUS.md` модуля, а не в памяти сессии. Как устроен
 рабочий цикл — [`docs/dev/WORKFLOW.md`](docs/dev/WORKFLOW.md).

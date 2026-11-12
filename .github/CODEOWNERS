@@ -5,3 +5,7 @@
 /server/internal/mls/   @nihestver
 /media-engine/          @nihestver
 /docs/spec/             @nihestver
+# CI, правила репозитория и ограждения агента — только владелец.
+# Эти строки остаются последними: побеждает последнее совпадение.
+/.github/               @nihestver
+/.claude/               @nihestver
