@@ -78,3 +78,4 @@ nats:
 ## `GET /api/v1/health`
 
 Тело — `bebeberloga.v1.HealthStatus` в protojson: `status` (`HEALTH_STATE_OK` | `HEALTH_STATE_DOWN`), `version`, `checks` (`postgres`, `valkey`, `nats` → `HEALTH_STATE_OK` | `HEALTH_STATE_DOWN` | `HEALTH_STATE_NOT_CONFIGURED`). Все настроенные зависимости доступны — `200`, иначе `503`. Незаданная зависимость не считается ошибкой. Результат кэшируется на `health.cache_ttl`; проверки выполняются долгоживущими клиентами, созданными при старте, без новых соединений на каждый запрос. Текстов ошибок в ответе нет — они в журнале.
+
