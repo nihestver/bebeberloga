@@ -90,6 +90,7 @@ VSCodium берёт расширения из [Open VSX](https://open-vsx.org); 
 
 - Conventional Commits (`feat(server): …`, `docs(spec): …`, `spike(S1): …`), подпись DCO (`git commit -s`) — проверяет lefthook.
 - Ветки: `feat/<промпт>-<что>`, `fix/…`, `docs/…`, `spike/<номер>-<что>`. Squash-merge в `main`, прямые push в `main` запрещены защитой ветки.
+- После merge GitHub удаляет ветку PR. Новая задача — новая ветка от свежего `main`: push во влитую ветку создаёт её на GitHub заново. Локальные ветки GitHub не трогает; один раз `git config fetch.prune true`, дальше `git fetch` сам убирает ссылки на удалённые ветки.
 - Каждый модуль ведёт `STATUS.md` (сделано / сломано / дальше); криптография и медиа — ещё `SECURITY-CHANGELOG.md`.
 
 ## Локальная среда
@@ -178,6 +179,7 @@ Postgres, Valkey и NATS наружу не публикуются ни в одн
 - [`dependabot.yml`](../../.github/dependabot.yml) — раз в неделю одна сводная PR на экосистему с сообщением `ci(deps): …` / `chore(deps): …`. Сейчас GitHub Actions, образы в `deploy/compose/` (версии закреплены, мажорные обновления PostgreSQL и Valkey отключены), Go-модуль `server/` и npm в `clients/web/`; блок `cargo` раскомментируется вместе с B3. Уведомления об уязвимостях (Dependabot alerts) включены в настройках репозитория: Security → Dependabot. В Dependabot-коммитах нет `Signed-off-by`: DCO проверяет только локальный lefthook.
 - `release.yml` — на тег `v*` (B17 часть 2). Практики, которые туда закладываются: один источник версии; черновик GitHub Release с `SHA256SUMS`, SBOM и подписями cosign, который человек проверяет и публикует сам; секреты подписи — в environment `release`, доступном только тегам `v*`; без секретов сборка проходит неподписанной с предупреждением, чтобы собирались и форки.
 - Claude в PR (по желанию): `/install-github-app` в Claude Code, токен подписки — секрет `CLAUDE_CODE_OAUTH_TOKEN`; ограничь `--max-turns 15` и `timeout-minutes: 20`.
+- [`codeql.yml`](../../.github/workflows/codeql.yml) — статический анализ кода CodeQL (Go-сервер, TS-клиент, сами workflow) на каждый PR, push в `main` и раз в неделю. Отложен до B04: пока нет `server/internal/identity`, прогон состоит из одной проверки `gate` и ничего не анализирует; PR, который добавит этот каталог, включит анализ сам. В обязательные проверки не входит и merge не блокирует; находки — Security → Code scanning. `spikes/` и сгенерированный код исключены.
 - Сторонние actions в workflow закреплены полным SHA коммита с версией в комментарии (`uses: owner/action@<40 символов> # v1.2.3`): тег action можно переставить на другой код, SHA — нет. Новый `uses:` добавляется так же. Dependabot (`github-actions`) обновляет SHA и комментарий одной сводной PR.
 - Защита `main` и тегов `v*` — rulesets (Settings → Rules → Rulesets), раздел ниже.
 
@@ -196,6 +198,24 @@ Postgres, Valkey и NATS наружу не публикуются ни в одн
 - Способ слияния один — squash (Settings → General).
 - Аварийный случай (GitHub Actions недоступен, а влить нужно): владелец на время переводит ruleset в Disabled и возвращает Active.
 - Claude Code действует от имени владельца — и локально (его ключи), и в облачных сессиях (приложение Claude работает под его учётной записью). GitHub не отличает его от админа, и обход доступен и ему. Поэтому merge и push в `main` запрещены агенту в `.claude/settings.json`. Это ограждение, а не изоляция: правило ловит обычную форму команды. Менять rulesets облачная сессия не может: у приложения нет права администрирования.
+
+### Настройки репозитория вне файлов
+
+Эти настройки живут в GitHub, а не в репозитории. Таблица нужна, чтобы их можно было сверить или восстановить; состояние на 13.11.2026.
+
+| Где | Настройка | Зачем |
+|---|---|---|
+| Settings → General | Разрешён только squash-merge; Automatically delete head branches | Линейная история; влитые ветки не копятся |
+| Settings → Rules → Rulesets | Четыре ruleset-а из раздела выше; классического правила защиты ветки нет | Защита `main` и тегов `v*` |
+| Settings → Actions → General | Require actions to be pinned to a full-length commit SHA | `uses:` по тегу не запускается |
+| Settings → Actions → General | Fork pull request workflows: Require approval for all external contributors | Workflow из чужого форка ждёт кнопки владельца |
+| Settings → Actions → General | Workflow permissions: read; «Allow GitHub Actions to create and approve pull requests» выключено | Токен workflow не пишет в репозиторий и не одобряет PR |
+| Settings → Environments → `test` | Deployment branches: только `main`; секреты выкатки — на уровне environment | Секреты стенда недоступны другим веткам |
+| Settings → Advanced Security | Private vulnerability reporting, Dependency graph, Dependabot alerts, Malware alerts, Secret scanning с push protection — включены | Уведомления об уязвимых и вредоносных зависимостях, секреты не попадают в push |
+| Settings → Advanced Security → Dependabot rules | Правило «spikes: одноразовый код, зависимости не обновляются»: бессрочно закрывает уведомления по пяти файлам зависимостей в `spikes/` | Спайки не обновляются; их уведомления не заслоняют настоящие |
+| Settings → Advanced Security | Dependabot security updates — выключены, пока правило для `spikes/` не закрыло уведомления: иначе Dependabot откроет PR на спайки. Включить сразу после | Исправление уязвимости, в том числе в косвенной зависимости, приходит готовой PR |
+
+Code scanning (CodeQL) задан файлом [`codeql.yml`](../../.github/workflows/codeql.yml), а не настройкой.
 
 ## Тестирование API
 

@@ -1,0 +1,84 @@
+name: codeql
+
+# Статический анализ кода (CodeQL): типовые уязвимости в Go-сервере, TS-клиенте и в самих workflow.
+# Отложен до B04: пока в сервере нет логики с пользовательскими данными, job `gate` видит, что
+# каталога server/internal/identity нет, и анализ пропускается. PR, который добавит этот каталог,
+# включит анализ сам — ничего переключать не нужно.
+# Проверка не входит в обязательные (ci-ok) и merge не блокирует; находки — Security → Code scanning.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # понедельник, 04:23 UTC: новые правила CodeQL находят старые ошибки и без изменений в коде
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+# Новый push в ветку PR отменяет её прошлый прогон.
+concurrency:
+  group: codeql-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: check
+        run: |
+          if [ -d server/internal/identity ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::server/internal/identity ещё нет (B04) — анализ CodeQL пропущен"
+          fi
+
+  analyze:
+    needs: gate
+    if: needs.gate.outputs.ready == 'true'
+    name: analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Go собирается вручную: так в анализ попадает только server/, без спайков.
+          - language: go
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+          - language: actions
+            build-mode: none
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: matrix.language == 'go'
+        uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+        with:
+          install_args: go
+      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # Спайки одноразовые, сгенерированный код не правится руками.
+          config: |
+            paths-ignore:
+              - spikes
+              - server/gen
+              - clients/web/src/gen
+      - if: matrix.language == 'go'
+        name: build server
+        run: cd server && go build ./...
+      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: "/language:${{ matrix.language }}"
