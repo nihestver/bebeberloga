@@ -99,6 +99,7 @@ cd bebeberloga
 mise install        # Go, Rust, Node, pnpm, golangci-lint и buf — версии из mise.toml
 lefthook install    # git-хуки: clean room, форматирование, Conventional Commits, DCO
 just check          # линтеры и тесты; рецепты модулей, которых ещё нет, пишут «skip»
+just help           # все команды проекта с описаниями, по разделам
 ```
 
 Инструменты для macOS ставятся одной командой из [`docs/dev/WORKFLOW.md`](docs/dev/WORKFLOW.md#инструменты-на-macos).
