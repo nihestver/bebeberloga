@@ -212,8 +212,8 @@ Postgres, Valkey и NATS наружу не публикуются ни в одн
 | Settings → Actions → General | Workflow permissions: read; «Allow GitHub Actions to create and approve pull requests» выключено | Токен workflow не пишет в репозиторий и не одобряет PR |
 | Settings → Environments → `test` | Deployment branches: только `main`; секреты выкатки — на уровне environment | Секреты стенда недоступны другим веткам |
 | Settings → Advanced Security | Private vulnerability reporting, Dependency graph, Dependabot alerts, Malware alerts, Secret scanning с push protection — включены | Уведомления об уязвимых и вредоносных зависимостях, секреты не попадают в push |
-| Settings → Advanced Security → Dependabot rules | Правило «spikes: одноразовый код, зависимости не обновляются»: бессрочно закрывает уведомления по пяти файлам зависимостей в `spikes/` | Спайки не обновляются; их уведомления не заслоняют настоящие |
-| Settings → Advanced Security | Dependabot security updates — выключены, пока правило для `spikes/` не закрыло уведомления: иначе Dependabot откроет PR на спайки. Включить сразу после | Исправление уязвимости, в том числе в косвенной зависимости, приходит готовой PR |
+| Settings → Advanced Security → Dependabot rules | Правило «spikes: одноразовый код, зависимости не обновляются»: бессрочно закрывает уведомления по пяти файлам зависимостей в `spikes/`. К уведомлениям, открытым до создания правила, GitHub его не применил — 79 штук закрыты вручную 13.11.2026 с причиной «Risk is tolerable» | Спайки не обновляются; их уведомления не заслоняют настоящие |
+| Settings → Advanced Security | Dependabot security updates — включены; Grouped security updates — выключены | Исправление уязвимости, в том числе в косвенной зависимости, приходит готовой PR. Если по `spikes/` появится открытое уведомление, Dependabot откроет PR и на него: уведомление закрыть, PR закрыть |
 
 Code scanning (CodeQL) задан файлом [`codeql.yml`](../../.github/workflows/codeql.yml), а не настройкой.
 
