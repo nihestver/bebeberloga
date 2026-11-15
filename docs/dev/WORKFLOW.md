@@ -65,7 +65,7 @@ VSCodium берёт расширения из [Open VSX](https://open-vsx.org); 
 | [`.claude/settings.json`](../../.claude/settings.json) | `allow` — рутинные команды без подтверждений (`just`, `go`, `cargo`, `pnpm`, `buf`, `git` без push, `gh pr create/view/list`); `ask` — всё, что уходит наружу (`ssh`, `git push`, `docker compose down`); `deny` — merge PR (`gh pr merge`, `gh api` с `merge`), `git push` в `main`, секреты, сайты стороннего продукта, `docs/PLAN.md` (в том числе через `git show/log/diff`); hooks ниже |
 | [`.claude/hooks/cleanroom-guard.sh`](../../.claude/hooks/cleanroom-guard.sh) | Перед каждой записью файла блокирует слова из запретного списка: уровень 1 — во всём репозитории (кроме самого списка, `docs/cleanroom/` и плана), уровень 2 — в коде, `spikes/`, `tests/` и `docs/protocol/`, кроме `clients/*/src/locales/` (ADR-0014). Тот же скрипт — в lefthook, `just cleanroom` и CI |
 | [`.claude/hooks/format.sh`](../../.claude/hooks/format.sh) | После каждой записи форматирует файл (gofmt, rustfmt, buf, prettier) |
-| [`.claude/agents/`](../../.claude/agents) | `cleanroom-reviewer` — независимое ревью на заимствования и соответствие спецификации; `security-reviewer` — инварианты E2EE; `spec-analyst` — контур A для правок `docs/spec/` без `CLAUDE.md` контура B |
+| [`.claude/agents/`](../../.claude/agents) | `cleanroom-reviewer` — независимое ревью на заимствования и соответствие спецификации; `security-reviewer` — инварианты E2EE; ревьюеры проверяют и раздел «Данные на сервере и сеть» из `CLAUDE.md`, и раздел «Данные и сеть» из `docs/cleanroom/REVIEW-CHECKLIST.md`; `spec-analyst` — контур A для правок `docs/spec/` без `CLAUDE.md` контура B |
 | [`.claude/skills/`](../../.claude/skills) | Команды ниже |
 
 ### Команды (скиллы)
