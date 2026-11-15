@@ -46,10 +46,10 @@
 | `devices` | Свои устройства с состоянием подтверждения | Список устройств, окно «Новое устройство хочет войти» |
 | `communities[]` | `CommunitySnapshot`: сообщество, категории, **видимые** каналы, роли, своя запись участника, вычисленные права (`EffectivePermissions`), присутствие в голосовых каналах, для владельца и администраторов — `locked_channels` («🔒 закрытый для тебя», PERMISSIONS §3 п. 2) | Рейл, боковая панель, права без расчёта на клиенте |
 | `dm_channels` | ЛС и групповые чаты (`Channel` типа DM/GROUP_DM) | Список ЛС |
-| `read_states` | Последнее прочитанное и число упоминаний по каналам | Бейджи непрочитанного |
+| `read_states` | Последнее прочитанное и число кандидатов в упоминания по каналам (`mention_candidate_count`): упоминания клиент считает сам (CRYPTO.md §6.4) | Бейджи непрочитанного; запрос `GET /users/me/mention-candidates` |
 | `relationships` | Друзья, запросы, блокировки | Вкладки «Друзья» |
 | `presences` | Присутствие друзей | Точки статуса |
-| `notification_settings` | Настройки уведомлений по сообществам и каналам | Решение показывать ли уведомление |
+| `notification_settings` | Настройки уведомлений по сообществам и каналам; применяет их клиент | Решение показывать ли уведомление |
 | `limits` | Лимиты инстанса (`InstanceLimits`) | Счётчик символов, лимит вложений, пресет стрима |
 | `mls_pending` | Группы с недоставленными Welcome или handshake; `returning` — группы, куда устройство возвращается парой Remove + Add | Догнать MLS-состояние через REST до первого сообщения; группы с `returning` не догонять, а ждать Welcome |
 | `identity_reset` | Действующий запрос сброса ключа идентичности (CRYPTO.md §6.3.9) | Предупреждение «Запрошен сброс твоих ключей» с отменой на старых устройствах и обратный отсчёт на новом (SCREENS/07 §4, §8) |
@@ -140,9 +140,9 @@
 |---|---|---|
 | `MessageCreated{MessageMeta}` | Принят `POST /channels/{id}/messages`; системное сообщение сервера | Видящие канал |
 | `MessageUpdated{MessageMeta}` | Изменились серверные метаданные: закреп/откреп, вложение загружено | Видящие канал |
-| `MessageDeleted{channel_id, message_ids[]}` | `DELETE …/messages/{id}`; бан с удалением сообщений (пачками до 100 id) | Видящие канал |
+| `MessageDeleted{channel_id, message_ids[]}` | `DELETE …/messages/{id}`; бан с удалением сообщений (пачками до 100 id). Шифртекст, обёрнутый ключ, хинты и вложения к этому моменту стёрты (ADR-0028 п. 3) | Видящие канал |
 | `TypingStarted{channel_id, user_id}` | Команда `TypingStart` | Видящие канал, кроме отправителя; клиент показывает 8 с |
-| `ReadStateUpdated{ReadState}` | `PUT …/read-state` с другого устройства; сброс счётчиков сервером | Свои устройства |
+| `ReadStateUpdated{ReadState}` | `PUT …/read-state` с другого устройства; изменилось число кандидатов в упоминания | Свои устройства |
 | `MlsHandshake{Handshake}` | Принят handshake (`POST /mls/groups/{id}/handshakes`) или сервер как external sender создал proposal | Члены группы |
 | `MlsWelcome{Welcome}` | Commit содержал Welcome для устройства | Устройство-адресат |
 | `MlsUpdateRequested{group_id, reason, designated_device_id, epoch}` | Накопились proposals external sender; плановая ротация; `POST /channels/{id}/mls/rotate`; пересоздание замороженной группы (`REASON_RECREATE`); замена ключа инстанса (`REASON_EXTERNAL_SENDER_ROTATION`); выключение или повторное включение настройки «Новые участники видят историю» (`REASON_HISTORY_SETTING`: разрыв `break_disable` или `break_enable` цепочки ключей истории, CRYPTO.md §6.3.3). `REASON_HISTORY_BUNDLE` в 1.0 не используется (external commit нет, ADR-0019) | Онлайн-устройства группы; коммитит только `designated_device_id`. Нет commit-а эпохи за 3 с — сервер назначает следующее устройство новым событием (CRYPTO.md §2.6) |
@@ -155,8 +155,8 @@
 | `CommunityUpdated{Community}` | `PATCH /communities/{id}`, передача владения | Участники |
 | `CommunityRemoved{CommunityRemoval}` | Удаление сообщества; выход; выгнан; забанен. Запись хранится и отдаётся в `Ready.community_removals`, пока устройство не подтвердит показ | Свои устройства |
 | `CategoryCreated/Updated/Deleted` | REST категорий | Участники |
-| `ChannelCreated/Updated/Deleted` | REST каналов; `ChannelDeleted` также тем, кто потерял `channel.see`; `ChannelCreated` — владельцу или администратору после `POST /channels/{id}/access/self` | Видящие канал |
-| `LockedChannelsUpdated{community_id, locked_channels[]}` | Создан или удалён приватный канал; владелец или администратор добавил себя; сменился состав администраторов | Владелец и администраторы |
+| `ChannelCreated/Updated/Deleted` | REST каналов; `ChannelDeleted` также тем, кто потерял `channel.see`; `ChannelCreated` — владельцу или администратору после `POST /channels/{id}/access/self`. `ChannelUpdated` приходит и когда меняется запись с названием и темой (`Channel.meta`): первая запись при создании группы чата, правка `PUT /channels/{id}/meta`, commit, начавший поколение ключа истории (CRYPTO.md §6.8). Название клиент расшифровывает сам; без ключа показывает заглушку | Видящие канал |
+| `LockedChannelsUpdated{community_id, locked_channels[]}` | Создан или удалён приватный канал; владелец или администратор добавил себя; сменился состав администраторов. Названий каналов в списке нет (ADR-0026) | Владелец и администраторы |
 | `MemberJoined/Updated/Left` | Вступление; смена ролей; выход/кик/бан | Участники |
 | `RoleCreated/Updated/Deleted` | REST ролей | Участники |
 | `PermissionsUpdated{EffectivePermissions}` | Любое изменение, влияющее на права получателя: роли, выдача ролей, доступ к каналу, передача владения | Затронутые участники |
@@ -190,4 +190,5 @@
 - Буфер Resume — список в Valkey с TTL 5 минут на `session_id`; `Heartbeat.seq` позволяет подрезать его раньше.
 - Адресация «видящие канал» вычисляется из тех же данных прав, что `EffectivePermissions`; при изменении прав сервер сначала пересчитывает подписки, потом рассылает `PermissionsUpdated`.
 - `CommunityRemoval` хранится в таблице до подтверждения устройством; записи старше 90 дней удаляются (STATUS.md).
-- Сервер не читает и не изменяет `MessageMeta.ciphertext` и блобы MLS — только пересылает.
+- Сервер не читает и не изменяет `MessageMeta.ciphertext`, блобы MLS и запись канала `ChannelMeta.blob` — только пересылает. Хинты упоминаний он хранит и отдаёт, но не сопоставляет.
+- Присутствие, набор текста и состав голосовых каналов — только текущее состояние в памяти и в Valkey со сроком жизни; в PostgreSQL и в журналы они не попадают. Адрес клиента на диск не пишется: ни в базу, ни в журнал, ни в буфер Resume (ADR-0028 пп. 1, 4; [`RETENTION.md`](RETENTION.md)).
