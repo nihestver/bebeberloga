@@ -10,6 +10,7 @@
 flowchart LR
   subgraph F0["Фаза 0 — фундамент и спайки"]
     B01[B01 протокол] --> B02[B02 CRYPTO.md]
+    B02 --> B21[B21 контракт под ADR-0026–0029]
     S1[S1 OpenMLS FFI] --> B02
     S4[S4 MLS DS] --> B02
     S1 --> S2[S2 LiveKit E2EE]
@@ -41,6 +42,8 @@ flowchart LR
     B17b[B17 ч.2 Helm, релизы]
   end
   B02 --> B03
+  B21 --> B03
+  B21 --> B04
   B01 --> B04 --> B05 --> B06
   B17a --> B04
   B02 --> B05
@@ -60,8 +63,8 @@ flowchart LR
 ```
 
 **Параллельные дорожки** (каждая — отдельный git worktree и отдельная сессия Claude Code):
-- Фаза 0: `B01 → B02` · `S1 → S2` · `S4` · `S3` · `S5` (нужно железо) · `B08` · `B04 ч.0 → B17 ч.1` (каркас сервера с `/health`, затем образ, compose и деплой).
-- Фаза 1: `B03` · `B04 → B05 → B06` · `B09` (после B03, B06, B08).
+- Фаза 0: `B01 → B02 → B21` · `S1 → S2` · `S4` · `S3` · `S5` (нужно железо) · `B08` · `B04 ч.0 → B17 ч.1` (каркас сервера с `/health`, затем образ, compose и деплой).
+- Фаза 1: `B03` · `B04 → B05 → B06` · `B09` (после B03, B06, B08). B03 и B04 (кроме ч.0) стартуют после B21: он приводит контракт и `CRYPTO.md` к ADR-0026–0029.
 - Фаза 2: `B07` · `B12` · затем `B11 → B13`.
 
 **Ворота фаз** (из плана): фаза 0 — спецификация и спайки приняты, E2EE-стрим измерен, деплой на тест-сервер работает; фаза 1 — E2EE-сообщения между двумя устройствами в канале; фаза 2 — стрим 1080p60 < 1 с со звуком приложения на трёх ОС; фаза 3 — все M-функции разделов 3.3–3.4 закрыты; фаза 4 — публичная beta; фаза 5 — аудит закрыт, релиз 1.0.
@@ -85,8 +88,9 @@ flowchart LR
 | S6 | Спайк: E2EE-стрим 1080p60 | [`S6-e2ee-stream.md`](S6-e2ee-stream.md) | 0 | S2, S3, S5 | не начат |
 | B1 | Протокол: Protobuf, gateway, REST | [`B01-protocol.md`](B01-protocol.md) | 0 | A1–A5 | готово (PR #3, #6) |
 | B2 | Криптографический дизайн | [`B02-crypto-design.md`](B02-crypto-design.md) | 0 | B1 (S1, S4 желательно) | готово (PR #12) |
-| B3 | Crypto-core (Rust) | [`B03-crypto-core.md`](B03-crypto-core.md) | 1 | B2 | не начат |
-| B4 | Сервер: каркас, identity, community | [`B04-server-core.md`](B04-server-core.md) | 0 (ч.0), 1 | ч.0 — нет; остальное — B1, B17 ч.1 | ч.0 — готово, PR #17 |
+| B21 | Контракт и крипто-дизайн под ADR-0026–0029: метаданные | [`B21-metadata-contract.md`](B21-metadata-contract.md) | 0 | B1, B2 | не начат |
+| B3 | Crypto-core (Rust) | [`B03-crypto-core.md`](B03-crypto-core.md) | 1 | B2, B21 | не начат |
+| B4 | Сервер: каркас, identity, community | [`B04-server-core.md`](B04-server-core.md) | 0 (ч.0), 1 | ч.0 — нет; остальное — B1, B21, B17 ч.1 | ч.0 — готово, PR #17 |
 | B5 | Сервер: MLS Delivery Service | [`B05-server-mls.md`](B05-server-mls.md) | 1 | B2, B4 | не начат |
 | B6 | Сервер: messaging, gateway, files, push | [`B06-server-messaging.md`](B06-server-messaging.md) | 1 | B4, B5 | не начат |
 | B7 | Сервер: media, звонки, саундборд | [`B07-server-media.md`](B07-server-media.md) | 2 | B4, B5 | не начат |
