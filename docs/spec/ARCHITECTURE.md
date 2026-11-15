@@ -64,6 +64,7 @@
 
 **4.8 Push-уведомления**
 
+- Порядок путей (ADR-0030): свой сервер уведомлений по UnifiedPush рядом с инстансом — основной; FCM — запасной, по умолчанию выключен; APNs — единственный путь для iOS. Desktop-клиенту push не нужен: уведомления приходят через gateway.
 - Push никогда не содержит текста: только id группы и id сообщения (UnifiedPush/FCM/APNs). Клиент по пушу забирает шифртекст, расшифровывает и показывает уведомление локально. На iOS — Notification Service Extension с доступом к ключам через Keychain/App Group.
 
 **4.9 Локальное хранилище**
@@ -158,7 +159,7 @@ E2EE закрывает содержимое. Метаданные сокращ�
 
 **5.4 Хранилища**: PostgreSQL 16 (схема с миграциями `goose`; партиции `messages` по месяцу; при росте — вынос `messages` в ScyllaDB за интерфейсом репозитория); Valkey (сессии, присутствие, буфер resume, rate limits); NATS JetStream (события между репликами gateway и воркерами push); S3-совместимое хранилище (MinIO или Garage) для blob-ов; LiveKit + coturn. Что и сколько хранится — `docs/protocol/RETENTION.md` (ADR-0028); присутствие и состояние голоса — только в памяти и в Valkey со сроком жизни, адреса клиентов на диск не пишутся.
 
-**5.5 Развёртывание**: `docker compose up` для малых инстансов (всё в одном); Helm-чарт с HPA для gateway и воркеров; единый бинарник `bebeberloga-server` с подкомандами `serve`, `migrate`, `admin`; конфигурация через YAML + env; автоматический TLS (Caddy или встроенный ACME); TURN по TLS на 443/tcp на отдельном имени — запасной путь медиа для сетей без UDP (ADR-0029).
+**5.5 Развёртывание**: `docker compose up` для малых инстансов (всё в одном); Helm-чарт с HPA для gateway и воркеров; единый бинарник `bebeberloga-server` с подкомандами `serve`, `migrate`, `admin`; конфигурация через YAML + env; автоматический TLS (Caddy или встроенный ACME); TURN по TLS на 443/tcp на отдельном имени — запасной путь медиа для сетей без UDP (ADR-0029). Инстанс самодостаточен (ADR-0030): клиент обращается только к своему инстансу, сервер — только к почтовому серверу оператора, за сертификатом и к шлюзам push, если их включили; стороннего прокси с завершением TLS перед инстансом нет; сервер ставится и обновляется без доступа к реестрам образов; о новой версии клиента сообщает инстанс.
 
 **5.6 Масштабирование**: gateway горизонтально за NATS; API stateless; MLS-очередь — одна горячая точка на группу (сериализация по group_id в Postgres advisory lock или Valkey lock); LiveKit — multi-node через свой Redis-протокол.
 
@@ -177,7 +178,7 @@ E2EE закрывает содержимое. Метаданные сокращ�
 | iOS (после 1.0, опционально) | Swift, SwiftUI, `livekit-swift`, crypto-core через uniffi, CallKit/PushKit, Notification Service Extension | Единственный полноценный путь к фоновым звонкам и расшифровке пушей на iOS |
 | Медиа | LiveKit server (SFU) + coturn; RNNoise (`rnnoise-wasm` / `rnnoise-nu`) для шумоподавления | Apache-2.0, Go, встроенное E2EE кадров с собственным KeyProvider во всех SDK |
 | Хранилища | PostgreSQL 16, Valkey 8, NATS JetStream, MinIO или Garage | FOSS; Valkey вместо Redis из-за смены лицензии Redis |
-| Push | UnifiedPush (ntfy/NextPush), FCM, APNs через `go-fcm`/`apns2` | FOSS-первый путь для де-гуглизированных Android |
+| Push | UnifiedPush (ntfy/NextPush), FCM, APNs через `go-fcm`/`apns2` | Свой сервер UnifiedPush рядом с инстансом — основной путь; FCM — запасной, по умолчанию выключен; APNs — для iOS (ADR-0030) |
 | Инфраструктура | Docker Compose, Helm, GitHub Actions/Woodpecker CI, `goreleaser`, `cargo-dist`, reproducible builds | Self-hosted CI тоже возможен |
 | Дизайн | Penpot (FOSS) для макетов; дизайн-токены в JSON (`design/tokens/`) → CSS/Compose/SwiftUI через Style Dictionary | Один источник правды для трёх платформ |
 | Документация | mdBook или Docusaurus; OpenAPI 3.1; ADR по шаблону MADR |  |
