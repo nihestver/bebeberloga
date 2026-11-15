@@ -536,8 +536,12 @@ type Device struct {
 	IdentitySignature []byte                 `protobuf:"bytes,7,opt,name=identity_signature,json=identitySignature,proto3" json:"identity_signature,omitempty"`
 	Verification      DeviceVerification     `protobuf:"varint,8,opt,name=verification,proto3,enum=bebeberloga.v1.DeviceVerification" json:"verification,omitempty"`
 	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	LastSeenAt        *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=last_seen_at,json=lastSeenAt,proto3" json:"last_seen_at,omitempty"`
-	// Город по IP последнего подключения, если инстанс это показывает.
+	// Время последней активности устройства. Нужно горизонту офлайна (CRYPTO.md §2.11); адрес
+	// клиента при этом не записывается (ADR-0028 п. 1, п. 4).
+	LastSeenAt *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=last_seen_at,json=lastSeenAt,proto3" json:"last_seen_at,omitempty"`
+	// Город последнего подключения. Пусто, пока оператор не включил показ
+	// (`InstanceInfo.device_location_enabled`, по умолчанию выключено); включённый, сервер
+	// записывает только название города, сам адрес — нет (ADR-0028 п. 2).
 	LastSeenLocation string `protobuf:"bytes,11,opt,name=last_seen_location,json=lastSeenLocation,proto3" json:"last_seen_location,omitempty"`
 	// Это устройство — то, с которого сделан запрос.
 	Current bool `protobuf:"varint,12,opt,name=current,proto3" json:"current,omitempty"`

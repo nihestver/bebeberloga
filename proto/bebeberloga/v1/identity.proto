@@ -74,8 +74,12 @@ message Device {
   bytes identity_signature = 7;
   DeviceVerification verification = 8;
   google.protobuf.Timestamp created_at = 9;
+  // Время последней активности устройства. Нужно горизонту офлайна (CRYPTO.md §2.11); адрес
+  // клиента при этом не записывается (ADR-0028 п. 1, п. 4).
   google.protobuf.Timestamp last_seen_at = 10;
-  // Город по IP последнего подключения, если инстанс это показывает.
+  // Город последнего подключения. Пусто, пока оператор не включил показ
+  // (`InstanceInfo.device_location_enabled`, по умолчанию выключено); включённый, сервер
+  // записывает только название города, сам адрес — нет (ADR-0028 п. 2).
   string last_seen_location = 11;
   // Это устройство — то, с которого сделан запрос.
   bool current = 12;

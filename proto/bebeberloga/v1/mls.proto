@@ -202,6 +202,22 @@ message HistoryBridge {
   bytes blob = 2;
 }
 
+// Запись канала с названием и темой, которую несёт commit, начинающий поколение ключа истории, и
+// начальный commit группы-преемника (CRYPTO.md §6.8.6–§6.8.7): коммитер отдаёт последнюю запись,
+// которую принял сам, под подключом нового поколения. В 1.0 DS требует ровно один элемент —
+// запись самого канала группы.
+message ChannelMetaCarry {
+  // Чья запись. В 1.0 — канал группы; у публичных веток (S) — id ветки.
+  string channel_id = 1;
+  // `ChannelMeta.latest_version`, который видел коммитер. Не равен текущему —
+  // CHANNEL_META_VERSION_CONFLICT: прошла правка, клиент повторяет тот же commit с новой записью.
+  uint32 seen_version = 2;
+  // Версия записи в `blob`; может быть меньше `seen_version`. 0 — годной записи у коммитера нет.
+  uint32 version = 3;
+  // SealedChannelMeta под поколением после commit-а; пусто при `version = 0`.
+  bytes blob = 4;
+}
+
 // Не используется в 1.0: GroupInfo сервер не хранит и не публикует (ADR-0019).
 message EncryptedGroupInfo {
   option deprecated = true;
@@ -278,4 +294,7 @@ message RecreationPlan {
   // Номер поколения ключа истории, которое начнёт новая группа (CRYPTO.md §6.3.10): при DISPUTE и
   // PERSONAL_RESTORE — ровно он, при JOURNAL_LOSS — не больше next_generation + 65 536.
   uint32 next_generation = 8;
+  // `ChannelMeta.latest_version` канала: создатель называет его в `ChannelMetaCarry.seen_version`
+  // начального commit-а (CRYPTO.md §6.8.7). 0 у каналов без записи и у групп звонков.
+  uint32 channel_meta_latest_version = 9;
 }

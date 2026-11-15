@@ -29,15 +29,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Упоминание, которое сервер должен доставить всем или присутствующим.
-// Передаётся открыто, потому что без этого нельзя проверить право `chat.ping_all`
-// и рассчитать бейджи; кто именно упомянут поимённо — скрыто в mention-hint.
+// Широкое упоминание: всех или присутствующих. Передаётся открыто, потому что без этого
+// сервер не может проверить право `chat.ping_all`. Кто упомянут поимённо, сервер не знает:
+// хинты сопоставляет клиент получателя (ADR-0027).
 type BroadcastMention int32
 
 const (
 	BroadcastMention_BROADCAST_MENTION_UNSPECIFIED BroadcastMention = 0
 	BroadcastMention_BROADCAST_MENTION_NONE        BroadcastMention = 1
-	// «@здесь»: участники канала, которые сейчас в сети.
+	// «@здесь»: участники канала, которые сейчас в сети. Засчитывает устройство, получившее
+	// сообщение, пока было на связи (CRYPTO.md §6.4).
 	BroadcastMention_BROADCAST_MENTION_ONLINE BroadcastMention = 2
 	// «@все»: все участники канала.
 	BroadcastMention_BROADCAST_MENTION_ALL BroadcastMention = 3
@@ -143,14 +144,16 @@ func (x SystemMessage_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SystemMessage_Kind.Descriptor instead.
 func (SystemMessage_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_message_proto_rawDescGZIP(), []int{2, 0}
+	return file_bebeberloga_v1_message_proto_rawDescGZIP(), []int{3, 0}
 }
 
 // Метаданные вложения на сервере. Ключ, имя и тип файла — только в зашифрованном конверте.
 type Attachment struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Размер шифртекста в байтах.
+	// Размер blob-а в байтах. Он выровнен: перед шифрованием файл дополнен нулями по схеме Padmé
+	// (CRYPTO.md §7.2, ADR-0028); истинный размер лежит в конверте (`FileRef.size`). С этим
+	// размером сравнивается лимит инстанса.
 	Size uint64 `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
 	// Хэш шифртекста (BLAKE3, 32 байта); клиент сверяет после скачивания.
 	CiphertextHash []byte `protobuf:"bytes,3,opt,name=ciphertext_hash,json=ciphertextHash,proto3" json:"ciphertext_hash,omitempty"`
@@ -234,30 +237,36 @@ type MessageMeta struct {
 	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// SealedMessage (CRYPTO.md §6.2.3): конверт MessageEnvelope и подпись устройства-отправителя,
 	// зашифрованные XChaCha20-Poly1305 ключом сообщения; длина кратна 256 байтам; не MLS.
-	// До 128 КиБ (обоснование — STATUS.md). Пусто у tombstone и системных сообщений.
+	// До 128 КиБ (обоснование — STATUS.md). Пусто у удалённых и системных сообщений.
 	Ciphertext []byte `protobuf:"bytes,8,opt,name=ciphertext,proto3" json:"ciphertext,omitempty"`
-	// Размер шифртекста в байтах (ARCHITECTURE.md §4.4); сохраняется и у tombstone.
+	// Размер шифртекста в байтах (ARCHITECTURE.md §4.4); у удалённого сообщения — 0.
 	Size uint32 `protobuf:"varint,9,opt,name=size,proto3" json:"size,omitempty"`
 	// Ключ сообщения, обёрнутый подключом текущего поколения ключа истории канала
 	// (WrappedMessageKey, CRYPTO.md §6.2.4; ADR-0020).
 	WrappedMessageKey []byte `protobuf:"bytes,10,opt,name=wrapped_message_key,json=wrappedMessageKey,proto3" json:"wrapped_message_key,omitempty"`
 	// Поколение ключа истории, которым обёрнут ключ сообщения.
 	HistoryKeyGeneration uint32 `protobuf:"varint,11,opt,name=history_key_generation,json=historyKeyGeneration,proto3" json:"history_key_generation,omitempty"`
-	// mention-hint — 16 байт HMAC подключом поколения ключа истории от id упоминаемого пользователя
-	// или роли (CRYPTO.md §6.4). Сервер сравнивает с хинтами, присланными участниками
-	// (`PUT /users/me/mention-hints`), в том числе задним числом.
+	// mention-hint — 16 байт HMAC подключом поколения ключа истории от вида цели, id упомянутого
+	// пользователя или роли и id этого сообщения, вперемешку с хинтами-пустышками (CRYPTO.md §6.4).
+	// Хинтов 0, 1, 2, 4, 8, 16, 32 или 50. Сервер их хранит и отдаёт, но ни с чем не сравнивает:
+	// сопоставляет клиент получателя (ADR-0027).
 	MentionHints     [][]byte         `protobuf:"bytes,12,rep,name=mention_hints,json=mentionHints,proto3" json:"mention_hints,omitempty"`
 	BroadcastMention BroadcastMention `protobuf:"varint,13,opt,name=broadcast_mention,json=broadcastMention,proto3,enum=bebeberloga.v1.BroadcastMention" json:"broadcast_mention,omitempty"`
 	Attachments      []*Attachment    `protobuf:"bytes,14,rep,name=attachments,proto3" json:"attachments,omitempty"`
 	// Сообщение закреплено (список закрепов — на сервере, только id).
 	Pinned bool `protobuf:"varint,15,opt,name=pinned,proto3" json:"pinned,omitempty"`
-	// Шифртекст удалён, запись — tombstone.
+	// Сообщение удалено. Сервер стёр шифртекст, обёрнутый ключ, хинты и blob-ы вложений; осталась
+	// отметка — заполнены только `id`, `channel_id`, `deleted` и `deleted_at` (ADR-0028 п. 3).
 	Deleted   bool                   `protobuf:"varint,16,opt,name=deleted,proto3" json:"deleted,omitempty"`
 	DeletedAt *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
 	// Системное сообщение сервера: шифртекста нет, тип и параметры — открытые.
-	System        *SystemMessage `protobuf:"bytes,18,opt,name=system,proto3" json:"system,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	System *SystemMessage `protobuf:"bytes,18,opt,name=system,proto3" json:"system,omitempty"`
+	// Ставит сервер при приёме: было ли у отправителя право `chat.ping_all` в этом канале. В ЛС и
+	// групповом чате — всегда true. Клиент получателя засчитывает совпадение с ролью и «@все» /
+	// «@здесь», только если отметка стоит (ADR-0027 п. 7, CRYPTO.md §6.4).
+	AuthorCanPingAll bool `protobuf:"varint,19,opt,name=author_can_ping_all,json=authorCanPingAll,proto3" json:"author_can_ping_all,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *MessageMeta) Reset() {
@@ -416,6 +425,100 @@ func (x *MessageMeta) GetSystem() *SystemMessage {
 	return nil
 }
 
+func (x *MessageMeta) GetAuthorCanPingAll() bool {
+	if x != nil {
+		return x.AuthorCanPingAll
+	}
+	return false
+}
+
+// Кандидат в упоминания: непрочитанное чужое сообщение с хинтами или широким упоминанием.
+// Список кандидатов клиент забирает после офлайна и сопоставляет хинты сам (ADR-0027 п. 5,
+// CRYPTO.md §6.4). Шифртекста и ключа сообщения здесь нет.
+type MentionCandidate struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	MessageId            string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	ChannelId            string                 `protobuf:"bytes,2,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	HistoryKeyGeneration uint32                 `protobuf:"varint,3,opt,name=history_key_generation,json=historyKeyGeneration,proto3" json:"history_key_generation,omitempty"`
+	MentionHints         [][]byte               `protobuf:"bytes,4,rep,name=mention_hints,json=mentionHints,proto3" json:"mention_hints,omitempty"`
+	BroadcastMention     BroadcastMention       `protobuf:"varint,5,opt,name=broadcast_mention,json=broadcastMention,proto3,enum=bebeberloga.v1.BroadcastMention" json:"broadcast_mention,omitempty"`
+	AuthorCanPingAll     bool                   `protobuf:"varint,6,opt,name=author_can_ping_all,json=authorCanPingAll,proto3" json:"author_can_ping_all,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *MentionCandidate) Reset() {
+	*x = MentionCandidate{}
+	mi := &file_bebeberloga_v1_message_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MentionCandidate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MentionCandidate) ProtoMessage() {}
+
+func (x *MentionCandidate) ProtoReflect() protoreflect.Message {
+	mi := &file_bebeberloga_v1_message_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MentionCandidate.ProtoReflect.Descriptor instead.
+func (*MentionCandidate) Descriptor() ([]byte, []int) {
+	return file_bebeberloga_v1_message_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *MentionCandidate) GetMessageId() string {
+	if x != nil {
+		return x.MessageId
+	}
+	return ""
+}
+
+func (x *MentionCandidate) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *MentionCandidate) GetHistoryKeyGeneration() uint32 {
+	if x != nil {
+		return x.HistoryKeyGeneration
+	}
+	return 0
+}
+
+func (x *MentionCandidate) GetMentionHints() [][]byte {
+	if x != nil {
+		return x.MentionHints
+	}
+	return nil
+}
+
+func (x *MentionCandidate) GetBroadcastMention() BroadcastMention {
+	if x != nil {
+		return x.BroadcastMention
+	}
+	return BroadcastMention_BROADCAST_MENTION_UNSPECIFIED
+}
+
+func (x *MentionCandidate) GetAuthorCanPingAll() bool {
+	if x != nil {
+		return x.AuthorCanPingAll
+	}
+	return false
+}
+
 // Системное сообщение генерирует сервер по открытым событиям; клиент рендерит текст сам.
 // Сообщения о новых устройствах и смене ключей не сюда: их создаёт клиент как зашифрованные
 // (DeviceNoticeBody в envelope.proto).
@@ -431,7 +534,7 @@ type SystemMessage struct {
 
 func (x *SystemMessage) Reset() {
 	*x = SystemMessage{}
-	mi := &file_bebeberloga_v1_message_proto_msgTypes[2]
+	mi := &file_bebeberloga_v1_message_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -443,7 +546,7 @@ func (x *SystemMessage) String() string {
 func (*SystemMessage) ProtoMessage() {}
 
 func (x *SystemMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_message_proto_msgTypes[2]
+	mi := &file_bebeberloga_v1_message_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -456,7 +559,7 @@ func (x *SystemMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SystemMessage.ProtoReflect.Descriptor instead.
 func (*SystemMessage) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_message_proto_rawDescGZIP(), []int{2}
+	return file_bebeberloga_v1_message_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SystemMessage) GetKind() SystemMessage_Kind {
@@ -500,7 +603,7 @@ type Pin struct {
 
 func (x *Pin) Reset() {
 	*x = Pin{}
-	mi := &file_bebeberloga_v1_message_proto_msgTypes[3]
+	mi := &file_bebeberloga_v1_message_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -512,7 +615,7 @@ func (x *Pin) String() string {
 func (*Pin) ProtoMessage() {}
 
 func (x *Pin) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_message_proto_msgTypes[3]
+	mi := &file_bebeberloga_v1_message_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -525,7 +628,7 @@ func (x *Pin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pin.ProtoReflect.Descriptor instead.
 func (*Pin) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_message_proto_rawDescGZIP(), []int{3}
+	return file_bebeberloga_v1_message_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Pin) GetChannelId() string {
@@ -566,7 +669,7 @@ const file_bebeberloga_v1_message_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x04R\x04size\x12'\n" +
 	"\x0fciphertext_hash\x18\x03 \x01(\fR\x0eciphertextHash\x12\x1a\n" +
-	"\buploaded\x18\x04 \x01(\bR\buploaded\"\xe8\x05\n" +
+	"\buploaded\x18\x04 \x01(\bR\buploaded\"\x97\x06\n" +
 	"\vMessageMeta\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -591,7 +694,17 @@ const file_bebeberloga_v1_message_proto_rawDesc = "" +
 	"\adeleted\x18\x10 \x01(\bR\adeleted\x129\n" +
 	"\n" +
 	"deleted_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\x125\n" +
-	"\x06system\x18\x12 \x01(\v2\x1d.bebeberloga.v1.SystemMessageR\x06system\"\xc2\x02\n" +
+	"\x06system\x18\x12 \x01(\v2\x1d.bebeberloga.v1.SystemMessageR\x06system\x12-\n" +
+	"\x13author_can_ping_all\x18\x13 \x01(\bR\x10authorCanPingAll\"\xa9\x02\n" +
+	"\x10MentionCandidate\x12\x1d\n" +
+	"\n" +
+	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x02 \x01(\tR\tchannelId\x124\n" +
+	"\x16history_key_generation\x18\x03 \x01(\rR\x14historyKeyGeneration\x12#\n" +
+	"\rmention_hints\x18\x04 \x03(\fR\fmentionHints\x12M\n" +
+	"\x11broadcast_mention\x18\x05 \x01(\x0e2 .bebeberloga.v1.BroadcastMentionR\x10broadcastMention\x12-\n" +
+	"\x13author_can_ping_all\x18\x06 \x01(\bR\x10authorCanPingAll\"\xc2\x02\n" +
 	"\rSystemMessage\x126\n" +
 	"\x04kind\x18\x01 \x01(\x0e2\".bebeberloga.v1.SystemMessage.KindR\x04kind\x12\x19\n" +
 	"\bactor_id\x18\x02 \x01(\tR\aactorId\x12$\n" +
@@ -630,29 +743,31 @@ func file_bebeberloga_v1_message_proto_rawDescGZIP() []byte {
 }
 
 var file_bebeberloga_v1_message_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_bebeberloga_v1_message_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_bebeberloga_v1_message_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_bebeberloga_v1_message_proto_goTypes = []any{
 	(BroadcastMention)(0),         // 0: bebeberloga.v1.BroadcastMention
 	(SystemMessage_Kind)(0),       // 1: bebeberloga.v1.SystemMessage.Kind
 	(*Attachment)(nil),            // 2: bebeberloga.v1.Attachment
 	(*MessageMeta)(nil),           // 3: bebeberloga.v1.MessageMeta
-	(*SystemMessage)(nil),         // 4: bebeberloga.v1.SystemMessage
-	(*Pin)(nil),                   // 5: bebeberloga.v1.Pin
-	(*timestamppb.Timestamp)(nil), // 6: google.protobuf.Timestamp
+	(*MentionCandidate)(nil),      // 4: bebeberloga.v1.MentionCandidate
+	(*SystemMessage)(nil),         // 5: bebeberloga.v1.SystemMessage
+	(*Pin)(nil),                   // 6: bebeberloga.v1.Pin
+	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
 }
 var file_bebeberloga_v1_message_proto_depIdxs = []int32{
-	6, // 0: bebeberloga.v1.MessageMeta.created_at:type_name -> google.protobuf.Timestamp
+	7, // 0: bebeberloga.v1.MessageMeta.created_at:type_name -> google.protobuf.Timestamp
 	0, // 1: bebeberloga.v1.MessageMeta.broadcast_mention:type_name -> bebeberloga.v1.BroadcastMention
 	2, // 2: bebeberloga.v1.MessageMeta.attachments:type_name -> bebeberloga.v1.Attachment
-	6, // 3: bebeberloga.v1.MessageMeta.deleted_at:type_name -> google.protobuf.Timestamp
-	4, // 4: bebeberloga.v1.MessageMeta.system:type_name -> bebeberloga.v1.SystemMessage
-	1, // 5: bebeberloga.v1.SystemMessage.kind:type_name -> bebeberloga.v1.SystemMessage.Kind
-	6, // 6: bebeberloga.v1.Pin.pinned_at:type_name -> google.protobuf.Timestamp
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	7, // 3: bebeberloga.v1.MessageMeta.deleted_at:type_name -> google.protobuf.Timestamp
+	5, // 4: bebeberloga.v1.MessageMeta.system:type_name -> bebeberloga.v1.SystemMessage
+	0, // 5: bebeberloga.v1.MentionCandidate.broadcast_mention:type_name -> bebeberloga.v1.BroadcastMention
+	1, // 6: bebeberloga.v1.SystemMessage.kind:type_name -> bebeberloga.v1.SystemMessage.Kind
+	7, // 7: bebeberloga.v1.Pin.pinned_at:type_name -> google.protobuf.Timestamp
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_bebeberloga_v1_message_proto_init() }
@@ -666,7 +781,7 @@ func file_bebeberloga_v1_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_bebeberloga_v1_message_proto_rawDesc), len(file_bebeberloga_v1_message_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

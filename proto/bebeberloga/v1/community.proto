@@ -49,8 +49,8 @@ enum ChannelType {
   CHANNEL_TYPE_UNSPECIFIED = 0;
   // Текстовый канал сообщества; одна MLS-группа.
   CHANNEL_TYPE_TEXT = 1;
-  // Голосовой канал; у него постоянная MLS-группа чата (создаётся первым сообщением)
-  // и короткоживущая группа звонка (создаётся первым вошедшим).
+  // Голосовой канал; у него постоянная MLS-группа чата (создаётся вместе с каналом: без неё
+  // у названия нет ключа, ADR-0026) и короткоживущая группа звонка (создаётся первым вошедшим).
   CHANNEL_TYPE_VOICE = 2;
   // Личные сообщения 1:1; `community_id` пуст, участники — в `participant_ids`.
   CHANNEL_TYPE_DM = 3;
@@ -71,6 +71,31 @@ enum HistoryVisibility {
   HISTORY_VISIBILITY_HIDDEN = 3;
 }
 
+// Запись канала с названием и темой и её открытые поля (CRYPTO.md §6.8). Название и тема —
+// содержимое: сервер хранит их только зашифрованными подключом головного поколения ключа истории
+// канала и не читает (ADR-0026). Открытой строки названия или темы в контракте нет.
+message ChannelMeta {
+  // Канал, чья это запись.
+  string channel_id = 1;
+  // Поколение ключа истории, подключом которого зашифрован `blob`; 0 — записи сейчас нет.
+  uint32 generation = 2;
+  // Версия записи в `blob`, с 1; 0 — записи сейчас нет.
+  uint32 version = 3;
+  // SealedChannelMeta (CRYPTO.md §6.8.1): название, тема, автор правки и подпись его устройства,
+  // зашифрованные XChaCha20-Poly1305; длина кратна 256 байтам, не больше 8 КиБ. Пусто — записи
+  // сейчас нет: её не отдал коммитер, начавший поколение, и ещё не записала правка.
+  bytes blob = 4;
+  // Хэш записи версии `version` (SHA-256 с солью внутри записи, 32 байта). Сервер запомнил его,
+  // когда принял эту версию от участника с правом `channel.edit`; клиент сверяет с ним
+  // расшифрованную запись (CRYPTO.md §6.8.2).
+  bytes record_hash = 5;
+  // Когда сервер принял версию `version`.
+  google.protobuf.Timestamp created_at = 6;
+  // Наибольшая версия, принятая правкой `PUT /channels/{id}/meta`. Следующая правка берёт версию
+  // больше неё; коммитер, начинающий поколение, называет её в `ChannelMetaCarry.seen_version`.
+  uint32 latest_version = 7;
+}
+
 // Канал любого типа, включая ЛС: история, закрепы и read-state адресуются
 // одинаково через `/channels/{id}`.
 message Channel {
@@ -80,12 +105,10 @@ message Channel {
   string community_id = 3;
   // Пусто, если канал вне категории.
   string category_id = 4;
-  // Для TEXT/VOICE: нормализованное имя (строчные, дефисы, без пробелов), 1–64 символа.
-  // Для GROUP_DM — имя группы (S). Для DM пусто. Для приватной THREAD (S) пусто: название
-  // приватной ветки — содержимое, оно передаётся внутри группы (ARCHITECTURE.md §4.1).
-  string name = 5;
-  // Тема канала, до 1024 символов (SCREENS/11 §3.1).
-  string topic = 6;
+  // 5, 6 — бывшие открытые `name` и `topic`. Название и тема канала — содержимое и лежат только
+  // в зашифрованной записи `meta` (ADR-0026, B21).
+  reserved 5, 6;
+  reserved "name", "topic";
   uint32 position = 7;
   // Канал виден только по явным разрешениям `channel.see` (PERMISSIONS.md §3).
   bool private = 8;
@@ -106,16 +129,23 @@ message Channel {
   google.protobuf.Timestamp created_at = 17;
   // Id последнего сообщения — для бейджей непрочитанного без запроса истории.
   string last_message_id = 18;
+  // Запись с названием и темой (TEXT, VOICE; GROUP_DM и THREAD — S). Не задана у DM и PERSONAL
+  // и пока клиент создателя не создал группу чата канала. Клиент без ключа головного поколения
+  // показывает вместо названия заглушку (SCREENS/03).
+  ChannelMeta meta = 19;
 }
 
 // Приватный канал, который владелец или администратор не видит, но может добавить
-// в него себя (PERMISSIONS.md §3 п. 2: «🔒 закрытый для тебя»). Только имя и место в списке.
+// в него себя (PERMISSIONS.md §3 п. 2: «🔒 закрытый для тебя»). Только место в списке: названия
+// нет — пока они не в канале, ключа от названия у них нет (ADR-0026 п. 6).
 message LockedChannel {
   string id = 1;
   string community_id = 2;
   string category_id = 3;
   ChannelType type = 4;
-  string name = 5;
+  // 5 — бывшее открытое `name` (ADR-0026, B21).
+  reserved 5;
+  reserved "name";
   uint32 position = 6;
 }
 
@@ -212,11 +242,14 @@ message Invite {
 }
 
 // Превью приглашения для неавторизованного или не вступившего пользователя (SCREENS/06 §2.2).
+// Канал превью не называет: ключа от названия у приглашённого нет (ADR-0026 п. 6).
 message InvitePreview {
   string code = 1;
   string community_name = 2;
   string community_icon_id = 3;
-  string channel_name = 4;
+  // 4 — бывшее открытое `channel_name` (ADR-0026, B21).
+  reserved 4;
+  reserved "channel_name";
   ChannelType channel_type = 5;
   uint32 member_count = 6;
   uint32 online_count = 7;
@@ -272,7 +305,8 @@ enum NotificationLevel {
 }
 
 // Настройки уведомлений пользователя для сообщества или канала. Хранятся на сервере
-// и синхронизируются между устройствами (OPEN-QUESTIONS №6).
+// и синхронизируются между устройствами (OPEN-QUESTIONS №6); применяет их клиент: сервер не
+// знает, кого упомянули (ADR-0027 п. 8).
 message NotificationSettings {
   oneof scope {
     string community_id = 1;
@@ -293,8 +327,14 @@ message NotificationSettings {
 message ReadState {
   string channel_id = 1;
   string last_read_message_id = 2;
-  // Число непрочитанных сообщений с упоминанием меня (по mention-hint).
-  uint32 mention_count = 3;
+  // 3 — бывшее `mention_count`: сервер не знает, кого упомянули, и упоминания не считает
+  // (ADR-0027, B21).
+  reserved 3;
+  reserved "mention_count";
+  // Число кандидатов: непрочитанных чужих сообщений канала, у которых есть хинты упоминаний или
+  // «@все» / «@здесь». Упоминания среди них клиент считает сам (`GET /users/me/mention-candidates`,
+  // CRYPTO.md §6.4); пока не посчитал, канал показывает обычный бейдж непрочитанного.
+  uint32 mention_candidate_count = 4;
 }
 
 // Сводка MLS-группы канала для раздела «Шифрование и история» (SCREENS/06 §5.2).

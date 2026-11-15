@@ -146,6 +146,11 @@ enum ErrorCode {
   // Время в UUIDv7 сообщения старше 30 сут или опережает время приёма больше чем на 5 мин
   // (CRYPTO.md §6.2.8). HTTP 400.
   ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW = 517;
+  // Запись канала с названием и темой (CRYPTO.md §6.8). Правка `PUT /channels/{id}/meta`: версию
+  // уже занял другой участник — клиент показывает новое название и предлагает повторить правку.
+  // Commit, начинающий поколение: `seen_version` его записи отстал от правки — клиент забирает
+  // запись и повторяет тот же commit с новой записью. `current_meta_version`. HTTP 409.
+  ERROR_CODE_CHANNEL_META_VERSION_CONFLICT = 518;
 
   // --- саундборд ---------------------------------------------------------
   // Звук не в формате Opus/ogg (клиент перекодирует перед загрузкой, FLOWS/09 ш. 2)
@@ -185,4 +190,6 @@ message Error {
   string successor_group_id = 9;
   // Для HISTORY_GENERATION_MISMATCH: текущее поколение ключа истории канала.
   uint32 current_generation = 10;
+  // Для CHANNEL_META_VERSION_CONFLICT: `ChannelMeta.latest_version` канала.
+  uint32 current_meta_version = 11;
 }

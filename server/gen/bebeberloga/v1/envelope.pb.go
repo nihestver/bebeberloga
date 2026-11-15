@@ -78,7 +78,7 @@ func (x DeviceNoticeBody_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DeviceNoticeBody_Kind.Descriptor instead.
 func (DeviceNoticeBody_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{13, 0}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{14, 0}
 }
 
 // Конверт. Внутри повторяется `message_id`, чтобы связать шифртекст с открытым id:
@@ -463,11 +463,12 @@ type FileRef struct {
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// MIME-тип.
 	MimeType string `protobuf:"bytes,3,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
-	// Размер открытого файла в байтах.
+	// Истинный размер открытого файла в байтах — без добавки до выровненной длины. Получатель
+	// обрезает расшифрованное по нему и проверяет, что добавка нулевая (CRYPTO.md §7.2).
 	Size uint64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
-	// Ключ XChaCha20-Poly1305 (32 байта). Схема чанков по 1 МиБ и nonce — CRYPTO.md (B2).
+	// Ключ XChaCha20-Poly1305 (32 байта). Схема чанков по 1 МиБ и nonce — CRYPTO.md §7.
 	Key []byte `protobuf:"bytes,5,opt,name=key,proto3" json:"key,omitempty"`
-	// Хэш открытого файла (BLAKE3, 32 байта).
+	// Хэш открытого файла без добавки (BLAKE3, 32 байта).
 	ContentHash []byte `protobuf:"bytes,6,opt,name=content_hash,json=contentHash,proto3" json:"content_hash,omitempty"`
 	// Хэш шифртекста, чтобы сверить с Attachment.ciphertext_hash.
 	CiphertextHash []byte `protobuf:"bytes,7,opt,name=ciphertext_hash,json=ciphertextHash,proto3" json:"ciphertext_hash,omitempty"`
@@ -479,7 +480,10 @@ type FileRef struct {
 	// Скрыть за плашкой «спойлер».
 	Spoiler bool `protobuf:"varint,11,opt,name=spoiler,proto3" json:"spoiler,omitempty"`
 	// Описание (альтернативный текст), до 500 символов (STATUS.md).
-	Description   string `protobuf:"bytes,12,opt,name=description,proto3" json:"description,omitempty"`
+	Description string `protobuf:"bytes,12,opt,name=description,proto3" json:"description,omitempty"`
+	// Превью изображения или видео — второй зашифрованный blob (ARCHITECTURE.md §4.5); не задано,
+	// если превью нет.
+	Preview       *FilePreview `protobuf:"bytes,13,opt,name=preview,proto3" json:"preview,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -598,6 +602,78 @@ func (x *FileRef) GetDescription() string {
 	return ""
 }
 
+func (x *FileRef) GetPreview() *FilePreview {
+	if x != nil {
+		return x.Preview
+	}
+	return nil
+}
+
+// Второй blob вложения — превью. Шифруется подключом того же ключа файла (объект вида 2,
+// CRYPTO.md §7.1) и выравнивается так же, как файл.
+type FilePreview struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Id blob-а превью на сервере (Attachment.id).
+	AttachmentId string `protobuf:"bytes,1,opt,name=attachment_id,json=attachmentId,proto3" json:"attachment_id,omitempty"`
+	// Истинный размер открытого превью в байтах — без добавки (CRYPTO.md §7.2).
+	Size uint64 `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	// Хэш шифртекста, чтобы сверить с Attachment.ciphertext_hash.
+	CiphertextHash []byte `protobuf:"bytes,3,opt,name=ciphertext_hash,json=ciphertextHash,proto3" json:"ciphertext_hash,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *FilePreview) Reset() {
+	*x = FilePreview{}
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FilePreview) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FilePreview) ProtoMessage() {}
+
+func (x *FilePreview) ProtoReflect() protoreflect.Message {
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FilePreview.ProtoReflect.Descriptor instead.
+func (*FilePreview) Descriptor() ([]byte, []int) {
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *FilePreview) GetAttachmentId() string {
+	if x != nil {
+		return x.AttachmentId
+	}
+	return ""
+}
+
+func (x *FilePreview) GetSize() uint64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *FilePreview) GetCiphertextHash() []byte {
+	if x != nil {
+		return x.CiphertextHash
+	}
+	return nil
+}
+
 // Превью ссылки (S): генерирует клиент отправителя (ARCHITECTURE.md §8).
 type LinkPreview struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
@@ -613,7 +689,7 @@ type LinkPreview struct {
 
 func (x *LinkPreview) Reset() {
 	*x = LinkPreview{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[3]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -625,7 +701,7 @@ func (x *LinkPreview) String() string {
 func (*LinkPreview) ProtoMessage() {}
 
 func (x *LinkPreview) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[3]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -638,7 +714,7 @@ func (x *LinkPreview) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LinkPreview.ProtoReflect.Descriptor instead.
 func (*LinkPreview) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{3}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *LinkPreview) GetUrl() string {
@@ -695,7 +771,7 @@ type TextBody struct {
 
 func (x *TextBody) Reset() {
 	*x = TextBody{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[4]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -707,7 +783,7 @@ func (x *TextBody) String() string {
 func (*TextBody) ProtoMessage() {}
 
 func (x *TextBody) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[4]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -720,7 +796,7 @@ func (x *TextBody) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TextBody.ProtoReflect.Descriptor instead.
 func (*TextBody) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{4}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TextBody) GetText() string {
@@ -778,7 +854,7 @@ type EditBody struct {
 
 func (x *EditBody) Reset() {
 	*x = EditBody{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[5]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -790,7 +866,7 @@ func (x *EditBody) String() string {
 func (*EditBody) ProtoMessage() {}
 
 func (x *EditBody) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[5]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -803,7 +879,7 @@ func (x *EditBody) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EditBody.ProtoReflect.Descriptor instead.
 func (*EditBody) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{5}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *EditBody) GetTargetId() string {
@@ -845,7 +921,7 @@ type DeleteBody struct {
 
 func (x *DeleteBody) Reset() {
 	*x = DeleteBody{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[6]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -857,7 +933,7 @@ func (x *DeleteBody) String() string {
 func (*DeleteBody) ProtoMessage() {}
 
 func (x *DeleteBody) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[6]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -870,7 +946,7 @@ func (x *DeleteBody) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteBody.ProtoReflect.Descriptor instead.
 func (*DeleteBody) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{6}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *DeleteBody) GetTargetId() string {
@@ -894,7 +970,7 @@ type ReactionBody struct {
 
 func (x *ReactionBody) Reset() {
 	*x = ReactionBody{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[7]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -906,7 +982,7 @@ func (x *ReactionBody) String() string {
 func (*ReactionBody) ProtoMessage() {}
 
 func (x *ReactionBody) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[7]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -919,7 +995,7 @@ func (x *ReactionBody) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReactionBody.ProtoReflect.Descriptor instead.
 func (*ReactionBody) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{7}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ReactionBody) GetTargetId() string {
@@ -954,7 +1030,7 @@ type PinBody struct {
 
 func (x *PinBody) Reset() {
 	*x = PinBody{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[8]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -966,7 +1042,7 @@ func (x *PinBody) String() string {
 func (*PinBody) ProtoMessage() {}
 
 func (x *PinBody) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[8]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -979,7 +1055,7 @@ func (x *PinBody) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PinBody.ProtoReflect.Descriptor instead.
 func (*PinBody) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{8}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PinBody) GetTargetId() string {
@@ -1008,7 +1084,7 @@ type FileKeyBody struct {
 
 func (x *FileKeyBody) Reset() {
 	*x = FileKeyBody{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[9]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1020,7 +1096,7 @@ func (x *FileKeyBody) String() string {
 func (*FileKeyBody) ProtoMessage() {}
 
 func (x *FileKeyBody) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[9]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1033,7 +1109,7 @@ func (x *FileKeyBody) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileKeyBody.ProtoReflect.Descriptor instead.
 func (*FileKeyBody) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{9}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *FileKeyBody) GetTargetMessageId() string {
@@ -1064,7 +1140,7 @@ type CallKeyBody struct {
 
 func (x *CallKeyBody) Reset() {
 	*x = CallKeyBody{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[10]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1076,7 +1152,7 @@ func (x *CallKeyBody) String() string {
 func (*CallKeyBody) ProtoMessage() {}
 
 func (x *CallKeyBody) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[10]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1089,7 +1165,7 @@ func (x *CallKeyBody) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallKeyBody.ProtoReflect.Descriptor instead.
 func (*CallKeyBody) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{10}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CallKeyBody) GetChannelId() string {
@@ -1126,7 +1202,7 @@ type HistoryKeysBody struct {
 
 func (x *HistoryKeysBody) Reset() {
 	*x = HistoryKeysBody{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[11]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1138,7 +1214,7 @@ func (x *HistoryKeysBody) String() string {
 func (*HistoryKeysBody) ProtoMessage() {}
 
 func (x *HistoryKeysBody) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[11]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1151,7 +1227,7 @@ func (x *HistoryKeysBody) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HistoryKeysBody.ProtoReflect.Descriptor instead.
 func (*HistoryKeysBody) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{11}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *HistoryKeysBody) GetKeys() []*HistoryKey {
@@ -1175,7 +1251,7 @@ type HistoryKey struct {
 
 func (x *HistoryKey) Reset() {
 	*x = HistoryKey{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[12]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1187,7 +1263,7 @@ func (x *HistoryKey) String() string {
 func (*HistoryKey) ProtoMessage() {}
 
 func (x *HistoryKey) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[12]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1200,7 +1276,7 @@ func (x *HistoryKey) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HistoryKey.ProtoReflect.Descriptor instead.
 func (*HistoryKey) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{12}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *HistoryKey) GetGeneration() uint32 {
@@ -1238,7 +1314,7 @@ type DeviceNoticeBody struct {
 
 func (x *DeviceNoticeBody) Reset() {
 	*x = DeviceNoticeBody{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[13]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1250,7 +1326,7 @@ func (x *DeviceNoticeBody) String() string {
 func (*DeviceNoticeBody) ProtoMessage() {}
 
 func (x *DeviceNoticeBody) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[13]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1263,7 +1339,7 @@ func (x *DeviceNoticeBody) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeviceNoticeBody.ProtoReflect.Descriptor instead.
 func (*DeviceNoticeBody) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{13}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *DeviceNoticeBody) GetKind() DeviceNoticeBody_Kind {
@@ -1302,7 +1378,7 @@ type PersonalSyncBody struct {
 
 func (x *PersonalSyncBody) Reset() {
 	*x = PersonalSyncBody{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[14]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1314,7 +1390,7 @@ func (x *PersonalSyncBody) String() string {
 func (*PersonalSyncBody) ProtoMessage() {}
 
 func (x *PersonalSyncBody) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[14]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1327,7 +1403,7 @@ func (x *PersonalSyncBody) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PersonalSyncBody.ProtoReflect.Descriptor instead.
 func (*PersonalSyncBody) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{14}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *PersonalSyncBody) GetVerification() []*VerificationStatus {
@@ -1361,7 +1437,7 @@ type RecoveryKeyRecord struct {
 
 func (x *RecoveryKeyRecord) Reset() {
 	*x = RecoveryKeyRecord{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[15]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1373,7 +1449,7 @@ func (x *RecoveryKeyRecord) String() string {
 func (*RecoveryKeyRecord) ProtoMessage() {}
 
 func (x *RecoveryKeyRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[15]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1386,7 +1462,7 @@ func (x *RecoveryKeyRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecoveryKeyRecord.ProtoReflect.Descriptor instead.
 func (*RecoveryKeyRecord) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{15}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RecoveryKeyRecord) GetDeviceId() string {
@@ -1416,7 +1492,7 @@ type VerificationStatus struct {
 
 func (x *VerificationStatus) Reset() {
 	*x = VerificationStatus{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[16]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1428,7 +1504,7 @@ func (x *VerificationStatus) String() string {
 func (*VerificationStatus) ProtoMessage() {}
 
 func (x *VerificationStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[16]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1441,7 +1517,7 @@ func (x *VerificationStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerificationStatus.ProtoReflect.Descriptor instead.
 func (*VerificationStatus) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{16}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *VerificationStatus) GetUserId() string {
@@ -1483,7 +1559,7 @@ type TrustedDomain struct {
 
 func (x *TrustedDomain) Reset() {
 	*x = TrustedDomain{}
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[17]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1495,7 +1571,7 @@ func (x *TrustedDomain) String() string {
 func (*TrustedDomain) ProtoMessage() {}
 
 func (x *TrustedDomain) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[17]
+	mi := &file_bebeberloga_v1_envelope_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1508,7 +1584,7 @@ func (x *TrustedDomain) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TrustedDomain.ProtoReflect.Descriptor instead.
 func (*TrustedDomain) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{17}
+	return file_bebeberloga_v1_envelope_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *TrustedDomain) GetDomain() string {
@@ -1553,7 +1629,7 @@ const file_bebeberloga_v1_envelope_proto_rawDesc = "" +
 	"channel_id\x18\x03 \x01(\tH\x00R\tchannelId\x12\x12\n" +
 	"\x03all\x18\x04 \x01(\bH\x00R\x03all\x12\x18\n" +
 	"\x06online\x18\x05 \x01(\bH\x00R\x06onlineB\b\n" +
-	"\x06target\"\xd9\x02\n" +
+	"\x06target\"\x90\x03\n" +
 	"\aFileRef\x12#\n" +
 	"\rattachment_id\x18\x01 \x01(\tR\fattachmentId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
@@ -1567,7 +1643,12 @@ const file_bebeberloga_v1_envelope_proto_rawDesc = "" +
 	"\tthumbnail\x18\n" +
 	" \x01(\fR\tthumbnail\x12\x18\n" +
 	"\aspoiler\x18\v \x01(\bR\aspoiler\x12 \n" +
-	"\vdescription\x18\f \x01(\tR\vdescription\"\xa3\x01\n" +
+	"\vdescription\x18\f \x01(\tR\vdescription\x125\n" +
+	"\apreview\x18\r \x01(\v2\x1b.bebeberloga.v1.FilePreviewR\apreview\"o\n" +
+	"\vFilePreview\x12#\n" +
+	"\rattachment_id\x18\x01 \x01(\tR\fattachmentId\x12\x12\n" +
+	"\x04size\x18\x02 \x01(\x04R\x04size\x12'\n" +
+	"\x0fciphertext_hash\x18\x03 \x01(\fR\x0eciphertextHash\"\xa3\x01\n" +
 	"\vLinkPreview\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x1b\n" +
 	"\tsite_name\x18\x02 \x01(\tR\bsiteName\x12\x14\n" +
@@ -1655,61 +1736,63 @@ func file_bebeberloga_v1_envelope_proto_rawDescGZIP() []byte {
 }
 
 var file_bebeberloga_v1_envelope_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_bebeberloga_v1_envelope_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_bebeberloga_v1_envelope_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_bebeberloga_v1_envelope_proto_goTypes = []any{
 	(DeviceNoticeBody_Kind)(0),    // 0: bebeberloga.v1.DeviceNoticeBody.Kind
 	(*MessageEnvelope)(nil),       // 1: bebeberloga.v1.MessageEnvelope
 	(*Mention)(nil),               // 2: bebeberloga.v1.Mention
 	(*FileRef)(nil),               // 3: bebeberloga.v1.FileRef
-	(*LinkPreview)(nil),           // 4: bebeberloga.v1.LinkPreview
-	(*TextBody)(nil),              // 5: bebeberloga.v1.TextBody
-	(*EditBody)(nil),              // 6: bebeberloga.v1.EditBody
-	(*DeleteBody)(nil),            // 7: bebeberloga.v1.DeleteBody
-	(*ReactionBody)(nil),          // 8: bebeberloga.v1.ReactionBody
-	(*PinBody)(nil),               // 9: bebeberloga.v1.PinBody
-	(*FileKeyBody)(nil),           // 10: bebeberloga.v1.FileKeyBody
-	(*CallKeyBody)(nil),           // 11: bebeberloga.v1.CallKeyBody
-	(*HistoryKeysBody)(nil),       // 12: bebeberloga.v1.HistoryKeysBody
-	(*HistoryKey)(nil),            // 13: bebeberloga.v1.HistoryKey
-	(*DeviceNoticeBody)(nil),      // 14: bebeberloga.v1.DeviceNoticeBody
-	(*PersonalSyncBody)(nil),      // 15: bebeberloga.v1.PersonalSyncBody
-	(*RecoveryKeyRecord)(nil),     // 16: bebeberloga.v1.RecoveryKeyRecord
-	(*VerificationStatus)(nil),    // 17: bebeberloga.v1.VerificationStatus
-	(*TrustedDomain)(nil),         // 18: bebeberloga.v1.TrustedDomain
-	(*timestamppb.Timestamp)(nil), // 19: google.protobuf.Timestamp
+	(*FilePreview)(nil),           // 4: bebeberloga.v1.FilePreview
+	(*LinkPreview)(nil),           // 5: bebeberloga.v1.LinkPreview
+	(*TextBody)(nil),              // 6: bebeberloga.v1.TextBody
+	(*EditBody)(nil),              // 7: bebeberloga.v1.EditBody
+	(*DeleteBody)(nil),            // 8: bebeberloga.v1.DeleteBody
+	(*ReactionBody)(nil),          // 9: bebeberloga.v1.ReactionBody
+	(*PinBody)(nil),               // 10: bebeberloga.v1.PinBody
+	(*FileKeyBody)(nil),           // 11: bebeberloga.v1.FileKeyBody
+	(*CallKeyBody)(nil),           // 12: bebeberloga.v1.CallKeyBody
+	(*HistoryKeysBody)(nil),       // 13: bebeberloga.v1.HistoryKeysBody
+	(*HistoryKey)(nil),            // 14: bebeberloga.v1.HistoryKey
+	(*DeviceNoticeBody)(nil),      // 15: bebeberloga.v1.DeviceNoticeBody
+	(*PersonalSyncBody)(nil),      // 16: bebeberloga.v1.PersonalSyncBody
+	(*RecoveryKeyRecord)(nil),     // 17: bebeberloga.v1.RecoveryKeyRecord
+	(*VerificationStatus)(nil),    // 18: bebeberloga.v1.VerificationStatus
+	(*TrustedDomain)(nil),         // 19: bebeberloga.v1.TrustedDomain
+	(*timestamppb.Timestamp)(nil), // 20: google.protobuf.Timestamp
 }
 var file_bebeberloga_v1_envelope_proto_depIdxs = []int32{
-	19, // 0: bebeberloga.v1.MessageEnvelope.sent_at:type_name -> google.protobuf.Timestamp
-	5,  // 1: bebeberloga.v1.MessageEnvelope.text:type_name -> bebeberloga.v1.TextBody
-	6,  // 2: bebeberloga.v1.MessageEnvelope.edit:type_name -> bebeberloga.v1.EditBody
-	7,  // 3: bebeberloga.v1.MessageEnvelope.delete:type_name -> bebeberloga.v1.DeleteBody
-	8,  // 4: bebeberloga.v1.MessageEnvelope.reaction:type_name -> bebeberloga.v1.ReactionBody
-	9,  // 5: bebeberloga.v1.MessageEnvelope.pin:type_name -> bebeberloga.v1.PinBody
-	10, // 6: bebeberloga.v1.MessageEnvelope.file_key:type_name -> bebeberloga.v1.FileKeyBody
-	11, // 7: bebeberloga.v1.MessageEnvelope.call_key:type_name -> bebeberloga.v1.CallKeyBody
-	12, // 8: bebeberloga.v1.MessageEnvelope.history_keys:type_name -> bebeberloga.v1.HistoryKeysBody
-	14, // 9: bebeberloga.v1.MessageEnvelope.device_notice:type_name -> bebeberloga.v1.DeviceNoticeBody
-	15, // 10: bebeberloga.v1.MessageEnvelope.personal_sync:type_name -> bebeberloga.v1.PersonalSyncBody
-	3,  // 11: bebeberloga.v1.LinkPreview.image:type_name -> bebeberloga.v1.FileRef
-	2,  // 12: bebeberloga.v1.TextBody.mentions:type_name -> bebeberloga.v1.Mention
-	3,  // 13: bebeberloga.v1.TextBody.attachments:type_name -> bebeberloga.v1.FileRef
-	4,  // 14: bebeberloga.v1.TextBody.link_previews:type_name -> bebeberloga.v1.LinkPreview
-	2,  // 15: bebeberloga.v1.EditBody.mentions:type_name -> bebeberloga.v1.Mention
-	4,  // 16: bebeberloga.v1.EditBody.link_previews:type_name -> bebeberloga.v1.LinkPreview
-	3,  // 17: bebeberloga.v1.FileKeyBody.file:type_name -> bebeberloga.v1.FileRef
-	13, // 18: bebeberloga.v1.HistoryKeysBody.keys:type_name -> bebeberloga.v1.HistoryKey
-	19, // 19: bebeberloga.v1.HistoryKey.valid_from:type_name -> google.protobuf.Timestamp
-	0,  // 20: bebeberloga.v1.DeviceNoticeBody.kind:type_name -> bebeberloga.v1.DeviceNoticeBody.Kind
-	17, // 21: bebeberloga.v1.PersonalSyncBody.verification:type_name -> bebeberloga.v1.VerificationStatus
-	18, // 22: bebeberloga.v1.PersonalSyncBody.trusted_domains:type_name -> bebeberloga.v1.TrustedDomain
-	16, // 23: bebeberloga.v1.PersonalSyncBody.recovery_key:type_name -> bebeberloga.v1.RecoveryKeyRecord
-	19, // 24: bebeberloga.v1.RecoveryKeyRecord.created_at:type_name -> google.protobuf.Timestamp
-	19, // 25: bebeberloga.v1.VerificationStatus.at:type_name -> google.protobuf.Timestamp
-	26, // [26:26] is the sub-list for method output_type
-	26, // [26:26] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	20, // 0: bebeberloga.v1.MessageEnvelope.sent_at:type_name -> google.protobuf.Timestamp
+	6,  // 1: bebeberloga.v1.MessageEnvelope.text:type_name -> bebeberloga.v1.TextBody
+	7,  // 2: bebeberloga.v1.MessageEnvelope.edit:type_name -> bebeberloga.v1.EditBody
+	8,  // 3: bebeberloga.v1.MessageEnvelope.delete:type_name -> bebeberloga.v1.DeleteBody
+	9,  // 4: bebeberloga.v1.MessageEnvelope.reaction:type_name -> bebeberloga.v1.ReactionBody
+	10, // 5: bebeberloga.v1.MessageEnvelope.pin:type_name -> bebeberloga.v1.PinBody
+	11, // 6: bebeberloga.v1.MessageEnvelope.file_key:type_name -> bebeberloga.v1.FileKeyBody
+	12, // 7: bebeberloga.v1.MessageEnvelope.call_key:type_name -> bebeberloga.v1.CallKeyBody
+	13, // 8: bebeberloga.v1.MessageEnvelope.history_keys:type_name -> bebeberloga.v1.HistoryKeysBody
+	15, // 9: bebeberloga.v1.MessageEnvelope.device_notice:type_name -> bebeberloga.v1.DeviceNoticeBody
+	16, // 10: bebeberloga.v1.MessageEnvelope.personal_sync:type_name -> bebeberloga.v1.PersonalSyncBody
+	4,  // 11: bebeberloga.v1.FileRef.preview:type_name -> bebeberloga.v1.FilePreview
+	3,  // 12: bebeberloga.v1.LinkPreview.image:type_name -> bebeberloga.v1.FileRef
+	2,  // 13: bebeberloga.v1.TextBody.mentions:type_name -> bebeberloga.v1.Mention
+	3,  // 14: bebeberloga.v1.TextBody.attachments:type_name -> bebeberloga.v1.FileRef
+	5,  // 15: bebeberloga.v1.TextBody.link_previews:type_name -> bebeberloga.v1.LinkPreview
+	2,  // 16: bebeberloga.v1.EditBody.mentions:type_name -> bebeberloga.v1.Mention
+	5,  // 17: bebeberloga.v1.EditBody.link_previews:type_name -> bebeberloga.v1.LinkPreview
+	3,  // 18: bebeberloga.v1.FileKeyBody.file:type_name -> bebeberloga.v1.FileRef
+	14, // 19: bebeberloga.v1.HistoryKeysBody.keys:type_name -> bebeberloga.v1.HistoryKey
+	20, // 20: bebeberloga.v1.HistoryKey.valid_from:type_name -> google.protobuf.Timestamp
+	0,  // 21: bebeberloga.v1.DeviceNoticeBody.kind:type_name -> bebeberloga.v1.DeviceNoticeBody.Kind
+	18, // 22: bebeberloga.v1.PersonalSyncBody.verification:type_name -> bebeberloga.v1.VerificationStatus
+	19, // 23: bebeberloga.v1.PersonalSyncBody.trusted_domains:type_name -> bebeberloga.v1.TrustedDomain
+	17, // 24: bebeberloga.v1.PersonalSyncBody.recovery_key:type_name -> bebeberloga.v1.RecoveryKeyRecord
+	20, // 25: bebeberloga.v1.RecoveryKeyRecord.created_at:type_name -> google.protobuf.Timestamp
+	20, // 26: bebeberloga.v1.VerificationStatus.at:type_name -> google.protobuf.Timestamp
+	27, // [27:27] is the sub-list for method output_type
+	27, // [27:27] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_bebeberloga_v1_envelope_proto_init() }
@@ -1742,7 +1825,7 @@ func file_bebeberloga_v1_envelope_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_bebeberloga_v1_envelope_proto_rawDesc), len(file_bebeberloga_v1_envelope_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   18,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

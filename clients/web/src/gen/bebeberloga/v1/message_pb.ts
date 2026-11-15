@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file bebeberloga/v1/message.proto.
  */
 export const file_bebeberloga_v1_message: GenFile = /*@__PURE__*/
-  fileDesc("ChxiZWJlYmVybG9nYS92MS9tZXNzYWdlLnByb3RvEg5iZWJlYmVybG9nYS52MSJRCgpBdHRhY2htZW50EgoKAmlkGAEgASgJEgwKBHNpemUYAiABKAQSFwoPY2lwaGVydGV4dF9oYXNoGAMgASgMEhAKCHVwbG9hZGVkGAQgASgIIpQECgtNZXNzYWdlTWV0YRIKCgJpZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJEhAKCGdyb3VwX2lkGAMgASgJEg0KBWVwb2NoGAQgASgEEhYKDmF1dGhvcl91c2VyX2lkGAUgASgJEhgKEGF1dGhvcl9kZXZpY2VfaWQYBiABKAkSLgoKY3JlYXRlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKY2lwaGVydGV4dBgIIAEoDBIMCgRzaXplGAkgASgNEhsKE3dyYXBwZWRfbWVzc2FnZV9rZXkYCiABKAwSHgoWaGlzdG9yeV9rZXlfZ2VuZXJhdGlvbhgLIAEoDRIVCg1tZW50aW9uX2hpbnRzGAwgAygMEjsKEWJyb2FkY2FzdF9tZW50aW9uGA0gASgOMiAuYmViZWJlcmxvZ2EudjEuQnJvYWRjYXN0TWVudGlvbhIvCgthdHRhY2htZW50cxgOIAMoCzIaLmJlYmViZXJsb2dhLnYxLkF0dGFjaG1lbnQSDgoGcGlubmVkGA8gASgIEg8KB2RlbGV0ZWQYECABKAgSLgoKZGVsZXRlZF9hdBgRIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLQoGc3lzdGVtGBIgASgLMh0uYmViZWJlcmxvZ2EudjEuU3lzdGVtTWVzc2FnZSKUAgoNU3lzdGVtTWVzc2FnZRIwCgRraW5kGAEgASgOMiIuYmViZWJlcmxvZ2EudjEuU3lzdGVtTWVzc2FnZS5LaW5kEhAKCGFjdG9yX2lkGAIgASgJEhYKDnRhcmdldF91c2VyX2lkGAMgASgJEhkKEXRhcmdldF9tZXNzYWdlX2lkGAQgASgJIosBCgRLaW5kEhQKEEtJTkRfVU5TUEVDSUZJRUQQABIWChJLSU5EX01FTUJFUl9KT0lORUQQARIXChNLSU5EX01FU1NBR0VfUElOTkVEEAISHgoaS0lORF9PV05FUlNISVBfVFJBTlNGRVJSRUQQAxIcChhLSU5EX0NIQU5ORUxfU0VMRl9KT0lORUQQBCJvCgNQaW4SEgoKY2hhbm5lbF9pZBgBIAEoCRISCgptZXNzYWdlX2lkGAIgASgJEhEKCXBpbm5lZF9ieRgDIAEoCRItCglwaW5uZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wKooBChBCcm9hZGNhc3RNZW50aW9uEiEKHUJST0FEQ0FTVF9NRU5USU9OX1VOU1BFQ0lGSUVEEAASGgoWQlJPQURDQVNUX01FTlRJT05fTk9ORRABEhwKGEJST0FEQ0FTVF9NRU5USU9OX09OTElORRACEhkKFUJST0FEQ0FTVF9NRU5USU9OX0FMTBADQsUBChJjb20uYmViZWJlcmxvZ2EudjFCDE1lc3NhZ2VQcm90b1ABWkhnaXRodWIuY29tL25paGVzdHZlci9iZWJlYmVybG9nYS9zZXJ2ZXIvZ2VuL2JlYmViZXJsb2dhL3YxO2JlYmViZXJsb2dhdjGiAgNCWFiqAg5CZWJlYmVybG9nYS5WMcoCDkJlYmViZXJsb2dhXFYx4gIaQmViZWJlcmxvZ2FcVjFcR1BCTWV0YWRhdGHqAg9CZWJlYmVybG9nYTo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("ChxiZWJlYmVybG9nYS92MS9tZXNzYWdlLnByb3RvEg5iZWJlYmVybG9nYS52MSJRCgpBdHRhY2htZW50EgoKAmlkGAEgASgJEgwKBHNpemUYAiABKAQSFwoPY2lwaGVydGV4dF9oYXNoGAMgASgMEhAKCHVwbG9hZGVkGAQgASgIIrEECgtNZXNzYWdlTWV0YRIKCgJpZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJEhAKCGdyb3VwX2lkGAMgASgJEg0KBWVwb2NoGAQgASgEEhYKDmF1dGhvcl91c2VyX2lkGAUgASgJEhgKEGF1dGhvcl9kZXZpY2VfaWQYBiABKAkSLgoKY3JlYXRlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKY2lwaGVydGV4dBgIIAEoDBIMCgRzaXplGAkgASgNEhsKE3dyYXBwZWRfbWVzc2FnZV9rZXkYCiABKAwSHgoWaGlzdG9yeV9rZXlfZ2VuZXJhdGlvbhgLIAEoDRIVCg1tZW50aW9uX2hpbnRzGAwgAygMEjsKEWJyb2FkY2FzdF9tZW50aW9uGA0gASgOMiAuYmViZWJlcmxvZ2EudjEuQnJvYWRjYXN0TWVudGlvbhIvCgthdHRhY2htZW50cxgOIAMoCzIaLmJlYmViZXJsb2dhLnYxLkF0dGFjaG1lbnQSDgoGcGlubmVkGA8gASgIEg8KB2RlbGV0ZWQYECABKAgSLgoKZGVsZXRlZF9hdBgRIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLQoGc3lzdGVtGBIgASgLMh0uYmViZWJlcmxvZ2EudjEuU3lzdGVtTWVzc2FnZRIbChNhdXRob3JfY2FuX3BpbmdfYWxsGBMgASgIIssBChBNZW50aW9uQ2FuZGlkYXRlEhIKCm1lc3NhZ2VfaWQYASABKAkSEgoKY2hhbm5lbF9pZBgCIAEoCRIeChZoaXN0b3J5X2tleV9nZW5lcmF0aW9uGAMgASgNEhUKDW1lbnRpb25faGludHMYBCADKAwSOwoRYnJvYWRjYXN0X21lbnRpb24YBSABKA4yIC5iZWJlYmVybG9nYS52MS5Ccm9hZGNhc3RNZW50aW9uEhsKE2F1dGhvcl9jYW5fcGluZ19hbGwYBiABKAgilAIKDVN5c3RlbU1lc3NhZ2USMAoEa2luZBgBIAEoDjIiLmJlYmViZXJsb2dhLnYxLlN5c3RlbU1lc3NhZ2UuS2luZBIQCghhY3Rvcl9pZBgCIAEoCRIWCg50YXJnZXRfdXNlcl9pZBgDIAEoCRIZChF0YXJnZXRfbWVzc2FnZV9pZBgEIAEoCSKLAQoES2luZBIUChBLSU5EX1VOU1BFQ0lGSUVEEAASFgoSS0lORF9NRU1CRVJfSk9JTkVEEAESFwoTS0lORF9NRVNTQUdFX1BJTk5FRBACEh4KGktJTkRfT1dORVJTSElQX1RSQU5TRkVSUkVEEAMSHAoYS0lORF9DSEFOTkVMX1NFTEZfSk9JTkVEEAQibwoDUGluEhIKCmNoYW5uZWxfaWQYASABKAkSEgoKbWVzc2FnZV9pZBgCIAEoCRIRCglwaW5uZWRfYnkYAyABKAkSLQoJcGlubmVkX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCqKAQoQQnJvYWRjYXN0TWVudGlvbhIhCh1CUk9BRENBU1RfTUVOVElPTl9VTlNQRUNJRklFRBAAEhoKFkJST0FEQ0FTVF9NRU5USU9OX05PTkUQARIcChhCUk9BRENBU1RfTUVOVElPTl9PTkxJTkUQAhIZChVCUk9BRENBU1RfTUVOVElPTl9BTEwQA0LFAQoSY29tLmJlYmViZXJsb2dhLnYxQgxNZXNzYWdlUHJvdG9QAVpIZ2l0aHViLmNvbS9uaWhlc3R2ZXIvYmViZWJlcmxvZ2Evc2VydmVyL2dlbi9iZWJlYmVybG9nYS92MTtiZWJlYmVybG9nYXYxogIDQlhYqgIOQmViZWJlcmxvZ2EuVjHKAg5CZWJlYmVybG9nYVxWMeICGkJlYmViZXJsb2dhXFYxXEdQQk1ldGFkYXRh6gIPQmViZWJlcmxvZ2E6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * Метаданные вложения на сервере. Ключ, имя и тип файла — только в зашифрованном конверте.
@@ -33,7 +33,9 @@ export type Attachment = Message<"bebeberloga.v1.Attachment"> & {
   id: string;
 
   /**
-   * Размер шифртекста в байтах.
+   * Размер blob-а в байтах. Он выровнен: перед шифрованием файл дополнен нулями по схеме Padmé
+   * (CRYPTO.md §7.2, ADR-0028); истинный размер лежит в конверте (`FileRef.size`). С этим
+   * размером сравнивается лимит инстанса.
    *
    * @generated from field: uint64 size = 2;
    */
@@ -112,14 +114,14 @@ export type MessageMeta = Message<"bebeberloga.v1.MessageMeta"> & {
   /**
    * SealedMessage (CRYPTO.md §6.2.3): конверт MessageEnvelope и подпись устройства-отправителя,
    * зашифрованные XChaCha20-Poly1305 ключом сообщения; длина кратна 256 байтам; не MLS.
-   * До 128 КиБ (обоснование — STATUS.md). Пусто у tombstone и системных сообщений.
+   * До 128 КиБ (обоснование — STATUS.md). Пусто у удалённых и системных сообщений.
    *
    * @generated from field: bytes ciphertext = 8;
    */
   ciphertext: Uint8Array;
 
   /**
-   * Размер шифртекста в байтах (ARCHITECTURE.md §4.4); сохраняется и у tombstone.
+   * Размер шифртекста в байтах (ARCHITECTURE.md §4.4); у удалённого сообщения — 0.
    *
    * @generated from field: uint32 size = 9;
    */
@@ -141,9 +143,10 @@ export type MessageMeta = Message<"bebeberloga.v1.MessageMeta"> & {
   historyKeyGeneration: number;
 
   /**
-   * mention-hint — 16 байт HMAC подключом поколения ключа истории от id упоминаемого пользователя
-   * или роли (CRYPTO.md §6.4). Сервер сравнивает с хинтами, присланными участниками
-   * (`PUT /users/me/mention-hints`), в том числе задним числом.
+   * mention-hint — 16 байт HMAC подключом поколения ключа истории от вида цели, id упомянутого
+   * пользователя или роли и id этого сообщения, вперемешку с хинтами-пустышками (CRYPTO.md §6.4).
+   * Хинтов 0, 1, 2, 4, 8, 16, 32 или 50. Сервер их хранит и отдаёт, но ни с чем не сравнивает:
+   * сопоставляет клиент получателя (ADR-0027).
    *
    * @generated from field: repeated bytes mention_hints = 12;
    */
@@ -167,7 +170,8 @@ export type MessageMeta = Message<"bebeberloga.v1.MessageMeta"> & {
   pinned: boolean;
 
   /**
-   * Шифртекст удалён, запись — tombstone.
+   * Сообщение удалено. Сервер стёр шифртекст, обёрнутый ключ, хинты и blob-ы вложений; осталась
+   * отметка — заполнены только `id`, `channel_id`, `deleted` и `deleted_at` (ADR-0028 п. 3).
    *
    * @generated from field: bool deleted = 16;
    */
@@ -184,6 +188,15 @@ export type MessageMeta = Message<"bebeberloga.v1.MessageMeta"> & {
    * @generated from field: bebeberloga.v1.SystemMessage system = 18;
    */
   system?: SystemMessage;
+
+  /**
+   * Ставит сервер при приёме: было ли у отправителя право `chat.ping_all` в этом канале. В ЛС и
+   * групповом чате — всегда true. Клиент получателя засчитывает совпадение с ролью и «@все» /
+   * «@здесь», только если отметка стоит (ADR-0027 п. 7, CRYPTO.md §6.4).
+   *
+   * @generated from field: bool author_can_ping_all = 19;
+   */
+  authorCanPingAll: boolean;
 };
 
 /**
@@ -192,6 +205,52 @@ export type MessageMeta = Message<"bebeberloga.v1.MessageMeta"> & {
  */
 export const MessageMetaSchema: GenMessage<MessageMeta> = /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_message, 1);
+
+/**
+ * Кандидат в упоминания: непрочитанное чужое сообщение с хинтами или широким упоминанием.
+ * Список кандидатов клиент забирает после офлайна и сопоставляет хинты сам (ADR-0027 п. 5,
+ * CRYPTO.md §6.4). Шифртекста и ключа сообщения здесь нет.
+ *
+ * @generated from message bebeberloga.v1.MentionCandidate
+ */
+export type MentionCandidate = Message<"bebeberloga.v1.MentionCandidate"> & {
+  /**
+   * @generated from field: string message_id = 1;
+   */
+  messageId: string;
+
+  /**
+   * @generated from field: string channel_id = 2;
+   */
+  channelId: string;
+
+  /**
+   * @generated from field: uint32 history_key_generation = 3;
+   */
+  historyKeyGeneration: number;
+
+  /**
+   * @generated from field: repeated bytes mention_hints = 4;
+   */
+  mentionHints: Uint8Array[];
+
+  /**
+   * @generated from field: bebeberloga.v1.BroadcastMention broadcast_mention = 5;
+   */
+  broadcastMention: BroadcastMention;
+
+  /**
+   * @generated from field: bool author_can_ping_all = 6;
+   */
+  authorCanPingAll: boolean;
+};
+
+/**
+ * Describes the message bebeberloga.v1.MentionCandidate.
+ * Use `create(MentionCandidateSchema)` to create a new message.
+ */
+export const MentionCandidateSchema: GenMessage<MentionCandidate> = /*@__PURE__*/
+  messageDesc(file_bebeberloga_v1_message, 2);
 
 /**
  * Системное сообщение генерирует сервер по открытым событиям; клиент рендерит текст сам.
@@ -227,7 +286,7 @@ export type SystemMessage = Message<"bebeberloga.v1.SystemMessage"> & {
  * Use `create(SystemMessageSchema)` to create a new message.
  */
 export const SystemMessageSchema: GenMessage<SystemMessage> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_message, 2);
+  messageDesc(file_bebeberloga_v1_message, 3);
 
 /**
  * @generated from enum bebeberloga.v1.SystemMessage.Kind
@@ -272,7 +331,7 @@ export enum SystemMessage_Kind {
  * Describes the enum bebeberloga.v1.SystemMessage.Kind.
  */
 export const SystemMessage_KindSchema: GenEnum<SystemMessage_Kind> = /*@__PURE__*/
-  enumDesc(file_bebeberloga_v1_message, 2, 0);
+  enumDesc(file_bebeberloga_v1_message, 3, 0);
 
 /**
  * Закреплённое сообщение.
@@ -306,12 +365,12 @@ export type Pin = Message<"bebeberloga.v1.Pin"> & {
  * Use `create(PinSchema)` to create a new message.
  */
 export const PinSchema: GenMessage<Pin> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_message, 3);
+  messageDesc(file_bebeberloga_v1_message, 4);
 
 /**
- * Упоминание, которое сервер должен доставить всем или присутствующим.
- * Передаётся открыто, потому что без этого нельзя проверить право `chat.ping_all`
- * и рассчитать бейджи; кто именно упомянут поимённо — скрыто в mention-hint.
+ * Широкое упоминание: всех или присутствующих. Передаётся открыто, потому что без этого
+ * сервер не может проверить право `chat.ping_all`. Кто упомянут поимённо, сервер не знает:
+ * хинты сопоставляет клиент получателя (ADR-0027).
  *
  * @generated from enum bebeberloga.v1.BroadcastMention
  */
@@ -327,7 +386,8 @@ export enum BroadcastMention {
   NONE = 1,
 
   /**
-   * «@здесь»: участники канала, которые сейчас в сети.
+   * «@здесь»: участники канала, которые сейчас в сети. Засчитывает устройство, получившее
+   * сообщение, пока было на связи (CRYPTO.md §6.4).
    *
    * @generated from enum value: BROADCAST_MENTION_ONLINE = 2;
    */

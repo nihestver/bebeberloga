@@ -1156,6 +1156,83 @@ func (x *HistoryBridge) GetBlob() []byte {
 	return nil
 }
 
+// Запись канала с названием и темой, которую несёт commit, начинающий поколение ключа истории, и
+// начальный commit группы-преемника (CRYPTO.md §6.8.6–§6.8.7): коммитер отдаёт последнюю запись,
+// которую принял сам, под подключом нового поколения. В 1.0 DS требует ровно один элемент —
+// запись самого канала группы.
+type ChannelMetaCarry struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Чья запись. В 1.0 — канал группы; у публичных веток (S) — id ветки.
+	ChannelId string `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	// `ChannelMeta.latest_version`, который видел коммитер. Не равен текущему —
+	// CHANNEL_META_VERSION_CONFLICT: прошла правка, клиент повторяет тот же commit с новой записью.
+	SeenVersion uint32 `protobuf:"varint,2,opt,name=seen_version,json=seenVersion,proto3" json:"seen_version,omitempty"`
+	// Версия записи в `blob`; может быть меньше `seen_version`. 0 — годной записи у коммитера нет.
+	Version uint32 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+	// SealedChannelMeta под поколением после commit-а; пусто при `version = 0`.
+	Blob          []byte `protobuf:"bytes,4,opt,name=blob,proto3" json:"blob,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChannelMetaCarry) Reset() {
+	*x = ChannelMetaCarry{}
+	mi := &file_bebeberloga_v1_mls_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelMetaCarry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelMetaCarry) ProtoMessage() {}
+
+func (x *ChannelMetaCarry) ProtoReflect() protoreflect.Message {
+	mi := &file_bebeberloga_v1_mls_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChannelMetaCarry.ProtoReflect.Descriptor instead.
+func (*ChannelMetaCarry) Descriptor() ([]byte, []int) {
+	return file_bebeberloga_v1_mls_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ChannelMetaCarry) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *ChannelMetaCarry) GetSeenVersion() uint32 {
+	if x != nil {
+		return x.SeenVersion
+	}
+	return 0
+}
+
+func (x *ChannelMetaCarry) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *ChannelMetaCarry) GetBlob() []byte {
+	if x != nil {
+		return x.Blob
+	}
+	return nil
+}
+
 // Не используется в 1.0: GroupInfo сервер не хранит и не публикует (ADR-0019).
 //
 // Deprecated: Marked as deprecated in bebeberloga/v1/mls.proto.
@@ -1170,7 +1247,7 @@ type EncryptedGroupInfo struct {
 
 func (x *EncryptedGroupInfo) Reset() {
 	*x = EncryptedGroupInfo{}
-	mi := &file_bebeberloga_v1_mls_proto_msgTypes[7]
+	mi := &file_bebeberloga_v1_mls_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1182,7 +1259,7 @@ func (x *EncryptedGroupInfo) String() string {
 func (*EncryptedGroupInfo) ProtoMessage() {}
 
 func (x *EncryptedGroupInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_mls_proto_msgTypes[7]
+	mi := &file_bebeberloga_v1_mls_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1195,7 +1272,7 @@ func (x *EncryptedGroupInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EncryptedGroupInfo.ProtoReflect.Descriptor instead.
 func (*EncryptedGroupInfo) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_mls_proto_rawDescGZIP(), []int{7}
+	return file_bebeberloga_v1_mls_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *EncryptedGroupInfo) GetGroupId() string {
@@ -1230,7 +1307,7 @@ type RosterEntry struct {
 
 func (x *RosterEntry) Reset() {
 	*x = RosterEntry{}
-	mi := &file_bebeberloga_v1_mls_proto_msgTypes[8]
+	mi := &file_bebeberloga_v1_mls_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1242,7 +1319,7 @@ func (x *RosterEntry) String() string {
 func (*RosterEntry) ProtoMessage() {}
 
 func (x *RosterEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_mls_proto_msgTypes[8]
+	mi := &file_bebeberloga_v1_mls_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1255,7 +1332,7 @@ func (x *RosterEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RosterEntry.ProtoReflect.Descriptor instead.
 func (*RosterEntry) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_mls_proto_rawDescGZIP(), []int{8}
+	return file_bebeberloga_v1_mls_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RosterEntry) GetLeaf() uint32 {
@@ -1287,7 +1364,7 @@ type Roster struct {
 
 func (x *Roster) Reset() {
 	*x = Roster{}
-	mi := &file_bebeberloga_v1_mls_proto_msgTypes[9]
+	mi := &file_bebeberloga_v1_mls_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1299,7 +1376,7 @@ func (x *Roster) String() string {
 func (*Roster) ProtoMessage() {}
 
 func (x *Roster) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_mls_proto_msgTypes[9]
+	mi := &file_bebeberloga_v1_mls_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1312,7 +1389,7 @@ func (x *Roster) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Roster.ProtoReflect.Descriptor instead.
 func (*Roster) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_mls_proto_rawDescGZIP(), []int{9}
+	return file_bebeberloga_v1_mls_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Roster) GetGroupId() string {
@@ -1362,13 +1439,16 @@ type RecreationPlan struct {
 	// Номер поколения ключа истории, которое начнёт новая группа (CRYPTO.md §6.3.10): при DISPUTE и
 	// PERSONAL_RESTORE — ровно он, при JOURNAL_LOSS — не больше next_generation + 65 536.
 	NextGeneration uint32 `protobuf:"varint,8,opt,name=next_generation,json=nextGeneration,proto3" json:"next_generation,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// `ChannelMeta.latest_version` канала: создатель называет его в `ChannelMetaCarry.seen_version`
+	// начального commit-а (CRYPTO.md §6.8.7). 0 у каналов без записи и у групп звонков.
+	ChannelMetaLatestVersion uint32 `protobuf:"varint,9,opt,name=channel_meta_latest_version,json=channelMetaLatestVersion,proto3" json:"channel_meta_latest_version,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *RecreationPlan) Reset() {
 	*x = RecreationPlan{}
-	mi := &file_bebeberloga_v1_mls_proto_msgTypes[10]
+	mi := &file_bebeberloga_v1_mls_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1380,7 +1460,7 @@ func (x *RecreationPlan) String() string {
 func (*RecreationPlan) ProtoMessage() {}
 
 func (x *RecreationPlan) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_mls_proto_msgTypes[10]
+	mi := &file_bebeberloga_v1_mls_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1393,7 +1473,7 @@ func (x *RecreationPlan) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecreationPlan.ProtoReflect.Descriptor instead.
 func (*RecreationPlan) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_mls_proto_rawDescGZIP(), []int{10}
+	return file_bebeberloga_v1_mls_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *RecreationPlan) GetOldGroupId() string {
@@ -1448,6 +1528,13 @@ func (x *RecreationPlan) GetReason() RecreationReason {
 func (x *RecreationPlan) GetNextGeneration() uint32 {
 	if x != nil {
 		return x.NextGeneration
+	}
+	return 0
+}
+
+func (x *RecreationPlan) GetChannelMetaLatestVersion() uint32 {
+	if x != nil {
+		return x.ChannelMetaLatestVersion
 	}
 	return 0
 }
@@ -1538,7 +1625,13 @@ const file_bebeberloga_v1_mls_proto_rawDesc = "" +
 	"\x05epoch\x18\x06 \x01(\x04R\x05epoch\"@\n" +
 	"\rHistoryBridge\x12\x1b\n" +
 	"\tdevice_id\x18\x01 \x01(\tR\bdeviceId\x12\x12\n" +
-	"\x04blob\x18\x02 \x01(\fR\x04blob\"]\n" +
+	"\x04blob\x18\x02 \x01(\fR\x04blob\"\x82\x01\n" +
+	"\x10ChannelMetaCarry\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x01 \x01(\tR\tchannelId\x12!\n" +
+	"\fseen_version\x18\x02 \x01(\rR\vseenVersion\x12\x18\n" +
+	"\aversion\x18\x03 \x01(\rR\aversion\x12\x12\n" +
+	"\x04blob\x18\x04 \x01(\fR\x04blob\"]\n" +
 	"\x12EncryptedGroupInfo\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\tR\agroupId\x12\x14\n" +
 	"\x05epoch\x18\x02 \x01(\x04R\x05epoch\x12\x12\n" +
@@ -1551,7 +1644,7 @@ const file_bebeberloga_v1_mls_proto_rawDesc = "" +
 	"\x05epoch\x18\x02 \x01(\x04R\x05epoch\x125\n" +
 	"\aentries\x18\x03 \x03(\v2\x1b.bebeberloga.v1.RosterEntryR\aentries\x12\x1f\n" +
 	"\vroster_hash\x18\x04 \x01(\fR\n" +
-	"rosterHash\"\xf1\x02\n" +
+	"rosterHash\"\xb0\x03\n" +
 	"\x0eRecreationPlan\x12 \n" +
 	"\fold_group_id\x18\x01 \x01(\tR\n" +
 	"oldGroupId\x12\x1d\n" +
@@ -1562,7 +1655,8 @@ const file_bebeberloga_v1_mls_proto_rawDesc = "" +
 	"\x16history_key_generation\x18\x05 \x01(\rR\x14historyKeyGeneration\x12*\n" +
 	"\x11target_device_ids\x18\x06 \x03(\tR\x0ftargetDeviceIds\x128\n" +
 	"\x06reason\x18\a \x01(\x0e2 .bebeberloga.v1.RecreationReasonR\x06reason\x12'\n" +
-	"\x0fnext_generation\x18\b \x01(\rR\x0enextGeneration*j\n" +
+	"\x0fnext_generation\x18\b \x01(\rR\x0enextGeneration\x12=\n" +
+	"\x1bchannel_meta_latest_version\x18\t \x01(\rR\x18channelMetaLatestVersion*j\n" +
 	"\tGroupKind\x12\x1a\n" +
 	"\x16GROUP_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fGROUP_KIND_CHAT\x10\x01\x12\x13\n" +
@@ -1623,7 +1717,7 @@ func file_bebeberloga_v1_mls_proto_rawDescGZIP() []byte {
 }
 
 var file_bebeberloga_v1_mls_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_bebeberloga_v1_mls_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_bebeberloga_v1_mls_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_bebeberloga_v1_mls_proto_goTypes = []any{
 	(GroupKind)(0),                // 0: bebeberloga.v1.GroupKind
 	(HistoryChange)(0),            // 1: bebeberloga.v1.HistoryChange
@@ -1638,28 +1732,29 @@ var file_bebeberloga_v1_mls_proto_goTypes = []any{
 	(*HistoryKeyLink)(nil),        // 10: bebeberloga.v1.HistoryKeyLink
 	(*HistoryGenerationInfo)(nil), // 11: bebeberloga.v1.HistoryGenerationInfo
 	(*HistoryBridge)(nil),         // 12: bebeberloga.v1.HistoryBridge
-	(*EncryptedGroupInfo)(nil),    // 13: bebeberloga.v1.EncryptedGroupInfo
-	(*RosterEntry)(nil),           // 14: bebeberloga.v1.RosterEntry
-	(*Roster)(nil),                // 15: bebeberloga.v1.Roster
-	(*RecreationPlan)(nil),        // 16: bebeberloga.v1.RecreationPlan
-	(*timestamppb.Timestamp)(nil), // 17: google.protobuf.Timestamp
+	(*ChannelMetaCarry)(nil),      // 13: bebeberloga.v1.ChannelMetaCarry
+	(*EncryptedGroupInfo)(nil),    // 14: bebeberloga.v1.EncryptedGroupInfo
+	(*RosterEntry)(nil),           // 15: bebeberloga.v1.RosterEntry
+	(*Roster)(nil),                // 16: bebeberloga.v1.Roster
+	(*RecreationPlan)(nil),        // 17: bebeberloga.v1.RecreationPlan
+	(*timestamppb.Timestamp)(nil), // 18: google.protobuf.Timestamp
 }
 var file_bebeberloga_v1_mls_proto_depIdxs = []int32{
 	0,  // 0: bebeberloga.v1.Group.kind:type_name -> bebeberloga.v1.GroupKind
-	17, // 1: bebeberloga.v1.Group.created_at:type_name -> google.protobuf.Timestamp
-	17, // 2: bebeberloga.v1.Group.last_rotation_at:type_name -> google.protobuf.Timestamp
+	18, // 1: bebeberloga.v1.Group.created_at:type_name -> google.protobuf.Timestamp
+	18, // 2: bebeberloga.v1.Group.last_rotation_at:type_name -> google.protobuf.Timestamp
 	2,  // 3: bebeberloga.v1.Group.state:type_name -> bebeberloga.v1.GroupState
 	3,  // 4: bebeberloga.v1.Group.recreation_reason:type_name -> bebeberloga.v1.RecreationReason
 	4,  // 5: bebeberloga.v1.Handshake.kind:type_name -> bebeberloga.v1.HandshakeKind
-	17, // 6: bebeberloga.v1.Handshake.created_at:type_name -> google.protobuf.Timestamp
+	18, // 6: bebeberloga.v1.Handshake.created_at:type_name -> google.protobuf.Timestamp
 	1,  // 7: bebeberloga.v1.Handshake.history_change:type_name -> bebeberloga.v1.HistoryChange
 	0,  // 8: bebeberloga.v1.Welcome.kind:type_name -> bebeberloga.v1.GroupKind
-	17, // 9: bebeberloga.v1.Welcome.created_at:type_name -> google.protobuf.Timestamp
-	17, // 10: bebeberloga.v1.HistoryKeyBundle.updated_at:type_name -> google.protobuf.Timestamp
-	17, // 11: bebeberloga.v1.HistoryKeyLink.created_at:type_name -> google.protobuf.Timestamp
-	17, // 12: bebeberloga.v1.HistoryGenerationInfo.started_at:type_name -> google.protobuf.Timestamp
+	18, // 9: bebeberloga.v1.Welcome.created_at:type_name -> google.protobuf.Timestamp
+	18, // 10: bebeberloga.v1.HistoryKeyBundle.updated_at:type_name -> google.protobuf.Timestamp
+	18, // 11: bebeberloga.v1.HistoryKeyLink.created_at:type_name -> google.protobuf.Timestamp
+	18, // 12: bebeberloga.v1.HistoryGenerationInfo.started_at:type_name -> google.protobuf.Timestamp
 	1,  // 13: bebeberloga.v1.HistoryGenerationInfo.change:type_name -> bebeberloga.v1.HistoryChange
-	14, // 14: bebeberloga.v1.Roster.entries:type_name -> bebeberloga.v1.RosterEntry
+	15, // 14: bebeberloga.v1.Roster.entries:type_name -> bebeberloga.v1.RosterEntry
 	0,  // 15: bebeberloga.v1.RecreationPlan.kind:type_name -> bebeberloga.v1.GroupKind
 	3,  // 16: bebeberloga.v1.RecreationPlan.reason:type_name -> bebeberloga.v1.RecreationReason
 	17, // [17:17] is the sub-list for method output_type
@@ -1680,7 +1775,7 @@ func file_bebeberloga_v1_mls_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_bebeberloga_v1_mls_proto_rawDesc), len(file_bebeberloga_v1_mls_proto_rawDesc)),
 			NumEnums:      6,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

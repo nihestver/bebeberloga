@@ -666,7 +666,7 @@ export type CommunitySnapshot = Message<"bebeberloga.v1.CommunitySnapshot"> & {
 
   /**
    * Для владельца и администраторов: приватные каналы, в которые они себя не добавили
-   * («🔒 закрытый для тебя», PERMISSIONS.md §3 п. 2). У остальных пусто.
+   * («🔒 закрытый для тебя», PERMISSIONS.md §3 п. 2) — без названий. У остальных пусто.
    *
    * @generated from field: repeated bebeberloga.v1.LockedChannel locked_channels = 8;
    */
@@ -1569,6 +1569,9 @@ export const CategoryDeletedSchema: GenMessage<CategoryDeleted> = /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 35);
 
 /**
+ * Канал создан. Записи с названием (`Channel.meta`) ещё нет: её приносит клиент создателя
+ * вместе с группой чата канала, и тогда приходит ChannelUpdated (FLOWS/03).
+ *
  * @generated from message bebeberloga.v1.ChannelCreated
  */
 export type ChannelCreated = Message<"bebeberloga.v1.ChannelCreated"> & {
@@ -1586,6 +1589,10 @@ export const ChannelCreatedSchema: GenMessage<ChannelCreated> = /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 36);
 
 /**
+ * Изменились открытые поля канала или его запись с названием и темой: правка
+ * `PUT /channels/{id}/meta` либо commit, начавший поколение ключа истории (CRYPTO.md §6.8).
+ * Клиент проверяет запись и, если не принял её, оставляет прежнее название.
+ *
  * @generated from message bebeberloga.v1.ChannelUpdated
  */
 export type ChannelUpdated = Message<"bebeberloga.v1.ChannelUpdated"> & {
@@ -1627,7 +1634,8 @@ export const ChannelDeletedSchema: GenMessage<ChannelDeleted> = /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 38);
 
 /**
- * Список «закрытых для тебя» каналов владельца или администратора изменился.
+ * Список «закрытых для тебя» каналов владельца или администратора изменился. Названий в нём
+ * нет (ADR-0026 п. 6).
  *
  * @generated from message bebeberloga.v1.LockedChannelsUpdated
  */
