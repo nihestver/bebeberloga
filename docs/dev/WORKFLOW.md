@@ -113,7 +113,7 @@ useradd -m -s /bin/bash deploy && usermod -aG docker deploy
 mkdir -p /home/deploy/bebeberloga && chown deploy:deploy /home/deploy/bebeberloga
 ```
 
-Порты: 7881/tcp и 50000–60000/udp — LiveKit, 3478/udp — coturn (уточняются в B7).
+Порты: 7881/tcp и 50000–60000/udp — LiveKit, 3478/udp — coturn (уточняются в B7). B7 добавит TURN по TLS на 443/tcp на `turn.test.bebeberloga.org` — запасной путь для сетей без UDP (ADR-0029).
 
 На Mac — ключ `ssh-keygen -t ed25519 -f ~/.ssh/bebeberloga_test`, публичную часть в `~deploy/.ssh/authorized_keys`, и в `~/.ssh/config`:
 
