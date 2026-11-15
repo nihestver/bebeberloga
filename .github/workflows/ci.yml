@@ -49,6 +49,8 @@ jobs:
               - 'mise.toml'
             proto:
               - 'proto/**'
+              - 'buf.yaml'
+              - 'buf.gen.yaml'
             deploy:
               - 'server/**'
               - 'deploy/**'

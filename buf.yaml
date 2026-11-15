@@ -10,6 +10,9 @@ lint:
     - STANDARD
   enum_zero_value_suffix: _UNSPECIFIED
   rpc_allow_same_request_response: false
+# WIRE_JSON (ADR-0031): совместимость на проводе и в JSON. Поле или значение enum удаляется только
+# вместе с записью его номера и имени в `reserved`; переименование и смена типа на том же номере
+# не проходят. Каждое ломающее изменение — строка в docs/protocol/STATUS.md.
 breaking:
   use:
-    - FILE
+    - WIRE_JSON
