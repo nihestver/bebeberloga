@@ -331,9 +331,10 @@ export type Channel = Message<"bebeberloga.v1.Channel"> & {
   lastMessageId: string;
 
   /**
-   * Запись с названием и темой (TEXT, VOICE; GROUP_DM и THREAD — S). Не задана у DM и PERSONAL
-   * и пока клиент создателя не создал группу чата канала. Клиент без ключа головного поколения
-   * показывает вместо названия заглушку (SCREENS/03).
+   * Запись с названием и темой (TEXT, VOICE; GROUP_DM и THREAD — S). Не задана у DM и PERSONAL,
+   * пока клиент создателя не создал группу чата канала, и для устройства с опубликованным Remove
+   * (CRYPTO.md §2.8): такое устройство показывает последнюю принятую запись. Клиент без ключа
+   * головного поколения показывает вместо названия заглушку (SCREENS/03).
    *
    * @generated from field: bebeberloga.v1.ChannelMeta meta = 19;
    */

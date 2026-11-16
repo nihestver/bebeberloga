@@ -1574,9 +1574,11 @@ paths:
 
         Ошибки: PERMISSION_DENIED; NOT_GROUP_MEMBER; GROUP_FROZEN; HISTORY_GENERATION_MISMATCH с
         `current_generation` — поколение устарело, клиент догоняет commit-ы, шифрует заново и
-        повторяет сам; VALIDATION_FAILED и PAYLOAD_TOO_LARGE — длина записи не кратна 256 байтам
-        или больше 8 КиБ; CHANNEL_META_VERSION_CONFLICT с `current_meta_version` — версию занял
-        другой участник, клиент показывает новое название и предлагает повторить правку;
+        повторяет сам, до 3 раз; VALIDATION_FAILED и PAYLOAD_TOO_LARGE — длина записи не кратна
+        256 байтам, хэш не в 32 байта или запись больше 8 КиБ; CHANNEL_META_VERSION_CONFLICT с
+        `current_meta_version` — версию занял другой участник, клиент показывает новое название и
+        предлагает повторить правку; если хэш текущей записи равен отправленному, это его же
+        правка, ответ на которую потерялся;
         CHANNEL_META_VERSION_TOO_FAR с `current_meta_version` — версия больше текущей сильнее, чем
         на 65 536, клиент правку не повторяет; RATE_LIMITED с `retry_after_ms` — с прошлой принятой
         правки этого канала не прошло 10 секунд, клиент повторяет ту же правку сам, пользователь
@@ -2423,6 +2425,11 @@ paths:
         правом `channel.edit` не сохранит название заново. Ошибки BAD_DELTA, BAD_WELCOME, UNAUTHORIZED_CHANGE,
         CHANNEL_MEMBER_LIMIT, GROUP_FROZEN, NOT_DESIGNATED, REMOVAL_PENDING,
         CHANNEL_META_VERSION_CONFLICT.
+
+        Первая запись (`initial_channel_meta`): PERMISSION_DENIED — нет права `channel.edit`;
+        VALIDATION_FAILED — записи нет, её версия не 1, длина не кратна 256 байтам или хэш не в
+        32 байта; PAYLOAD_TOO_LARGE — запись больше 8 КиБ; CONFLICT — у канала уже была запись
+        или группа чата, в том числе замороженная или заменённая (CRYPTO.md §6.8.5).
 
         GroupInfo не передаётся: external commit в 1.0 не используется (ADR-0019).
       operationId: createGroup
@@ -3488,8 +3495,8 @@ components:
         client_download_url:
           type: string
           format: uri
-          pattern: '^(https://.+)?$'
-          description: 'Куда вести пользователя за новой версией клиента; задаёт оператор. Только `https://`: ссылку с другой схемой сервер не отдаёт, а клиент не открывает. Пусто — ссылка не задана.'
+          pattern: '^(https://[^/?#@]+([/?#].*)?)?$'
+          description: 'Куда вести пользователя за новой версией клиента; задаёт оператор. Только `https://` и без части «имя@» перед именем сайта (userinfo, RFC 3986 §3.2.1): ссылку с другой схемой или с такой частью сервер не принимает от оператора и не отдаёт, а клиент не открывает. Пусто — ссылка не задана.'
     ExternalSenderKeyRotation:
       type: object
       x-proto-message: bebeberloga.v1.ExternalSenderKeyRotation
@@ -3812,7 +3819,7 @@ components:
         last_message_id: { $ref: '#/components/schemas/Id' }
         meta:
           allOf: [{ $ref: '#/components/schemas/ChannelMeta' }]
-          description: Зашифрованная запись с названием и темой; открытой строки названия у канала нет (ADR-0026). Не задана у ЛС и личного канала и пока не создана группа чата канала.
+          description: Зашифрованная запись с названием и темой; открытой строки названия у канала нет (ADR-0026). Не задана у ЛС и личного канала, пока не создана группа чата канала, и для устройства с опубликованным Remove (CRYPTO.md §2.8).
     ChannelMeta:
       type: object
       description: Запись канала с названием и темой и её открытые поля (CRYPTO.md §6.8). Сервер запись не читает.

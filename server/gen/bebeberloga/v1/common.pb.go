@@ -642,7 +642,9 @@ type InstanceInfo struct {
 	// О новой версии клиент узнаёт только отсюда; куда ведёт ссылка, решает оператор
 	// (ADR-0030 п. 4). Пусто — оператор ссылку не задал.
 	ClientVersion string `protobuf:"bytes,12,opt,name=client_version,json=clientVersion,proto3" json:"client_version,omitempty"`
-	// Только `https://`. Ссылку с другой схемой сервер не отдаёт, а клиент не открывает.
+	// Только `https://` и без части «имя@» перед именем сайта (userinfo, RFC 3986 §3.2.1): с ней
+	// адрес выглядит как адрес инстанса, а ведёт на другой сайт. Ссылку с другой схемой или с
+	// такой частью сервер не принимает от оператора и не отдаёт, а клиент не открывает.
 	ClientDownloadUrl string `protobuf:"bytes,13,opt,name=client_download_url,json=clientDownloadUrl,proto3" json:"client_download_url,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache

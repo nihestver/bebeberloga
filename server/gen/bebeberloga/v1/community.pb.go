@@ -680,9 +680,10 @@ type Channel struct {
 	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// Id последнего сообщения — для бейджей непрочитанного без запроса истории.
 	LastMessageId string `protobuf:"bytes,18,opt,name=last_message_id,json=lastMessageId,proto3" json:"last_message_id,omitempty"`
-	// Запись с названием и темой (TEXT, VOICE; GROUP_DM и THREAD — S). Не задана у DM и PERSONAL
-	// и пока клиент создателя не создал группу чата канала. Клиент без ключа головного поколения
-	// показывает вместо названия заглушку (SCREENS/03).
+	// Запись с названием и темой (TEXT, VOICE; GROUP_DM и THREAD — S). Не задана у DM и PERSONAL,
+	// пока клиент создателя не создал группу чата канала, и для устройства с опубликованным Remove
+	// (CRYPTO.md §2.8): такое устройство показывает последнюю принятую запись. Клиент без ключа
+	// головного поколения показывает вместо названия заглушку (SCREENS/03).
 	Meta          *ChannelMeta `protobuf:"bytes,19,opt,name=meta,proto3" json:"meta,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
