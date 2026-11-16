@@ -68,6 +68,7 @@
 | `IDENTITY_RESET_LIMITED` | 429 | Запрос сброса сейчас ограничен: после «Это не я» — не раньше чем через 24 ч и не больше 3 за 7 сут (CRYPTO.md §6.3.9) | `retry_after_ms`; новое устройство показывает «Сброс ключей сейчас недоступен…» (SCREENS/07 §4); о запросах, отклонённых лимитом, — письмо на email аккаунта не чаще раза в сутки |
 | `HISTORY_GENERATION_MISMATCH` | 409 | Сообщение обёрнуто или запись канала зашифрована не текущим поколением ключа истории канала (CRYPTO.md §6.2.8, §6.8.5) | `current_generation`; клиент догоняет commit-ы и повторяет (до 3 раз) |
 | `CHANNEL_META_VERSION_CONFLICT` | 409 | Запись канала с названием и темой (CRYPTO.md §6.8). Правка `PUT /channels/{id}/meta`: версию занял другой участник. Commit, начинающий поколение: `seen_version` его записи отстал от правки | `current_meta_version`. Правка — клиент показывает новое название и предлагает повторить; commit — клиент забирает запись и повторяет тот же commit с новой записью (CRYPTO.md §2.13) |
+| `CHANNEL_META_VERSION_TOO_FAR` | 409 | Правка `PUT /channels/{id}/meta`: версия больше текущей сильнее, чем на 65 536, — устройство приняло версию, которой у сервера нет (CRYPTO.md §6.8.5) | `current_meta_version`. Клиент правку не повторяет; сервер пишет отказ в журнал оператора; чинит пересоздание группы канала (CRYPTO.md §6.8.7) |
 | `NOT_DESIGNATED` | 409 | Commit не от устройства, назначенного DS на эту эпоху (CRYPTO.md §2.6), или `GET …/recreation`, `POST …/recreation/key-packages` и `POST /mls/groups` при пересоздании не от назначенного создателя (§2.10.5) | |
 | `SOUND_SLOTS_FULL` | 409 | Слоты звуков заняты | `limit` |
 | `INVITE_EXPIRED` | 410 | Срок приглашения истёк | |
@@ -134,7 +135,7 @@
 | Голос | `POST /channels/{id}/voice/join`, `POST /channels/{id}/voice/leave`, `POST /channels/{id}/voice/members/{uid}/mute`, `POST …/deafen` | Токен SFU; серверный mute/deafen (OPEN-QUESTIONS №4) |
 | Саундборд | `GET /sounds/builtin`, `GET/POST /communities/{id}/sounds`, `GET/POST /users/me/sounds`, `GET/PATCH/DELETE /sounds/{id}`, `GET /sounds/{id}/audio` | FLOWS/09; команда «сыграть» — gateway |
 | Внутренние | `POST /internal/media/webhooks` | Webhook SFU, общий секрет |
-| Админ-API (заготовка для B16, в `openapi.yaml` пока нет) | `GET /admin/channels/{id}/recreation` (журнал оператора: группы линии канала с эпохами, записи клиентов об отказах от commit-ов с причинами — CRYPTO.md §2.9.2, заявления `local_epoch` впереди DS — §2.10.9), `POST /admin/channels/{id}/recreation {predecessor_group_id, last_agreed_epoch, creator_device_id}` | Пересоздание канала по команде оператора «от группы P и эпохи E с создателем X» (CRYPTO.md §2.10.1): команда админ-CLI инстанса, не право сообщества; DS проверяет, что P — группа линии канала, E ≤ её последней эпохи, X — устройство из карты P в E без ожидающего Remove (`NOT_FOUND`, `VALIDATION_FAILED`, `REMOVAL_PENDING`); дальше — обычное пересоздание §2.10.2–§2.10.7 |
+| Админ-API (заготовка для B16, в `openapi.yaml` пока нет) | `GET /admin/channels/{id}/recreation` (журнал оператора: группы линии канала с эпохами, записи клиентов об отказах от commit-ов с причинами — CRYPTO.md §2.9.2, заявления `local_epoch` впереди DS — §2.10.9, отказы правке записи канала из-за версии намного впереди сервера — §6.8.5), `POST /admin/channels/{id}/recreation {predecessor_group_id, last_agreed_epoch, creator_device_id}` | Пересоздание канала по команде оператора «от группы P и эпохи E с создателем X» (CRYPTO.md §2.10.1): команда админ-CLI инстанса, не право сообщества; DS проверяет, что P — группа линии канала, E ≤ её последней эпохи, X — устройство из карты P в E без ожидающего Remove (`NOT_FOUND`, `VALIDATION_FAILED`, `REMOVAL_PENDING`); дальше — обычное пересоздание §2.10.2–§2.10.7 |
 
 ## 5. Ключевые сценарии
 
@@ -158,8 +159,9 @@
 
 1. `POST /communities/{id}/channels {type, category_id, private, allowed_*}` — без названия → `ChannelCreated`.
 2. Клиент создателя создаёт группу чата канала: `POST /mls/groups {channel_id, kind: GROUP_KIND_CHAT, …, initial_channel_meta{generation: 1, version: 1, blob, record_hash}}` → `ChannelUpdated` с `Channel.meta`.
-3. Правка: `PUT /channels/{id}/meta {generation, version, blob, record_hash}` → `ChannelUpdated`. Поколение устарело — `HISTORY_GENERATION_MISMATCH`, клиент повторяет сам; версию занял другой — `CHANNEL_META_VERSION_CONFLICT`, клиент показывает новое название.
-4. Commit, начинающий поколение ключа истории, несёт запись под новым поколением в `channel_meta[]` того же запроса `POST /mls/groups/{id}/handshakes`.
+3. Правка: `PUT /channels/{id}/meta {generation, version, blob, record_hash}` → `ChannelUpdated`. Поколение устарело — `HISTORY_GENERATION_MISMATCH`, клиент повторяет сам; версию занял другой — `CHANNEL_META_VERSION_CONFLICT`, клиент показывает новое название. Правок — не больше одной в 10 секунд на канал: раньше — `RATE_LIMITED`, клиент повторяет сам через `retry_after_ms`, пользователь отказа не видит. Версия намного больше серверной — `CHANNEL_META_VERSION_TOO_FAR`, клиент не повторяет.
+4. Commit, начинающий поколение ключа истории, несёт запись под новым поколением в `channel_meta[]` того же запроса `POST /mls/groups/{id}/handshakes`. Сервер сохраняет её, только если её версия равна `latest_version`; иначе commit принят, а канал остаётся без записи.
+5. Сервер хранит только текущую версию записи: номер, хэш, время приёма и шифртекст. Когда запись на сервере негодна или её нет, клиент участника с правом `channel.edit` сам сохраняет название заново тем же `PUT` — не чаще раза в сутки на канал (CRYPTO.md §6.8.5).
 
 Клиент без ключа головного поколения — ждёт commit своего Add, смотрит превью приглашения или видит канал как «🔒 закрытый для тебя» — названия не получает и показывает заглушку.
 
