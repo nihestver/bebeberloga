@@ -1,6 +1,6 @@
 # ADR-0017: Контракты API — OpenAPI 3.0.3 поверх Protobuf-моделей, buf, UUIDv7 строкой
 
-- Статус: Принято
+- Статус: Принято; частично изменено [ADR-0031](0031-buf-breaking-wire-json.md) (п. 4: категория `buf breaking`)
 - Дата: 2026-11-02
 - Связано: ADR-0002, ADR-0004, ADR-0015, ADR-0016 (спайк S1: handshake зашифрованы, сервер — external sender); `docs/spec/ARCHITECTURE.md` §5.2, §6.4; `CLAUDE.md` («Protobuf — единственный источник моделей»); промпт B01
 
