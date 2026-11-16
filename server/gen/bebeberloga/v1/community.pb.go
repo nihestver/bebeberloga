@@ -549,21 +549,24 @@ type ChannelMeta struct {
 	ChannelId string `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
 	// Поколение ключа истории, подключом которого зашифрован `blob`; 0 — записи сейчас нет.
 	Generation uint32 `protobuf:"varint,2,opt,name=generation,proto3" json:"generation,omitempty"`
-	// Версия записи в `blob`, с 1; 0 — записи сейчас нет.
-	Version uint32 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+	// Версия записи в `blob` — всегда `latest_version`; 0 — записи сейчас нет.
+	Version uint64 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
 	// SealedChannelMeta (CRYPTO.md §6.8.1): название, тема, автор правки и подпись его устройства,
 	// зашифрованные XChaCha20-Poly1305; длина кратна 256 байтам, не больше 8 КиБ. Пусто — записи
 	// сейчас нет: её не отдал коммитер, начавший поколение, и ещё не записала правка.
 	Blob []byte `protobuf:"bytes,4,opt,name=blob,proto3" json:"blob,omitempty"`
-	// Хэш записи версии `version` (SHA-256 с солью внутри записи, 32 байта). Сервер запомнил его,
-	// когда принял эту версию от участника с правом `channel.edit`; клиент сверяет с ним
-	// расшифрованную запись (CRYPTO.md §6.8.2).
+	// Хэш записи текущей версии (SHA-256 с солью внутри записи, 32 байта); пусто — записи сейчас
+	// нет. Сервер запомнил его, когда принял эту версию от участника с правом `channel.edit`, и
+	// хранит хэш только текущей версии; клиент сверяет с ним расшифрованную запись
+	// (CRYPTO.md §6.8.2).
 	RecordHash []byte `protobuf:"bytes,5,opt,name=record_hash,json=recordHash,proto3" json:"record_hash,omitempty"`
-	// Когда сервер принял версию `version`.
+	// Когда сервер принял текущую версию; не задано — записи сейчас нет.
 	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	// Наибольшая версия, принятая правкой `PUT /channels/{id}/meta`. Следующая правка берёт версию
-	// больше неё; коммитер, начинающий поколение, называет её в `ChannelMetaCarry.seen_version`.
-	LatestVersion uint32 `protobuf:"varint,7,opt,name=latest_version,json=latestVersion,proto3" json:"latest_version,omitempty"`
+	// Номер текущей версии — наибольшей, принятой правкой `PUT /channels/{id}/meta`; 0 — записи у
+	// канала ещё не было. Следующая правка берёт версию больше неё, но не больше чем на 65 536;
+	// коммитер, начинающий поколение, называет её в `ChannelMetaCarry.seen_version`. Задан и тогда,
+	// когда записи сейчас нет.
+	LatestVersion uint64 `protobuf:"varint,7,opt,name=latest_version,json=latestVersion,proto3" json:"latest_version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -612,7 +615,7 @@ func (x *ChannelMeta) GetGeneration() uint32 {
 	return 0
 }
 
-func (x *ChannelMeta) GetVersion() uint32 {
+func (x *ChannelMeta) GetVersion() uint64 {
 	if x != nil {
 		return x.Version
 	}
@@ -640,7 +643,7 @@ func (x *ChannelMeta) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *ChannelMeta) GetLatestVersion() uint32 {
+func (x *ChannelMeta) GetLatestVersion() uint64 {
 	if x != nil {
 		return x.LatestVersion
 	}
@@ -2155,13 +2158,13 @@ const file_bebeberloga_v1_community_proto_rawDesc = "" +
 	"\n" +
 	"generation\x18\x02 \x01(\rR\n" +
 	"generation\x12\x18\n" +
-	"\aversion\x18\x03 \x01(\rR\aversion\x12\x12\n" +
+	"\aversion\x18\x03 \x01(\x04R\aversion\x12\x12\n" +
 	"\x04blob\x18\x04 \x01(\fR\x04blob\x12\x1f\n" +
 	"\vrecord_hash\x18\x05 \x01(\fR\n" +
 	"recordHash\x129\n" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12%\n" +
-	"\x0elatest_version\x18\a \x01(\rR\rlatestVersion\"\xcf\x05\n" +
+	"\x0elatest_version\x18\a \x01(\x04R\rlatestVersion\"\xcf\x05\n" +
 	"\aChannel\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12/\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x1b.bebeberloga.v1.ChannelTypeR\x04type\x12!\n" +

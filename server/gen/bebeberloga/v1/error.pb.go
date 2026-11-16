@@ -159,6 +159,10 @@ const (
 	// Commit, начинающий поколение: `seen_version` его записи отстал от правки — клиент забирает
 	// запись и повторяет тот же commit с новой записью. `current_meta_version`. HTTP 409.
 	ErrorCode_ERROR_CODE_CHANNEL_META_VERSION_CONFLICT ErrorCode = 518
+	// Правка `PUT /channels/{id}/meta`: версия больше текущей сильнее, чем на 65 536, — версия на
+	// устройстве намного впереди сервера (CRYPTO.md §6.8.5). Клиент правку не повторяет; чинит
+	// пересоздание группы канала оператором. `current_meta_version`. HTTP 409.
+	ErrorCode_ERROR_CODE_CHANNEL_META_VERSION_TOO_FAR ErrorCode = 519
 	// --- саундборд ---------------------------------------------------------
 	// Звук не в формате Opus/ogg (клиент перекодирует перед загрузкой, FLOWS/09 ш. 2)
 	// или длиннее 5 с. HTTP 400.
@@ -226,6 +230,7 @@ var (
 		516: "ERROR_CODE_NOT_DESIGNATED",
 		517: "ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW",
 		518: "ERROR_CODE_CHANNEL_META_VERSION_CONFLICT",
+		519: "ERROR_CODE_CHANNEL_META_VERSION_TOO_FAR",
 		600: "ERROR_CODE_SOUND_INVALID",
 		601: "ERROR_CODE_SOUND_SLOTS_FULL",
 	}
@@ -286,6 +291,7 @@ var (
 		"ERROR_CODE_NOT_DESIGNATED":                516,
 		"ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW":      517,
 		"ERROR_CODE_CHANNEL_META_VERSION_CONFLICT": 518,
+		"ERROR_CODE_CHANNEL_META_VERSION_TOO_FAR":  519,
 		"ERROR_CODE_SOUND_INVALID":                 600,
 		"ERROR_CODE_SOUND_SLOTS_FULL":              601,
 	}
@@ -396,8 +402,9 @@ type Error struct {
 	SuccessorGroupId string `protobuf:"bytes,9,opt,name=successor_group_id,json=successorGroupId,proto3" json:"successor_group_id,omitempty"`
 	// Для HISTORY_GENERATION_MISMATCH: текущее поколение ключа истории канала.
 	CurrentGeneration uint32 `protobuf:"varint,10,opt,name=current_generation,json=currentGeneration,proto3" json:"current_generation,omitempty"`
-	// Для CHANNEL_META_VERSION_CONFLICT: `ChannelMeta.latest_version` канала.
-	CurrentMetaVersion uint32 `protobuf:"varint,11,opt,name=current_meta_version,json=currentMetaVersion,proto3" json:"current_meta_version,omitempty"`
+	// Для CHANNEL_META_VERSION_CONFLICT и CHANNEL_META_VERSION_TOO_FAR: `ChannelMeta.latest_version`
+	// канала.
+	CurrentMetaVersion uint64 `protobuf:"varint,11,opt,name=current_meta_version,json=currentMetaVersion,proto3" json:"current_meta_version,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -502,7 +509,7 @@ func (x *Error) GetCurrentGeneration() uint32 {
 	return 0
 }
 
-func (x *Error) GetCurrentMetaVersion() uint32 {
+func (x *Error) GetCurrentMetaVersion() uint64 {
 	if x != nil {
 		return x.CurrentMetaVersion
 	}
@@ -530,7 +537,7 @@ const file_bebeberloga_v1_error_proto_rawDesc = "" +
 	"\x12successor_group_id\x18\t \x01(\tR\x10successorGroupId\x12-\n" +
 	"\x12current_generation\x18\n" +
 	" \x01(\rR\x11currentGeneration\x120\n" +
-	"\x14current_meta_version\x18\v \x01(\rR\x12currentMetaVersion*\xf8\x0f\n" +
+	"\x14current_meta_version\x18\v \x01(\x04R\x12currentMetaVersion*\xa6\x10\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cERROR_CODE_VALIDATION_FAILED\x10\x01\x12\x1e\n" +
@@ -587,7 +594,8 @@ const file_bebeberloga_v1_error_proto_rawDesc = "" +
 	"&ERROR_CODE_HISTORY_GENERATION_MISMATCH\x10\x83\x04\x12\x1e\n" +
 	"\x19ERROR_CODE_NOT_DESIGNATED\x10\x84\x04\x12(\n" +
 	"#ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW\x10\x85\x04\x12-\n" +
-	"(ERROR_CODE_CHANNEL_META_VERSION_CONFLICT\x10\x86\x04\x12\x1d\n" +
+	"(ERROR_CODE_CHANNEL_META_VERSION_CONFLICT\x10\x86\x04\x12,\n" +
+	"'ERROR_CODE_CHANNEL_META_VERSION_TOO_FAR\x10\x87\x04\x12\x1d\n" +
 	"\x18ERROR_CODE_SOUND_INVALID\x10\xd8\x04\x12 \n" +
 	"\x1bERROR_CODE_SOUND_SLOTS_FULL\x10\xd9\x04\"\x06\b\xc9\x01\x10\xc9\x01\"\x06\b\x82\x04\x10\x82\x04*\x1fERROR_CODE_RECOVERY_KEY_INVALID*\x1dERROR_CODE_GROUP_UNDER_REVIEWB\xc3\x01\n" +
 	"\x12com.bebeberloga.v1B\n" +

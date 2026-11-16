@@ -1159,16 +1159,18 @@ func (x *HistoryBridge) GetBlob() []byte {
 // Запись канала с названием и темой, которую несёт commit, начинающий поколение ключа истории, и
 // начальный commit группы-преемника (CRYPTO.md §6.8.6–§6.8.7): коммитер отдаёт последнюю запись,
 // которую принял сам, под подключом нового поколения. В 1.0 DS требует ровно один элемент —
-// запись самого канала группы.
+// запись самого канала группы. Сохраняет он её, только если её версия равна текущей; commit
+// принимается при любой версии. Элемент повтора уже принятого commit-а не применяется.
 type ChannelMetaCarry struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Чья запись. В 1.0 — канал группы; у публичных веток (S) — id ветки.
 	ChannelId string `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
 	// `ChannelMeta.latest_version`, который видел коммитер. Не равен текущему —
 	// CHANNEL_META_VERSION_CONFLICT: прошла правка, клиент повторяет тот же commit с новой записью.
-	SeenVersion uint32 `protobuf:"varint,2,opt,name=seen_version,json=seenVersion,proto3" json:"seen_version,omitempty"`
-	// Версия записи в `blob`; может быть меньше `seen_version`. 0 — годной записи у коммитера нет.
-	Version uint32 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+	SeenVersion uint64 `protobuf:"varint,2,opt,name=seen_version,json=seenVersion,proto3" json:"seen_version,omitempty"`
+	// Версия записи в `blob`. Не равна `ChannelMeta.latest_version` — DS запись не сохраняет, и
+	// канал остаётся без записи. 0 — годной записи у коммитера нет.
+	Version uint64 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
 	// SealedChannelMeta под поколением после commit-а; пусто при `version = 0`.
 	Blob          []byte `protobuf:"bytes,4,opt,name=blob,proto3" json:"blob,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1212,14 +1214,14 @@ func (x *ChannelMetaCarry) GetChannelId() string {
 	return ""
 }
 
-func (x *ChannelMetaCarry) GetSeenVersion() uint32 {
+func (x *ChannelMetaCarry) GetSeenVersion() uint64 {
 	if x != nil {
 		return x.SeenVersion
 	}
 	return 0
 }
 
-func (x *ChannelMetaCarry) GetVersion() uint32 {
+func (x *ChannelMetaCarry) GetVersion() uint64 {
 	if x != nil {
 		return x.Version
 	}
@@ -1441,7 +1443,7 @@ type RecreationPlan struct {
 	NextGeneration uint32 `protobuf:"varint,8,opt,name=next_generation,json=nextGeneration,proto3" json:"next_generation,omitempty"`
 	// `ChannelMeta.latest_version` канала: создатель называет его в `ChannelMetaCarry.seen_version`
 	// начального commit-а (CRYPTO.md §6.8.7). 0 у каналов без записи и у групп звонков.
-	ChannelMetaLatestVersion uint32 `protobuf:"varint,9,opt,name=channel_meta_latest_version,json=channelMetaLatestVersion,proto3" json:"channel_meta_latest_version,omitempty"`
+	ChannelMetaLatestVersion uint64 `protobuf:"varint,9,opt,name=channel_meta_latest_version,json=channelMetaLatestVersion,proto3" json:"channel_meta_latest_version,omitempty"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -1532,7 +1534,7 @@ func (x *RecreationPlan) GetNextGeneration() uint32 {
 	return 0
 }
 
-func (x *RecreationPlan) GetChannelMetaLatestVersion() uint32 {
+func (x *RecreationPlan) GetChannelMetaLatestVersion() uint64 {
 	if x != nil {
 		return x.ChannelMetaLatestVersion
 	}
@@ -1629,8 +1631,8 @@ const file_bebeberloga_v1_mls_proto_rawDesc = "" +
 	"\x10ChannelMetaCarry\x12\x1d\n" +
 	"\n" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12!\n" +
-	"\fseen_version\x18\x02 \x01(\rR\vseenVersion\x12\x18\n" +
-	"\aversion\x18\x03 \x01(\rR\aversion\x12\x12\n" +
+	"\fseen_version\x18\x02 \x01(\x04R\vseenVersion\x12\x18\n" +
+	"\aversion\x18\x03 \x01(\x04R\aversion\x12\x12\n" +
 	"\x04blob\x18\x04 \x01(\fR\x04blob\"]\n" +
 	"\x12EncryptedGroupInfo\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\tR\agroupId\x12\x14\n" +
@@ -1656,7 +1658,7 @@ const file_bebeberloga_v1_mls_proto_rawDesc = "" +
 	"\x11target_device_ids\x18\x06 \x03(\tR\x0ftargetDeviceIds\x128\n" +
 	"\x06reason\x18\a \x01(\x0e2 .bebeberloga.v1.RecreationReasonR\x06reason\x12'\n" +
 	"\x0fnext_generation\x18\b \x01(\rR\x0enextGeneration\x12=\n" +
-	"\x1bchannel_meta_latest_version\x18\t \x01(\rR\x18channelMetaLatestVersion*j\n" +
+	"\x1bchannel_meta_latest_version\x18\t \x01(\x04R\x18channelMetaLatestVersion*j\n" +
 	"\tGroupKind\x12\x1a\n" +
 	"\x16GROUP_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fGROUP_KIND_CHAT\x10\x01\x12\x13\n" +

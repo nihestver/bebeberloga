@@ -1568,14 +1568,19 @@ paths:
         Новая версия зашифрованной записи с названием и темой (ADR-0026, CRYPTO.md §6.8.5; FLOWS/03
         «Переименовать канал, сменить тему»). Право `channel.edit`; устройство должно состоять в
         группе канала — у остальных нет ключа. Сервер содержимого не видит: он проверяет право,
-        членство, поколение и версию, ставит запись на место прежней, запоминает её хэш и рассылает
-        ChannelUpdated видящим канал.
+        членство, поколение, версию и частоту, ставит запись на место прежней и рассылает
+        ChannelUpdated видящим канал. Хранит он только текущую версию: её номер, хэш, время приёма
+        и шифртекст; прежние стираются.
 
         Ошибки: PERMISSION_DENIED; NOT_GROUP_MEMBER; GROUP_FROZEN; HISTORY_GENERATION_MISMATCH с
         `current_generation` — поколение устарело, клиент догоняет commit-ы, шифрует заново и
-        повторяет сам; CHANNEL_META_VERSION_CONFLICT с `current_meta_version` — версию занял другой
-        участник, клиент показывает новое название и предлагает повторить правку; VALIDATION_FAILED и
-        PAYLOAD_TOO_LARGE — длина записи не кратна 256 байтам или больше 8 КиБ.
+        повторяет сам; VALIDATION_FAILED и PAYLOAD_TOO_LARGE — длина записи не кратна 256 байтам
+        или больше 8 КиБ; CHANNEL_META_VERSION_CONFLICT с `current_meta_version` — версию занял
+        другой участник, клиент показывает новое название и предлагает повторить правку;
+        CHANNEL_META_VERSION_TOO_FAR с `current_meta_version` — версия больше текущей сильнее, чем
+        на 65 536, клиент правку не повторяет; RATE_LIMITED с `retry_after_ms` — с прошлой принятой
+        правки этого канала не прошло 10 секунд, клиент повторяет ту же правку сам, пользователь
+        отказа не видит.
       operationId: putChannelMeta
       requestBody:
         required: true
@@ -2413,7 +2418,9 @@ paths:
         непрерывности, создателя назначает DS. Создавать новую группу вправе только устройство,
         назначенное создателем этого пересоздания (CRYPTO.md §2.10.5). Начальный commit начинает
         поколение ключа истории, поэтому несёт запись канала в `channel_meta` — последнюю, которую
-        создатель принял сам (CRYPTO.md §6.8.7). Ошибки BAD_DELTA, BAD_WELCOME, UNAUTHORIZED_CHANGE,
+        создатель принял сам (CRYPTO.md §6.8.7). Сервер сохраняет её, только если её версия равна
+        `latest_version`; иначе группа создаётся, а канал остаётся без записи, пока участник с
+        правом `channel.edit` не сохранит название заново. Ошибки BAD_DELTA, BAD_WELCOME, UNAUTHORIZED_CHANGE,
         CHANNEL_MEMBER_LIMIT, GROUP_FROZEN, NOT_DESIGNATED, REMOVAL_PENDING,
         CHANNEL_META_VERSION_CONFLICT.
 
@@ -2533,8 +2540,10 @@ paths:
         несёт запись канала с названием и темой под подключом нового поколения — `channel_meta`
         (CRYPTO.md §6.8.6); без неё — BAD_DELTA. Если `seen_version` отстал от правки —
         CHANNEL_META_VERSION_CONFLICT с `current_meta_version`: клиент забирает запись и повторяет
-        тот же commit с новым `channel_meta`. Версию самой записи сервер не сравнивает: коммитер
-        отдаёт последнюю запись, которую принял сам.
+        тот же commit с новым `channel_meta`. Коммитер отдаёт последнюю запись, которую принял сам.
+        Сервер сохраняет её, только если её версия равна `latest_version`; при другой версии и при
+        `version = 0` commit принимается, а канал остаётся без записи. Элемент `channel_meta`
+        повтора уже принятого commit-а не применяется.
 
         Commit принимается только от устройства, назначенного на эту эпоху (`MlsUpdateRequested.designated_device_id`), иначе
         NOT_DESIGNATED. Ошибки: NOT_GROUP_MEMBER, REMOVAL_PENDING, PROPOSALS_MISSING, UNAUTHORIZED_CHANGE (в том числе
@@ -3337,7 +3346,7 @@ components:
         current_epoch: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: Для EPOCH_MISMATCH. }
         successor_group_id: { allOf: [{ $ref: '#/components/schemas/Id' }], description: 'Для GROUP_FROZEN: группа, которая заменила эту; пусто, пока пересоздание не завершено.' }
         current_generation: { type: integer, description: 'Для HISTORY_GENERATION_MISMATCH: текущее поколение ключа истории канала.' }
-        current_meta_version: { type: integer, description: 'Для CHANNEL_META_VERSION_CONFLICT: `ChannelMeta.latest_version` канала.' }
+        current_meta_version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Для CHANNEL_META_VERSION_CONFLICT и CHANNEL_META_VERSION_TOO_FAR: `ChannelMeta.latest_version` канала.' }
         field_errors:
           type: array
           items:
@@ -3413,6 +3422,7 @@ components:
         - ERROR_CODE_NOT_DESIGNATED
         - ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW
         - ERROR_CODE_CHANNEL_META_VERSION_CONFLICT
+        - ERROR_CODE_CHANNEL_META_VERSION_TOO_FAR
         - ERROR_CODE_SOUND_INVALID
         - ERROR_CODE_SOUND_SLOTS_FULL
 
@@ -3813,22 +3823,22 @@ components:
       properties:
         channel_id: { $ref: '#/components/schemas/Id' }
         generation: { type: integer, minimum: 0, description: 'Поколение ключа истории, подключом которого зашифрован `blob`; 0 — записи сейчас нет.' }
-        version: { type: integer, minimum: 0, description: 'Версия записи в `blob`; 0 — записи сейчас нет.' }
+        version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Версия записи в `blob` — всегда `latest_version`; 0 — записи сейчас нет.' }
         blob:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
           description: SealedChannelMeta (CRYPTO.md §6.8.1); длина кратна 256 байтам, не больше 8 КиБ. Пусто — записи сейчас нет.
         record_hash:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
-          description: Хэш записи этой версии (SHA-256 с солью внутри записи, 32 байта), который сервер запомнил при её приёме; клиент сверяет с ним расшифрованную запись.
+          description: Хэш записи текущей версии (SHA-256 с солью внутри записи, 32 байта), который сервер запомнил при её приёме; хэшей прежних версий он не хранит. Клиент сверяет с ним расшифрованную запись. Пусто — записи сейчас нет.
         created_at: { $ref: '#/components/schemas/Timestamp' }
-        latest_version: { type: integer, minimum: 0, description: 'Наибольшая версия, принятая правкой; следующая правка берёт версию больше неё.' }
+        latest_version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Номер текущей версии — наибольшей, принятой правкой; 0 — записи у канала ещё не было. Следующая правка берёт версию больше неё, но не больше чем на 65 536. Задан и тогда, когда записи сейчас нет.' }
     ChannelMetaWrite:
       type: object
       description: Новая версия записи канала — тело `PUT /channels/{channel_id}/meta` и `initial_channel_meta` (CRYPTO.md §6.8.5).
       required: [generation, version, blob, record_hash]
       properties:
         generation: { type: integer, minimum: 1, description: Текущее поколение ключа истории канала. }
-        version: { type: integer, minimum: 1, description: 'Больше `latest_version`, но не больше чем на 65 536; у первой записи — 1.' }
+        version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Больше `latest_version`, но не больше чем на 65 536; у первой записи — 1.' }
         blob:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
           description: SealedChannelMeta; длина кратна 256 байтам, не больше 8 КиБ.
@@ -3844,8 +3854,8 @@ components:
       required: [channel_id, seen_version, version]
       properties:
         channel_id: { $ref: '#/components/schemas/Id' }
-        seen_version: { type: integer, minimum: 0, description: '`ChannelMeta.latest_version`, который видел коммитер.' }
-        version: { type: integer, minimum: 0, description: 'Версия записи в `blob`; может быть меньше `seen_version`. 0 — годной записи у коммитера нет.' }
+        seen_version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: '`ChannelMeta.latest_version`, который видел коммитер.' }
+        version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Версия записи в `blob`. Не равна `latest_version` — сервер запись не сохраняет, и канал остаётся без записи. 0 — годной записи у коммитера нет.' }
         blob:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
           description: SealedChannelMeta под поколением после commit-а; пусто при `version = 0`.
@@ -4506,7 +4516,7 @@ components:
           items: { $ref: '#/components/schemas/Id' }
         reason: { $ref: '#/components/schemas/RecreationReason' }
         next_generation: { type: integer, description: 'Поколение ключа истории, которое начнёт новая группа (CRYPTO.md §6.3.10): при DISPUTE и PERSONAL_RESTORE — ровно оно, при JOURNAL_LOSS — не больше next_generation + 65 536, иначе BAD_DELTA.' }
-        channel_meta_latest_version: { type: integer, minimum: 0, description: '`ChannelMeta.latest_version` канала — для `seen_version` в начальном commit-е (CRYPTO.md §6.8.7); 0 у каналов без записи и у групп звонков.' }
+        channel_meta_latest_version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: '`ChannelMeta.latest_version` канала — для `seen_version` в начальном commit-е (CRYPTO.md §6.8.7); 0 у каналов без записи и у групп звонков.' }
 
     # --- голос и звуки -------------------------------------------------------
     VoiceJoin:

@@ -151,6 +151,10 @@ enum ErrorCode {
   // Commit, начинающий поколение: `seen_version` его записи отстал от правки — клиент забирает
   // запись и повторяет тот же commit с новой записью. `current_meta_version`. HTTP 409.
   ERROR_CODE_CHANNEL_META_VERSION_CONFLICT = 518;
+  // Правка `PUT /channels/{id}/meta`: версия больше текущей сильнее, чем на 65 536, — версия на
+  // устройстве намного впереди сервера (CRYPTO.md §6.8.5). Клиент правку не повторяет; чинит
+  // пересоздание группы канала оператором. `current_meta_version`. HTTP 409.
+  ERROR_CODE_CHANNEL_META_VERSION_TOO_FAR = 519;
 
   // --- саундборд ---------------------------------------------------------
   // Звук не в формате Opus/ogg (клиент перекодирует перед загрузкой, FLOWS/09 ш. 2)
@@ -190,6 +194,7 @@ message Error {
   string successor_group_id = 9;
   // Для HISTORY_GENERATION_MISMATCH: текущее поколение ключа истории канала.
   uint32 current_generation = 10;
-  // Для CHANNEL_META_VERSION_CONFLICT: `ChannelMeta.latest_version` канала.
-  uint32 current_meta_version = 11;
+  // Для CHANNEL_META_VERSION_CONFLICT и CHANNEL_META_VERSION_TOO_FAR: `ChannelMeta.latest_version`
+  // канала.
+  uint64 current_meta_version = 11;
 }
