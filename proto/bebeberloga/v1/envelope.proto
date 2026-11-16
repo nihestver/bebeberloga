@@ -91,6 +91,9 @@ message FilePreview {
   uint64 size = 2;
   // Хэш шифртекста, чтобы сверить с Attachment.ciphertext_hash.
   bytes ciphertext_hash = 3;
+  // Хэш открытого превью без добавки (BLAKE3, 32 байта); сверяется после расшифровки
+  // (CRYPTO.md §7.3).
+  bytes content_hash = 4;
 }
 
 // Превью ссылки (S): генерирует клиент отправителя (ARCHITECTURE.md §8).

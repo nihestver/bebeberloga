@@ -261,9 +261,10 @@ type MessageMeta struct {
 	DeletedAt *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
 	// Системное сообщение сервера: шифртекста нет, тип и параметры — открытые.
 	System *SystemMessage `protobuf:"bytes,18,opt,name=system,proto3" json:"system,omitempty"`
-	// Ставит сервер при приёме: было ли у отправителя право `chat.ping_all` в этом канале. В ЛС и
-	// групповом чате — всегда true. Клиент получателя засчитывает совпадение с ролью и «@все» /
-	// «@здесь», только если отметка стоит (ADR-0027 п. 7, CRYPTO.md §6.4).
+	// Ставит сервер при приёме: было ли у отправителя право `chat.ping_all` в этом канале. В ЛС —
+	// всегда true; в групповом чате (S) — OPEN-QUESTIONS №59. Клиент получателя засчитывает
+	// совпадение с ролью и «@все» / «@здесь», только если отметка стоит (ADR-0027 п. 7,
+	// CRYPTO.md §6.4).
 	AuthorCanPingAll bool `protobuf:"varint,19,opt,name=author_can_ping_all,json=authorCanPingAll,proto3" json:"author_can_ping_all,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache

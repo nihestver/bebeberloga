@@ -268,7 +268,7 @@ export type InstanceInfo = Message<"bebeberloga.v1.InstanceInfo"> & {
    * Адреса STUN и TURN инстанса — URI по RFC 7064 и RFC 7065 (`stun:`, `turn:`, `turns:`), включая
    * запасной путь `turns:turn.<домен>:443?transport=tcp` (ADR-0029 п. 1). Клиент использует только
    * их: сторонних серверов нет (ADR-0029 п. 4). Учётных данных TURN здесь нет — ответ доступен без
-   * входа; их выдаёт вход в голосовой канал.
+   * входа. Откуда клиент их получает и в каком виде, определяет B07 (медиасервисы).
    *
    * @generated from field: repeated string ice_urls = 11;
    */
@@ -284,6 +284,8 @@ export type InstanceInfo = Message<"bebeberloga.v1.InstanceInfo"> & {
   clientVersion: string;
 
   /**
+   * Только `https://`. Ссылку с другой схемой сервер не отдаёт, а клиент не открывает.
+   *
    * @generated from field: string client_download_url = 13;
    */
   clientDownloadUrl: string;

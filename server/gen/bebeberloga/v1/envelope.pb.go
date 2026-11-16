@@ -619,8 +619,11 @@ type FilePreview struct {
 	Size uint64 `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
 	// Хэш шифртекста, чтобы сверить с Attachment.ciphertext_hash.
 	CiphertextHash []byte `protobuf:"bytes,3,opt,name=ciphertext_hash,json=ciphertextHash,proto3" json:"ciphertext_hash,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Хэш открытого превью без добавки (BLAKE3, 32 байта); сверяется после расшифровки
+	// (CRYPTO.md §7.3).
+	ContentHash   []byte `protobuf:"bytes,4,opt,name=content_hash,json=contentHash,proto3" json:"content_hash,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FilePreview) Reset() {
@@ -670,6 +673,13 @@ func (x *FilePreview) GetSize() uint64 {
 func (x *FilePreview) GetCiphertextHash() []byte {
 	if x != nil {
 		return x.CiphertextHash
+	}
+	return nil
+}
+
+func (x *FilePreview) GetContentHash() []byte {
+	if x != nil {
+		return x.ContentHash
 	}
 	return nil
 }
@@ -1644,11 +1654,12 @@ const file_bebeberloga_v1_envelope_proto_rawDesc = "" +
 	" \x01(\fR\tthumbnail\x12\x18\n" +
 	"\aspoiler\x18\v \x01(\bR\aspoiler\x12 \n" +
 	"\vdescription\x18\f \x01(\tR\vdescription\x125\n" +
-	"\apreview\x18\r \x01(\v2\x1b.bebeberloga.v1.FilePreviewR\apreview\"o\n" +
+	"\apreview\x18\r \x01(\v2\x1b.bebeberloga.v1.FilePreviewR\apreview\"\x92\x01\n" +
 	"\vFilePreview\x12#\n" +
 	"\rattachment_id\x18\x01 \x01(\tR\fattachmentId\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x04R\x04size\x12'\n" +
-	"\x0fciphertext_hash\x18\x03 \x01(\fR\x0eciphertextHash\"\xa3\x01\n" +
+	"\x0fciphertext_hash\x18\x03 \x01(\fR\x0eciphertextHash\x12!\n" +
+	"\fcontent_hash\x18\x04 \x01(\fR\vcontentHash\"\xa3\x01\n" +
 	"\vLinkPreview\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x1b\n" +
 	"\tsite_name\x18\x02 \x01(\tR\bsiteName\x12\x14\n" +

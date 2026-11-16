@@ -646,6 +646,10 @@ paths:
         после офлайна, считает хинты своего id и своих ролей и сравнивает сам: сервер не знает,
         какие кандидаты окажутся упоминаниями. Шифртекста и ключей сообщений в ответе нет. Порядок
         — по `message_id`; пагинация курсором `after`.
+
+        В список попадают только сообщения, которые сервер отдал бы этому устройству в ленте
+        канала (CRYPTO.md §6.3.8 п. 3). Запросы, которые клиент делает сам, от совпадения хинта не
+        зависят: тела кандидатов он забирает одинаково у совпавших и несовпавших (CRYPTO.md §6.4).
       operationId: listMentionCandidates
       parameters:
         - name: channel_id
@@ -1871,9 +1875,9 @@ paths:
       tags: [bans]
       summary: Забанить
       description: |
-        Право `member.remove`. При `delete_messages_window_seconds` > 0 сервер ставит tombstone на
-        сообщения за период и рассылает MessageDeleted пачками (FLOWS/10). Допустимые значения:
-        0, 3600, 86400, 604800.
+        Право `member.remove`. При `delete_messages_window_seconds` > 0 сервер стирает сообщения за
+        период, оставляя отметки об удалении (ADR-0028 п. 3), и рассылает MessageDeleted пачками
+        (FLOWS/10). Допустимые значения: 0, 3600, 86400, 604800.
       operationId: banMember
       requestBody:
         required: true
@@ -3466,7 +3470,7 @@ components:
           description: Инстанс показывает владельцу устройства город последнего подключения. По умолчанию false; включает оператор. Сам адрес сервер не записывает (ADR-0028 п. 2).
         ice_urls:
           type: array
-          description: 'Адреса STUN и TURN инстанса — URI по RFC 7064 и RFC 7065, включая запасной путь `turns:turn.<домен>:443?transport=tcp` (ADR-0029 п. 1, п. 4). Учётных данных TURN здесь нет: их выдаёт вход в голосовой канал.'
+          description: 'Адреса STUN и TURN инстанса — URI по RFC 7064 и RFC 7065, включая запасной путь `turns:turn.<домен>:443?transport=tcp` (ADR-0029 п. 1, п. 4). Учётных данных TURN здесь нет: ответ доступен без входа. Откуда клиент их получает и в каком виде, определяет B07.'
           items: { type: string }
         client_version:
           type: string
@@ -3474,7 +3478,8 @@ components:
         client_download_url:
           type: string
           format: uri
-          description: Куда вести пользователя за новой версией клиента; задаёт оператор. Пусто — ссылка не задана.
+          pattern: '^(https://.+)?$'
+          description: 'Куда вести пользователя за новой версией клиента; задаёт оператор. Только `https://`: ссылку с другой схемой сервер не отдаёт, а клиент не открывает. Пусто — ссылка не задана.'
     ExternalSenderKeyRotation:
       type: object
       x-proto-message: bebeberloga.v1.ExternalSenderKeyRotation
@@ -4202,7 +4207,7 @@ components:
         pinned: { type: boolean }
         deleted:
           type: boolean
-          description: 'Сообщение удалено: шифртекст, обёрнутый ключ, хинты и вложения стёрты; заполнены только `id`, `channel_id`, `deleted` и `deleted_at` (ADR-0028 п. 3).'
+          description: 'Сообщение удалено: шифртекст, обёрнутый ключ, хинты и вложения стёрты; заполнены только `id`, `channel_id`, `deleted` и `deleted_at` (ADR-0028 п. 3). Остальные обязательные поля у отметки пусты: `author_user_id` — пустая строка, `pinned` и `author_can_ping_all` — false.'
         deleted_at: { $ref: '#/components/schemas/Timestamp' }
         system: { $ref: '#/components/schemas/SystemMessage' }
         author_can_ping_all:
