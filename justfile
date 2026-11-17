@@ -205,6 +205,8 @@ compose-smoke port="18089":
     $c up -d --build --wait || { $c ps -a; $c logs --tail=50; exit 1; }
     hurl --test --retry 10 --retry-interval 3000 --variable base_url=http://127.0.0.1:{{port}} tools/api/smoke/*.hurl \
       || { $c logs --tail=50 server caddy; exit 1; }
+    # «канарейка» журналов (T71): адрес клиента, User-Agent и путь запроса не оседают в журналах
+    tools/deploy/log-canary.sh http://127.0.0.1:{{port}} $c
 
 # --- кодогенерация ----------------------------------------------------------
 
@@ -247,10 +249,12 @@ deploy-test ref="origin/main":
 smoke-test base_url=env_var_or_default("BB_TEST_URL", "https://test.bebeberloga.org"):
     hurl --test --retry 10 --retry-interval 3000 --variable base_url={{base_url}} tools/api/smoke/*.hurl
 
+# Журнал запросов сервер пишет в файлы по дням в томе server-logs (7 суток или 50 МБ), а в журнал
+# контейнера — только строку запуска и фатальные ошибки; для server рецепт показывает и то и другое.
 # журналы сервиса тест-стенда: just test-logs caddy
 [group('тест-стенд')]
-test-logs svc="server":
-    ssh bb-test "cd ~/bebeberloga && docker compose logs --tail=200 {{svc}}"
+test-logs svc="server" lines="200":
+    ssh bb-test "cd ~/bebeberloga && docker compose logs --tail={{lines}} {{svc}} && if [ {{svc}} = server ]; then docker compose exec -T server bebeberloga-server logs --tail {{lines}} || true; fi"
 
 # --- стенд агента (ssh-алиас bb-claude; настройка — tools/dev/setup-agent-access.sh) ---
 # Рабочее дерево (вместе с незакоммиченными правками) копируется в ~/src/bebeberloga пользователя
@@ -294,10 +298,11 @@ remote-up: remote-sync
 remote-ps:
     ssh {{agent_host}} 'cd {{agent_dir}} && {{agent_compose}} ps'
 
+# Для server — журнал контейнера (строка запуска, фатальные ошибки) и журнал запросов из тома server-logs.
 # журналы сервиса стенда агента: just remote-logs caddy
 [group('стенд агента')]
-remote-logs svc="server":
-    ssh {{agent_host}} 'cd {{agent_dir}} && {{agent_compose}} logs --tail=200 {{svc}}'
+remote-logs svc="server" lines="200":
+    ssh {{agent_host}} 'cd {{agent_dir}} && {{agent_compose}} logs --tail={{lines}} {{svc}} && if [ {{svc}} = server ]; then {{agent_compose}} exec -T server bebeberloga-server logs --tail {{lines}} || true; fi'
 
 # остановить стенд агента; тома с данными сохраняются
 [group('стенд агента')]

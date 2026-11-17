@@ -4,6 +4,7 @@
 // Команда bebeberloga-server — единый бинарник сервера (ARCHITECTURE.md §5.5):
 //
 //	bebeberloga-server serve   [--config path]   запустить сервер
+//	bebeberloga-server logs    [--tail N]        показать журнал сервера из каталога log.dir
 //	bebeberloga-server migrate [--config path]   применить миграции БД (появится в B04)
 //	bebeberloga-server admin   …                 административные команды (появится в B16)
 //	bebeberloga-server version                   версия
@@ -29,11 +30,12 @@ const usage = `bebeberloga-server — сервер Bebeberloga.
 
 Подкоманды:
   serve     запустить сервер
+  logs      показать журнал сервера (--tail N — последние N строк, по умолчанию 200; 0 — весь)
   migrate   применить миграции базы данных
   admin     административные команды
   version   показать версию
 
-Флаги serve и migrate:
+Флаги serve, logs и migrate:
   --config <путь>   YAML-конфиг (или переменная BB_CONFIG)
 `
 
@@ -58,6 +60,8 @@ func run(ctx context.Context, args []string, lookupEnv func(string) (string, boo
 	switch args[0] {
 	case "serve":
 		err = cmdServe(ctx, args[1:], lookupEnv, stdout, stderr)
+	case "logs":
+		err = cmdLogs(args[1:], lookupEnv, stdout, stderr)
 	case "migrate":
 		err = cmdStub("migrate", args[1:], stderr)
 	case "admin":

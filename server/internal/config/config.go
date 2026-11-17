@@ -52,6 +52,12 @@ type Log struct {
 	Level string `yaml:"level"`
 	// Format: json (по умолчанию) или console.
 	Format string `yaml:"format"`
+	// Dir — каталог журнала: файл на каждый день. Пусто — журнал идёт в stdout (разработка).
+	Dir string `yaml:"dir"`
+	// MaxDays — сколько календарных дней хранится журнал в Dir, считая сегодняшний.
+	MaxDays int `yaml:"max_days"`
+	// MaxSizeMB — предел суммарного размера файлов журнала в Dir, МБ.
+	MaxSizeMB int `yaml:"max_size_mb"`
 }
 
 // Database — PostgreSQL. Пустой URL — не настроена (в части 0 допустимо).
@@ -88,7 +94,8 @@ func Default() Config {
 			IdleTimeout:       2 * time.Minute,
 			ShutdownTimeout:   10 * time.Second,
 		},
-		Log: Log{Level: "info", Format: "json"},
+		// Срок и размер журнала — RETENTION.md §6 (ответ владельца на OPEN-QUESTIONS №53).
+		Log: Log{Level: "info", Format: "json", MaxDays: 7, MaxSizeMB: 50},
 		Health: Health{
 			Timeout:  2 * time.Second,
 			CacheTTL: 2 * time.Second,
@@ -220,6 +227,12 @@ func (c Config) Validate() error {
 	case "json", "console":
 	default:
 		errs = append(errs, fmt.Errorf("log.format: %q, ожидается json или console", c.Log.Format))
+	}
+	if c.Log.MaxDays < 1 {
+		errs = append(errs, errors.New("log.max_days: должен быть не меньше 1"))
+	}
+	if c.Log.MaxSizeMB < 1 {
+		errs = append(errs, errors.New("log.max_size_mb: должен быть не меньше 1"))
 	}
 	errs = append(errs,
 		checkDatabaseURL(c.Database.URL),

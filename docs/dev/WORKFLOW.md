@@ -156,9 +156,11 @@ ufw allow 18080/tcp && ufw allow 17881/tcp && ufw allow 13478/udp && ufw allow 4
 |---|---|
 | `just remote-sync` | Копирует рабочее дерево на сервер (rsync); без `.git`, секретов, сборок и `docs/PLAN.md` — список в `tools/dev/remote-sync.exclude` |
 | `just remote <рецепт>` | Синхронизирует и запускает рецепт `just` на сервере: `just remote test-go`, `just remote test-rust` |
-| `just remote-up` / `remote-ps` / `remote-logs [svc]` / `remote-down` | Стенд `bb-agent`: `docker-compose.yml` + `compose.agent.yml`; образ сервера собирается на сервере из копии дерева |
+| `just remote-up` / `remote-ps` / `remote-logs [svc] [строк]` / `remote-down` | Стенд `bb-agent`: `docker-compose.yml` + `compose.agent.yml`; образ сервера собирается на сервере из копии дерева |
 | `just remote-check` | Процессор, память, диск, версии Docker, Compose и buildx, mise на сервере |
-| `just compose-smoke` | Там, где запущен: собрать образ, поднять стек проектом `bb-smoke` (`127.0.0.1:18089`), прогнать smoke-тесты, убрать стек. Этот же рецепт — job `deploy` в CI |
+| `just compose-smoke` | Там, где запущен: собрать образ, поднять стек проектом `bb-smoke` (`127.0.0.1:18089`), прогнать smoke-тесты и «канарейку» журналов (`tools/deploy/log-canary.sh`), убрать стек. Этот же рецепт — job `deploy` в CI |
+
+**Журнал сервера.** Запросы сервер пишет не в журнал контейнера, а в файлы по дням в томе `server-logs`: 7 суток или 50 МБ, что наступит раньше (`docs/protocol/RETENTION.md` §6). В журнале контейнера остаются только строка запуска и фатальные ошибки. `just remote-logs` и `just test-logs` для сервиса `server` показывают и то и другое: сначала журнал контейнера, затем последние строки журнала запросов (`bebeberloga-server logs --tail N` внутри контейнера); второй аргумент — число строк, по умолчанию 200: `just remote-logs server 500`. Для остальных сервисов рецепты показывают журнал контейнера. «Канарейка» в `compose-smoke` проверяет, что адрес клиента, User-Agent, путь запроса и заголовки не попадают ни в один журнал стенда — в том числе когда сервер остановлен и Caddy отвечает 502.
 
 Порты стендов не пересекаются (уточняются в B7):
 

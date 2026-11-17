@@ -4,6 +4,8 @@
 package httpapi
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"net/http"
 	"runtime/debug"
 	"strings"
@@ -25,7 +27,6 @@ const BasePath = "/api/v1"
 // NewRouter собирает маршрутизатор: служебные middleware, трассировка и контракт под BasePath.
 func NewRouter(log zerolog.Logger, h api.StrictServerInterface, tp trace.TracerProvider) http.Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
 	// Адрес клиента за обратным прокси (X-Forwarded-For) здесь не подменяется: доверять
 	// заголовку можно только от известного прокси, это решается вместе с rate limit (B06).
 	r.Use(requestLogger(log))
@@ -69,13 +70,15 @@ func NewRouter(log zerolog.Logger, h api.StrictServerInterface, tp trace.TracerP
 const unmatchedRoute = "unmatched"
 
 // requestLogger кладёт журнал с request_id в контекст и пишет строку на каждый ответ.
+// Поля строки — только из ADR-0025 п. 3: метод, шаблон маршрута, код ответа, длительность,
+// id запроса. Новое поле — правкой ADR, не кодом.
 // В журнал и в имя span-а идёт шаблон маршрута (`/api/v1/health`), а не сырой путь:
 // параметры пути (коды приглашений и т. п.) не должны оседать в журналах и трассировке.
 func requestLogger(log zerolog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
-			l := log.With().Str("request_id", middleware.GetReqID(r.Context())).Logger()
+			l := log.With().Str("request_id", newRequestID()).Logger()
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 			ctx := l.WithContext(r.Context())
 			next.ServeHTTP(ww, r.WithContext(ctx))
@@ -90,11 +93,20 @@ func requestLogger(log zerolog.Logger) func(http.Handler) http.Handler {
 				Str("method", r.Method).
 				Str("route", route).
 				Int("status", ww.Status()).
-				Int("bytes", ww.BytesWritten()).
 				Dur("duration", time.Since(start)).
 				Msg("http")
 		})
 	}
+}
+
+// newRequestID — случайный id одного запроса: по нему связываются строки журнала (ADR-0025 п. 3).
+// Заголовок X-Request-Id клиента не используется: его значение попало бы в журнал как есть.
+func newRequestID() string {
+	var b [8]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(b[:])
 }
 
 // recoverer превращает панику обработчика в 500 с записью в журнал: паника в обработчике — баг,

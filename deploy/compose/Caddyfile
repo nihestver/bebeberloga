@@ -16,6 +16,23 @@
 	servers {
 		protocols h1 h2
 	}
+
+	# Журнал Caddy: журнала доступа нет (ADR-0025 п. 3), но при ошибке — например, пока сервер
+	# перезапускается и Caddy отвечает 502 — он пишет запрос в свой журнал целиком. Поля, по
+	# которым виден клиент, удаляются: адрес и порт, путь с параметрами, заголовки (ADR-0028 п. 1).
+	# Проверяет это «канарейка» в `just compose-smoke`.
+	log {
+		format filter {
+			wrap json
+			fields {
+				request>remote_ip delete
+				request>remote_port delete
+				request>client_ip delete
+				request>uri delete
+				request>headers delete
+			}
+		}
+	}
 }
 
 {$BB_SITE_ADDRESS} {

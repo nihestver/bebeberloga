@@ -19,6 +19,8 @@ x-defaults: &defaults
   restart: unless-stopped
   security_opt:
     - no-new-privileges:true
+  # Журналы контейнеров ротируются по размеру: истории активности пользователей в них нет
+  # (сервер пишет свою в отдельный том, Caddy журнал доступа не ведёт).
   logging:
     driver: json-file
     options:
@@ -36,6 +38,10 @@ services:
     environment:
       BB_HTTP_ADDR: ":8080"
       BB_LOG_LEVEL: ${BB_LOG_LEVEL:-info}
+      # Журнал сервера — файлы по дням в отдельном томе: 7 суток или 50 МБ (RETENTION.md §6).
+      # В журнал контейнера идут только строка запуска и фатальные ошибки. Читать:
+      # docker compose exec server bebeberloga-server logs --tail 200
+      BB_LOG_DIR: /var/log/bebeberloga
       # Пароли подставляются в URL как есть, поэтому в них допустимы только буквы и цифры (.env.example).
       BB_DATABASE_URL: postgres://bebeberloga:${POSTGRES_PASSWORD:?задай POSTGRES_PASSWORD в .env или запусти ./init-env.sh}@postgres:5432/bebeberloga?sslmode=disable
       BB_VALKEY_URL: redis://:${VALKEY_PASSWORD:?задай VALKEY_PASSWORD в .env или запусти ./init-env.sh}@valkey:6379/0
@@ -47,6 +53,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_healthy
+    volumes:
+      - server-logs:/var/log/bebeberloga
     networks:
       - edge
       - backend
@@ -157,6 +165,7 @@ services:
   # Образов здесь нет намеренно: без конфигурации сервисы не запускаются, а версии выберет B07.
 
 volumes:
+  server-logs:
   postgres-data:
   valkey-data:
   nats-data:
