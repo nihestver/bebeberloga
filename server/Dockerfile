@@ -23,6 +23,8 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go build -trimpath -buildvcs=false \
       -ldflags "-s -w -X github.com/nihestver/bebeberloga/server/internal/buildinfo.version=${VERSION}" \
       -o /out/bebeberloga-server ./cmd/bebeberloga-server
+# Пустой каталог журнала: в итоговом образе нет оболочки, создать его там нечем.
+RUN mkdir -p /out/log
 
 # distroless static: сертификаты CA, tzdata, /etc/passwd с пользователем nonroot (65532) — и больше ничего.
 FROM gcr.io/distroless/static-debian13:nonroot
@@ -32,6 +34,9 @@ LABEL org.opencontainers.image.title="bebeberloga-server" \
       org.opencontainers.image.source="https://github.com/nihestver/bebeberloga" \
       org.opencontainers.image.licenses="AGPL-3.0-or-later"
 COPY --from=build /out/bebeberloga-server /usr/local/bin/bebeberloga-server
+# Каталог журнала сервера (BB_LOG_DIR в docker-compose.yml). Новый том Docker наследует владельца
+# каталога из образа, поэтому сервер под пользователем nonroot может в него писать.
+COPY --from=build --chown=65532:65532 /out/log /var/log/bebeberloga
 USER 65532:65532
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/bebeberloga-server"]

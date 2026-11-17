@@ -7,13 +7,34 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	stdlog "log"
 	"net"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/rs/zerolog"
 
 	"github.com/nihestver/bebeberloga/server/internal/config"
 )
+
+// httpErrorWriter пишет сообщения net/http в журнал сервера. Без него они шли бы в stderr —
+// в журнал контейнера, который ротируется по размеру, а не по сроку (RETENTION.md §6).
+// net/http называет в некоторых сообщениях адрес удалённой стороны; адреса из текста убираются:
+// если сервер стоит без прокси, это адрес клиента (ADR-0028 п. 1).
+type httpErrorWriter struct{ log zerolog.Logger }
+
+func (w httpErrorWriter) Write(p []byte) (int, error) {
+	w.log.Warn().Str("source", "net/http").Msg(scrubAddrs(strings.TrimSpace(string(p))))
+	return len(p), nil
+}
+
+// addrPattern — адрес IPv4 или IPv6 в скобках, с портом или без.
+var addrPattern = regexp.MustCompile(`\[[0-9a-fA-F:.%]+\](:\d+)?|\b\d{1,3}(\.\d{1,3}){3}(:\d+)?\b`)
+
+func scrubAddrs(s string) string {
+	return addrPattern.ReplaceAllString(s, "<адрес>")
+}
 
 // Serve слушает cfg.Addr и обслуживает handler, пока ctx не отменят; затем завершает
 // открытые соединения в пределах cfg.ShutdownTimeout. ready (если задан) получает
@@ -25,7 +46,7 @@ func Serve(ctx context.Context, log zerolog.Logger, cfg config.HTTP, handler htt
 		ReadTimeout:       cfg.ReadTimeout,
 		WriteTimeout:      cfg.WriteTimeout,
 		IdleTimeout:       cfg.IdleTimeout,
-		ErrorLog:          nil, // ошибки net/http идут в stderr; собственный журнал запросов — в middleware
+		ErrorLog:          stdlog.New(httpErrorWriter{log: log}, "", 0),
 		BaseContext:       func(net.Listener) context.Context { return ctx },
 	}
 

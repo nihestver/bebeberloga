@@ -88,6 +88,23 @@ func TestLoadEnvDuration(t *testing.T) {
 	}
 }
 
+// TestLoadLogDir: каталог, срок и размер журнала задаются окружением; умолчания — 7 суток и 50 МБ
+// (RETENTION.md §6).
+func TestLoadLogDir(t *testing.T) {
+	t.Parallel()
+	def := Default().Log
+	if def.Dir != "" || def.MaxDays != 7 || def.MaxSizeMB != 50 {
+		t.Errorf("умолчания журнала: %+v", def)
+	}
+	cfg, err := Load("", envFrom(map[string]string{"BB_LOG_DIR": "/var/log/bebeberloga", "BB_LOG_MAX_DAYS": "3", "BB_LOG_MAX_SIZE_MB": "20"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Log.Dir != "/var/log/bebeberloga" || cfg.Log.MaxDays != 3 || cfg.Log.MaxSizeMB != 20 {
+		t.Errorf("журнал из env: %+v", cfg.Log)
+	}
+}
+
 func TestLoadErrors(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -102,6 +119,9 @@ func TestLoadErrors(t *testing.T) {
 		{name: "неизвестный уровень", env: map[string]string{"BB_LOG_LEVEL": "loud"}, want: "log.level"},
 		{name: "неизвестный формат", env: map[string]string{"BB_LOG_FORMAT": "xml"}, want: "log.format"},
 		{name: "нулевой таймаут", yaml: "health:\n  timeout: 0s\n", want: "health.timeout"},
+		{name: "нулевой срок журнала", env: map[string]string{"BB_LOG_MAX_DAYS": "0"}, want: "log.max_days"},
+		{name: "нулевой размер журнала", yaml: "log:\n  max_size_mb: 0\n", want: "log.max_size_mb"},
+		{name: "срок журнала не число", env: map[string]string{"BB_LOG_MAX_DAYS": "неделя"}, want: "BB_LOG_MAX_DAYS"},
 		{name: "схема базы", env: map[string]string{"BB_DATABASE_URL": "mysql://x/y"}, want: "database.url"},
 		{name: "схема valkey", env: map[string]string{"BB_VALKEY_URL": "http://x"}, want: "valkey.url"},
 		{name: "схема nats", env: map[string]string{"BB_NATS_URL": "postgres://x"}, want: "nats.url"},

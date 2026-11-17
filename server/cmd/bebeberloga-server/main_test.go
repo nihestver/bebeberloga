@@ -37,6 +37,8 @@ func TestRunDispatch(t *testing.T) {
 		{name: "migrate — заглушка", args: []string{"migrate"}, wantCode: 1, wantStderr: "ещё не реализовано"},
 		{name: "admin — заглушка", args: []string{"admin"}, wantCode: 1, wantStderr: "ещё не реализовано"},
 		{name: "migrate -h", args: []string{"migrate", "-h"}, wantCode: 0},
+		{name: "logs без каталога журнала", args: []string{"logs"}, wantCode: 1, wantStderr: "log.dir не задан"},
+		{name: "logs с неизвестным флагом", args: []string{"logs", "--follow"}, wantCode: 2},
 		{name: "serve с неизвестным флагом", args: []string{"serve", "--port=1"}, wantCode: 2},
 		{name: "serve с лишним аргументом", args: []string{"serve", "extra"}, wantCode: 2, wantStderr: "лишние аргументы"},
 		{name: "serve с несуществующим конфигом", args: []string{"serve", "--config", "/nonexistent/bb.yaml"}, wantCode: 1, wantStderr: "конфиг"},
@@ -156,6 +158,104 @@ func TestServeEndToEnd(t *testing.T) {
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("сервер не остановился")
+	}
+}
+
+// TestServeLogsToDir: с заданным log.dir журнал запросов пишется в файлы, в stdout остаётся
+// только строка запуска, а подкоманда logs показывает журнал (RETENTION.md §6).
+func TestServeLogsToDir(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfg := config.Default()
+	cfg.HTTP.Addr = "127.0.0.1:0"
+	cfg.Log.Dir = dir
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	addrCh := make(chan net.Addr, 1)
+	errCh := make(chan error, 1)
+	var stdout bytes.Buffer
+	go func() { errCh <- serve(ctx, cfg, &stdout, func(a net.Addr) { addrCh <- a }) }()
+	var addr net.Addr
+	select {
+	case addr = <-addrCh:
+	case err := <-errCh:
+		t.Fatalf("serve завершился: %v", err)
+	case <-time.After(10 * time.Second):
+		t.Fatal("сервер не стартовал")
+	}
+	resp, err := http.Get("http://" + addr.String() + "/api/v1/health")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	cancel()
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("serve: %v", err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("сервер не остановился")
+	}
+
+	lines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
+	if len(lines) != 1 || !strings.Contains(lines[0], "bebeberloga-server запускается") {
+		t.Errorf("в stdout должна быть только строка запуска: %q", stdout.String())
+	}
+	env := func(k string) (string, bool) {
+		if k == "BB_LOG_DIR" {
+			return dir, true
+		}
+		return "", false
+	}
+	var out, stderr bytes.Buffer
+	if code := run(context.Background(), []string{"logs", "--tail", "0"}, env, &out, &stderr); code != 0 {
+		t.Fatalf("logs: код %d, stderr %q", code, stderr.String())
+	}
+	for _, want := range []string{"bebeberloga-server запускается", `"route":"/api/v1/health"`, "bebeberloga-server остановлен"} {
+		if !strings.Contains(out.String(), want) {
+			t.Errorf("журнал без %s: %s", want, out.String())
+		}
+	}
+	// Строка запроса в настоящем журнале (NewLogger) — только поля ADR-0025 п. 3.
+	allowed := map[string]bool{"level": true, "time": true, "request_id": true, "method": true, "route": true, "status": true, "duration": true, "message": true}
+	for _, line := range strings.Split(strings.TrimSpace(out.String()), "\n") {
+		var fields map[string]any
+		if err := json.Unmarshal([]byte(line), &fields); err != nil {
+			t.Fatalf("строка журнала не JSON: %s", line)
+		}
+		if fields["message"] != "http" {
+			continue
+		}
+		for name := range fields {
+			if !allowed[name] {
+				t.Errorf("поле %q не из белого списка ADR-0025 п. 3: %s", name, line)
+			}
+		}
+	}
+	var last bytes.Buffer
+	if code := run(context.Background(), []string{"logs", "--tail", "1"}, env, &last, io.Discard); code != 0 || strings.Count(last.String(), "\n") != 1 {
+		t.Errorf("logs --tail 1: код %d, вывод %q", code, last.String())
+	}
+}
+
+// TestServeLogDirUnavailable: каталог журнала недоступен — сервер не стартует и говорит почему.
+func TestServeLogDirUnavailable(t *testing.T) {
+	t.Parallel()
+	file := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(file, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	env := func(k string) (string, bool) {
+		if k == "BB_LOG_DIR" {
+			return filepath.Join(file, "logs"), true
+		}
+		return "", false
+	}
+	var stderr bytes.Buffer
+	if code := run(context.Background(), []string{"serve"}, env, io.Discard, &stderr); code != 1 || !strings.Contains(stderr.String(), "журнал") {
+		t.Fatalf("code=%d stderr=%q", code, stderr.String())
 	}
 }
 

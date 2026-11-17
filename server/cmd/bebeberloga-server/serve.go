@@ -36,14 +36,38 @@ func cmdServe(ctx context.Context, args []string, lookupEnv func(string) (string
 	return serve(ctx, cfg, stdout, nil)
 }
 
-// serve собирает зависимости и обслуживает HTTP. ready сообщает адрес прослушивания (для тестов).
-func serve(ctx context.Context, cfg config.Config, logOut io.Writer, ready func(net.Addr)) error {
-	log, err := observability.NewLogger(cfg.Log, logOut)
+// cmdLogs печатает журнал сервера из каталога log.dir: в образе сервера нет оболочки, поэтому
+// читать файлы журнала больше нечем (`docker compose exec server bebeberloga-server logs`).
+func cmdLogs(args []string, lookupEnv func(string) (string, bool), stdout, stderr io.Writer) error {
+	fs := flag.NewFlagSet("logs", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	configPath := configFlags(fs, lookupEnv)
+	tail := fs.Int("tail", 200, "сколько последних строк показать; 0 — весь журнал")
+	if err := parseFlags(fs, args); err != nil {
+		return err
+	}
+	cfg, err := config.Load(*configPath, lookupEnv)
 	if err != nil {
 		return err
 	}
+	if cfg.Log.Dir == "" {
+		return errors.New("log.dir не задан: журнал сервера идёт в stdout")
+	}
+	return observability.TailLog(cfg.Log.Dir, *tail, stdout)
+}
+
+// serve собирает зависимости и обслуживает HTTP. ready сообщает адрес прослушивания (для тестов).
+func serve(ctx context.Context, cfg config.Config, logOut io.Writer, ready func(net.Addr)) error {
+	loggers, err := observability.NewLogger(cfg.Log, logOut)
+	if err != nil {
+		return err
+	}
+	defer loggers.Close() //nolint:errcheck // остановка; ошибка закрытия файла журнала ничего не меняет
+	log := loggers.Log
 	version := buildinfo.Version()
-	log.Info().Str("version", version).Msg("bebeberloga-server запускается")
+	// Строка запуска — единственная, что идёт и в stdout: остальной журнал при заданном
+	// log.dir пишется только в файлы по дням (RETENTION.md §6).
+	loggers.Startup.Info().Str("version", version).Msg("bebeberloga-server запускается")
 
 	tracing, err := observability.SetupTracing(ctx, log, version)
 	if err != nil {

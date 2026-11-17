@@ -140,6 +140,57 @@ func TestRequestLogged(t *testing.T) {
 	}
 }
 
+// TestRequestLogFieldsWhitelisted — «канарейка» журнала сервера (ADR-0025 п. 3 и п. 9, T71):
+// в строке запроса только поля белого списка, а то, что прислал клиент, — путь, параметры,
+// заголовки, включая X-Request-Id и User-Agent, — в журнал не попадает.
+func TestRequestLogFieldsWhitelisted(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	srv := newTestServer(t, health.Report{Status: bebeberlogav1.HealthState_HEALTH_STATE_OK}, &buf)
+	for _, path := range []string{"/api/v1/health?q=canary-query", "/api/v1/canary-unknown/canary-path"} {
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+path, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("X-Request-Id", "canary-request-id")
+		req.Header.Set("User-Agent", "canary-agent/1.0")
+		req.Header.Set("X-Forwarded-For", "203.0.113.77")
+		req.Header.Set("Authorization", "Bearer canary-token")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = resp.Body.Close()
+	}
+	logged := buf.String()
+	for _, canary := range []string{"canary", "203.0.113.77", "127.0.0.1"} {
+		if strings.Contains(logged, canary) {
+			t.Errorf("в журнал попало %q: %s", canary, logged)
+		}
+	}
+	allowed := map[string]bool{"level": true, "request_id": true, "method": true, "route": true, "status": true, "duration": true, "message": true}
+	ids := map[string]bool{}
+	for _, line := range strings.Split(strings.TrimSpace(logged), "\n") {
+		var fields map[string]any
+		if err := json.Unmarshal([]byte(line), &fields); err != nil {
+			t.Fatalf("строка журнала не JSON: %s", line)
+		}
+		for name := range fields {
+			if !allowed[name] {
+				t.Errorf("поле %q не из белого списка ADR-0025 п. 3: %s", name, line)
+			}
+		}
+		id, _ := fields["request_id"].(string)
+		if len(id) != 16 || ids[id] {
+			t.Errorf("request_id должен быть случайным и своим у каждого запроса: %q", id)
+		}
+		ids[id] = true
+	}
+	if len(ids) != 2 {
+		t.Errorf("ожидались две строки журнала, получено %d: %s", len(ids), logged)
+	}
+}
+
 func TestUnmatchedRouteNotLoggedRaw(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
