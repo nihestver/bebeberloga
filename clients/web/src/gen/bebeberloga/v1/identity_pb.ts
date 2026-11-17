@@ -337,8 +337,8 @@ export type PublicDevice = Message<"bebeberloga.v1.PublicDevice"> & {
   historyHpkeKeySignature: Uint8Array;
 
   /**
-   * Время удаления; запись удалённого устройства сервер хранит, пока существует аккаунт, — по
-   * ней проверяются подписи его сообщений в истории и записи канала (CRYPTO.md §6.2.8).
+   * Время удаления; запись удалённого устройства сервер хранит навсегда — по ней проверяются
+   * подписи его сообщений в истории и записи канала (CRYPTO.md §6.2.8).
    *
    * @generated from field: google.protobuf.Timestamp removed_at = 10;
    */
@@ -354,7 +354,7 @@ export const PublicDeviceSchema: GenMessage<PublicDevice> = /*@__PURE__*/
 
 /**
  * Ключ идентичности пользователя с периодом действия: история ключей после «Начать заново»
- * (CRYPTO.md §6.2.6). Сервер хранит её, пока существует аккаунт (CRYPTO.md §6.2.8).
+ * (CRYPTO.md §6.2.6). Сервер хранит её навсегда (CRYPTO.md §6.2.8).
  *
  * @generated from message bebeberloga.v1.IdentityKeyRecord
  */

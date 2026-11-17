@@ -695,8 +695,8 @@ type PublicDevice struct {
 	CreatedAt               *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	HistoryHpkeKey          []byte                 `protobuf:"bytes,8,opt,name=history_hpke_key,json=historyHpkeKey,proto3" json:"history_hpke_key,omitempty"`
 	HistoryHpkeKeySignature []byte                 `protobuf:"bytes,9,opt,name=history_hpke_key_signature,json=historyHpkeKeySignature,proto3" json:"history_hpke_key_signature,omitempty"`
-	// Время удаления; запись удалённого устройства сервер хранит, пока существует аккаунт, — по
-	// ней проверяются подписи его сообщений в истории и записи канала (CRYPTO.md §6.2.8).
+	// Время удаления; запись удалённого устройства сервер хранит навсегда — по ней проверяются
+	// подписи его сообщений в истории и записи канала (CRYPTO.md §6.2.8).
 	RemovedAt     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=removed_at,json=removedAt,proto3" json:"removed_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -803,7 +803,7 @@ func (x *PublicDevice) GetRemovedAt() *timestamppb.Timestamp {
 }
 
 // Ключ идентичности пользователя с периодом действия: история ключей после «Начать заново»
-// (CRYPTO.md §6.2.6). Сервер хранит её, пока существует аккаунт (CRYPTO.md §6.2.8).
+// (CRYPTO.md §6.2.6). Сервер хранит её навсегда (CRYPTO.md §6.2.8).
 type IdentityKeyRecord struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	IdentityPubkey []byte                 `protobuf:"bytes,1,opt,name=identity_pubkey,json=identityPubkey,proto3" json:"identity_pubkey,omitempty"`
