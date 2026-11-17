@@ -1171,7 +1171,7 @@ type ChannelMetaCarry struct {
 	SeenVersion uint64 `protobuf:"varint,2,opt,name=seen_version,json=seenVersion,proto3" json:"seen_version,omitempty"`
 	// Версия записи в `blob`. Не равна `ChannelMeta.latest_version` — DS запись не сохраняет, и
 	// канал остаётся без записи. 0 — записи текущей версии у коммитера нет или его устройство
-	// отвергло её по подписи.
+	// отвергло её по подписи или по порогу версий.
 	Version uint64 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
 	// SealedChannelMeta под поколением после commit-а; пусто при `version = 0`.
 	Blob          []byte `protobuf:"bytes,4,opt,name=blob,proto3" json:"blob,omitempty"`

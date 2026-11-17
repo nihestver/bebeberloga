@@ -216,7 +216,7 @@ message ChannelMetaCarry {
   uint64 seen_version = 2;
   // Версия записи в `blob`. Не равна `ChannelMeta.latest_version` — DS запись не сохраняет, и
   // канал остаётся без записи. 0 — записи текущей версии у коммитера нет или его устройство
-  // отвергло её по подписи.
+  // отвергло её по подписи или по порогу версий.
   uint64 version = 3;
   // SealedChannelMeta под поколением после commit-а; пусто при `version = 0`.
   bytes blob = 4;

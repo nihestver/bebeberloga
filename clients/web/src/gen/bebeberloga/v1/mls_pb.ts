@@ -474,7 +474,7 @@ export type ChannelMetaCarry = Message<"bebeberloga.v1.ChannelMetaCarry"> & {
   /**
    * Версия записи в `blob`. Не равна `ChannelMeta.latest_version` — DS запись не сохраняет, и
    * канал остаётся без записи. 0 — записи текущей версии у коммитера нет или его устройство
-   * отвергло её по подписи.
+   * отвергло её по подписи или по порогу версий.
    *
    * @generated from field: uint64 version = 3;
    */
