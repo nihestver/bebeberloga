@@ -3332,8 +3332,8 @@ func (x *CategoryDeleted) GetCategoryId() string {
 	return ""
 }
 
-// Канал создан. Записи с названием (`Channel.meta`) ещё нет: её приносит клиент создателя
-// вместе с группой чата канала, и тогда приходит ChannelUpdated (FLOWS/03).
+// Канал создан — сразу с группой чата и первой записью с названием (`Channel.meta`): клиент
+// создателя приносит их тем же запросом (FLOWS/03, CRYPTO.md §6.8.5).
 type ChannelCreated struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Channel       *Channel               `protobuf:"bytes,1,opt,name=channel,proto3" json:"channel,omitempty"`

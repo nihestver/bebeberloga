@@ -60,7 +60,8 @@ enum ErrorCode {
   ERROR_CODE_NO_KEY_PACKAGES = 202;
   // Запрос подтверждения устройства истёк (10 минут). HTTP 410.
   ERROR_CODE_VERIFICATION_EXPIRED = 203;
-  // Подпись ключа устройства не проходит проверку ключом идентичности. HTTP 400.
+  // Подпись не проходит проверку: подпись ключа устройства ключом идентичности или подпись вызова
+  // сервера при повторном входе на том же устройстве (CRYPTO.md §3.9). HTTP 400.
   ERROR_CODE_SIGNATURE_INVALID = 204;
   // KeyPackage не прошёл проверки DS: подписи, capabilities, срок, расширения листа, уникальность
   // HPKE-ключей, credential устройства (CRYPTO.md §1.4). HTTP 400.
@@ -78,12 +79,10 @@ enum ErrorCode {
   ERROR_CODE_COMMUNITY_LIMIT = 301;
   // Пользователь забанен в этом сообществе. HTTP 403.
   ERROR_CODE_BANNED = 302;
-  // Приглашение истекло. HTTP 410.
-  ERROR_CODE_INVITE_EXPIRED = 303;
-  // Приглашение отозвано. HTTP 410.
-  ERROR_CODE_INVITE_REVOKED = 304;
-  // У приглашения исчерпан лимит использований. HTTP 410.
-  ERROR_CODE_INVITE_USES_EXHAUSTED = 305;
+  // 303–305 — прежние коды истёкшего, отозванного и исчерпанного приглашения. Запись такого
+  // приглашения сервер удаляет сразу и отвечает NOT_FOUND (RETENTION.md §2.2).
+  reserved 303, 304, 305;
+  reserved "ERROR_CODE_INVITE_EXPIRED", "ERROR_CODE_INVITE_REVOKED", "ERROR_CODE_INVITE_USES_EXHAUSTED";
   // Приглашения сообщества приостановлены. HTTP 403.
   ERROR_CODE_INVITES_PAUSED = 306;
   // Нельзя действовать против участника с равной или старшей ролью. HTTP 403.

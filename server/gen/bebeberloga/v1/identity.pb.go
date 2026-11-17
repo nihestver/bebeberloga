@@ -248,6 +248,9 @@ func (PushTransport) EnumDescriptor() ([]byte, []int) {
 
 // Публичный профиль пользователя. Аватар — id иконки из встроенного набора
 // (FEATURES 3.1); своя картинка — S, поле `avatar_url` зарезервировано.
+// У удалённого аккаунта заполнены только `id` и `deleted`: имя, аватар, «о себе», ключ
+// идентичности и дата регистрации стёрты и не отдаются (RETENTION.md §2.1). Ключи идентичности
+// для проверки подписей остаются в истории ключей (`GET /users/{id}/identity-keys`).
 type User struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -684,6 +687,9 @@ func (x *Device) GetHistoryHpkeKeySignature() []byte {
 // Устройство чужого пользователя для вкладки «Безопасность» (SCREENS/09 §4.2):
 // тип, дата добавления, статус проверки и открытые ключи. Без города, времени
 // последнего входа и версии клиента — их видит только владелец (SCREENS/07 §6).
+// У удалённого устройства остаются только `id`, `user_id`, `signature_pubkey`,
+// `identity_signature`, `created_at` и `removed_at`: тип, статус проверки, ключ HPKE истории и
+// его подпись сервер стирает при удалении (RETENTION.md §2.1).
 type PublicDevice struct {
 	state                   protoimpl.MessageState `protogen:"open.v1"`
 	Id                      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1075,7 +1081,10 @@ type DeviceRegistration struct {
 	Platform      DevicePlatform `protobuf:"varint,2,opt,name=platform,proto3,enum=bebeberloga.v1.DevicePlatform" json:"platform,omitempty"`
 	ClientVersion string         `protobuf:"bytes,3,opt,name=client_version,json=clientVersion,proto3" json:"client_version,omitempty"`
 	// Id уже существующего устройства при повторном входе на нём.
-	DeviceId      string `protobuf:"bytes,4,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
+	DeviceId string `protobuf:"bytes,4,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
+	// Доказательство владения ключом подписи устройства `device_id`; обязательно вместе с ним.
+	// Без него по одному паролю можно было бы присвоить чужой id устройства (CRYPTO.md §3.9).
+	Proof         *DeviceLoginProof `protobuf:"bytes,5,opt,name=proof,proto3" json:"proof,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1138,6 +1147,68 @@ func (x *DeviceRegistration) GetDeviceId() string {
 	return ""
 }
 
+func (x *DeviceRegistration) GetProof() *DeviceLoginProof {
+	if x != nil {
+		return x.Proof
+	}
+	return nil
+}
+
+// Подпись вызова сервера ключом подписи устройства при повторном входе на нём.
+type DeviceLoginProof struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Вызов из `POST /auth/device-challenge` (32 байта); годится один раз.
+	Challenge []byte `protobuf:"bytes,1,opt,name=challenge,proto3" json:"challenge,omitempty"`
+	// AppSign(sk устройства, "device login", DeviceLoginContent), 64 байта (CRYPTO.md §3.9).
+	Signature     []byte `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeviceLoginProof) Reset() {
+	*x = DeviceLoginProof{}
+	mi := &file_bebeberloga_v1_identity_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeviceLoginProof) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeviceLoginProof) ProtoMessage() {}
+
+func (x *DeviceLoginProof) ProtoReflect() protoreflect.Message {
+	mi := &file_bebeberloga_v1_identity_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeviceLoginProof.ProtoReflect.Descriptor instead.
+func (*DeviceLoginProof) Descriptor() ([]byte, []int) {
+	return file_bebeberloga_v1_identity_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *DeviceLoginProof) GetChallenge() []byte {
+	if x != nil {
+		return x.Challenge
+	}
+	return nil
+}
+
+func (x *DeviceLoginProof) GetSignature() []byte {
+	if x != nil {
+		return x.Signature
+	}
+	return nil
+}
+
 // Сессия после входа или обновления токена.
 type Session struct {
 	state        protoimpl.MessageState `protogen:"open.v1"`
@@ -1153,7 +1224,7 @@ type Session struct {
 
 func (x *Session) Reset() {
 	*x = Session{}
-	mi := &file_bebeberloga_v1_identity_proto_msgTypes[10]
+	mi := &file_bebeberloga_v1_identity_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1165,7 +1236,7 @@ func (x *Session) String() string {
 func (*Session) ProtoMessage() {}
 
 func (x *Session) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_identity_proto_msgTypes[10]
+	mi := &file_bebeberloga_v1_identity_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1178,7 +1249,7 @@ func (x *Session) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Session.ProtoReflect.Descriptor instead.
 func (*Session) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_identity_proto_rawDescGZIP(), []int{10}
+	return file_bebeberloga_v1_identity_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *Session) GetAccessToken() string {
@@ -1230,7 +1301,7 @@ type KeyPackage struct {
 
 func (x *KeyPackage) Reset() {
 	*x = KeyPackage{}
-	mi := &file_bebeberloga_v1_identity_proto_msgTypes[11]
+	mi := &file_bebeberloga_v1_identity_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1242,7 +1313,7 @@ func (x *KeyPackage) String() string {
 func (*KeyPackage) ProtoMessage() {}
 
 func (x *KeyPackage) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_identity_proto_msgTypes[11]
+	mi := &file_bebeberloga_v1_identity_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1255,7 +1326,7 @@ func (x *KeyPackage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KeyPackage.ProtoReflect.Descriptor instead.
 func (*KeyPackage) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_identity_proto_rawDescGZIP(), []int{11}
+	return file_bebeberloga_v1_identity_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *KeyPackage) GetDeviceId() string {
@@ -1292,7 +1363,7 @@ type DeviceVerificationRequest struct {
 
 func (x *DeviceVerificationRequest) Reset() {
 	*x = DeviceVerificationRequest{}
-	mi := &file_bebeberloga_v1_identity_proto_msgTypes[12]
+	mi := &file_bebeberloga_v1_identity_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1304,7 +1375,7 @@ func (x *DeviceVerificationRequest) String() string {
 func (*DeviceVerificationRequest) ProtoMessage() {}
 
 func (x *DeviceVerificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_identity_proto_msgTypes[12]
+	mi := &file_bebeberloga_v1_identity_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1317,7 +1388,7 @@ func (x *DeviceVerificationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeviceVerificationRequest.ProtoReflect.Descriptor instead.
 func (*DeviceVerificationRequest) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_identity_proto_rawDescGZIP(), []int{12}
+	return file_bebeberloga_v1_identity_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *DeviceVerificationRequest) GetId() string {
@@ -1353,7 +1424,7 @@ type Relationship struct {
 
 func (x *Relationship) Reset() {
 	*x = Relationship{}
-	mi := &file_bebeberloga_v1_identity_proto_msgTypes[13]
+	mi := &file_bebeberloga_v1_identity_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1365,7 +1436,7 @@ func (x *Relationship) String() string {
 func (*Relationship) ProtoMessage() {}
 
 func (x *Relationship) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_identity_proto_msgTypes[13]
+	mi := &file_bebeberloga_v1_identity_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1378,7 +1449,7 @@ func (x *Relationship) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Relationship.ProtoReflect.Descriptor instead.
 func (*Relationship) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_identity_proto_rawDescGZIP(), []int{13}
+	return file_bebeberloga_v1_identity_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *Relationship) GetUser() *User {
@@ -1416,7 +1487,7 @@ type PushEndpoint struct {
 
 func (x *PushEndpoint) Reset() {
 	*x = PushEndpoint{}
-	mi := &file_bebeberloga_v1_identity_proto_msgTypes[14]
+	mi := &file_bebeberloga_v1_identity_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1428,7 +1499,7 @@ func (x *PushEndpoint) String() string {
 func (*PushEndpoint) ProtoMessage() {}
 
 func (x *PushEndpoint) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_identity_proto_msgTypes[14]
+	mi := &file_bebeberloga_v1_identity_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1441,7 +1512,7 @@ func (x *PushEndpoint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PushEndpoint.ProtoReflect.Descriptor instead.
 func (*PushEndpoint) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_identity_proto_rawDescGZIP(), []int{14}
+	return file_bebeberloga_v1_identity_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *PushEndpoint) GetDeviceId() string {
@@ -1557,12 +1628,16 @@ const file_bebeberloga_v1_identity_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"applies_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tappliesAt\"\xa8\x01\n" +
+	"applies_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tappliesAt\"\xe0\x01\n" +
 	"\x12DeviceRegistration\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12:\n" +
 	"\bplatform\x18\x02 \x01(\x0e2\x1e.bebeberloga.v1.DevicePlatformR\bplatform\x12%\n" +
 	"\x0eclient_version\x18\x03 \x01(\tR\rclientVersion\x12\x1b\n" +
-	"\tdevice_id\x18\x04 \x01(\tR\bdeviceId\"\xd3\x01\n" +
+	"\tdevice_id\x18\x04 \x01(\tR\bdeviceId\x126\n" +
+	"\x05proof\x18\x05 \x01(\v2 .bebeberloga.v1.DeviceLoginProofR\x05proof\"N\n" +
+	"\x10DeviceLoginProof\x12\x1c\n" +
+	"\tchallenge\x18\x01 \x01(\fR\tchallenge\x12\x1c\n" +
+	"\tsignature\x18\x02 \x01(\fR\tsignature\"\xd3\x01\n" +
 	"\aSession\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
 	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\x12\x1d\n" +
@@ -1626,7 +1701,7 @@ func file_bebeberloga_v1_identity_proto_rawDescGZIP() []byte {
 }
 
 var file_bebeberloga_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_bebeberloga_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_bebeberloga_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_bebeberloga_v1_identity_proto_goTypes = []any{
 	(DeviceVerification)(0),           // 0: bebeberloga.v1.DeviceVerification
 	(IdentityResetState)(0),           // 1: bebeberloga.v1.IdentityResetState
@@ -1642,51 +1717,53 @@ var file_bebeberloga_v1_identity_proto_goTypes = []any{
 	(*PersonalBackup)(nil),            // 11: bebeberloga.v1.PersonalBackup
 	(*IdentityResetRequest)(nil),      // 12: bebeberloga.v1.IdentityResetRequest
 	(*DeviceRegistration)(nil),        // 13: bebeberloga.v1.DeviceRegistration
-	(*Session)(nil),                   // 14: bebeberloga.v1.Session
-	(*KeyPackage)(nil),                // 15: bebeberloga.v1.KeyPackage
-	(*DeviceVerificationRequest)(nil), // 16: bebeberloga.v1.DeviceVerificationRequest
-	(*Relationship)(nil),              // 17: bebeberloga.v1.Relationship
-	(*PushEndpoint)(nil),              // 18: bebeberloga.v1.PushEndpoint
-	(*timestamppb.Timestamp)(nil),     // 19: google.protobuf.Timestamp
-	(DevicePlatform)(0),               // 20: bebeberloga.v1.DevicePlatform
+	(*DeviceLoginProof)(nil),          // 14: bebeberloga.v1.DeviceLoginProof
+	(*Session)(nil),                   // 15: bebeberloga.v1.Session
+	(*KeyPackage)(nil),                // 16: bebeberloga.v1.KeyPackage
+	(*DeviceVerificationRequest)(nil), // 17: bebeberloga.v1.DeviceVerificationRequest
+	(*Relationship)(nil),              // 18: bebeberloga.v1.Relationship
+	(*PushEndpoint)(nil),              // 19: bebeberloga.v1.PushEndpoint
+	(*timestamppb.Timestamp)(nil),     // 20: google.protobuf.Timestamp
+	(DevicePlatform)(0),               // 21: bebeberloga.v1.DevicePlatform
 }
 var file_bebeberloga_v1_identity_proto_depIdxs = []int32{
-	19, // 0: bebeberloga.v1.User.created_at:type_name -> google.protobuf.Timestamp
+	20, // 0: bebeberloga.v1.User.created_at:type_name -> google.protobuf.Timestamp
 	4,  // 1: bebeberloga.v1.Account.user:type_name -> bebeberloga.v1.User
-	19, // 2: bebeberloga.v1.Account.recovery_key_created_at:type_name -> google.protobuf.Timestamp
+	20, // 2: bebeberloga.v1.Account.recovery_key_created_at:type_name -> google.protobuf.Timestamp
 	4,  // 3: bebeberloga.v1.UserProfile.user:type_name -> bebeberloga.v1.User
 	2,  // 4: bebeberloga.v1.UserProfile.relationship:type_name -> bebeberloga.v1.RelationshipKind
-	19, // 5: bebeberloga.v1.UserProfile.friends_since:type_name -> google.protobuf.Timestamp
-	20, // 6: bebeberloga.v1.Device.platform:type_name -> bebeberloga.v1.DevicePlatform
+	20, // 5: bebeberloga.v1.UserProfile.friends_since:type_name -> google.protobuf.Timestamp
+	21, // 6: bebeberloga.v1.Device.platform:type_name -> bebeberloga.v1.DevicePlatform
 	0,  // 7: bebeberloga.v1.Device.verification:type_name -> bebeberloga.v1.DeviceVerification
-	19, // 8: bebeberloga.v1.Device.created_at:type_name -> google.protobuf.Timestamp
-	19, // 9: bebeberloga.v1.Device.last_seen_at:type_name -> google.protobuf.Timestamp
-	20, // 10: bebeberloga.v1.PublicDevice.platform:type_name -> bebeberloga.v1.DevicePlatform
+	20, // 8: bebeberloga.v1.Device.created_at:type_name -> google.protobuf.Timestamp
+	20, // 9: bebeberloga.v1.Device.last_seen_at:type_name -> google.protobuf.Timestamp
+	21, // 10: bebeberloga.v1.PublicDevice.platform:type_name -> bebeberloga.v1.DevicePlatform
 	0,  // 11: bebeberloga.v1.PublicDevice.verification:type_name -> bebeberloga.v1.DeviceVerification
-	19, // 12: bebeberloga.v1.PublicDevice.created_at:type_name -> google.protobuf.Timestamp
-	19, // 13: bebeberloga.v1.PublicDevice.removed_at:type_name -> google.protobuf.Timestamp
-	19, // 14: bebeberloga.v1.IdentityKeyRecord.valid_from:type_name -> google.protobuf.Timestamp
-	19, // 15: bebeberloga.v1.IdentityKeyRecord.valid_until:type_name -> google.protobuf.Timestamp
-	19, // 16: bebeberloga.v1.RecoveryPublicKey.created_at:type_name -> google.protobuf.Timestamp
-	19, // 17: bebeberloga.v1.PersonalBackup.created_at:type_name -> google.protobuf.Timestamp
+	20, // 12: bebeberloga.v1.PublicDevice.created_at:type_name -> google.protobuf.Timestamp
+	20, // 13: bebeberloga.v1.PublicDevice.removed_at:type_name -> google.protobuf.Timestamp
+	20, // 14: bebeberloga.v1.IdentityKeyRecord.valid_from:type_name -> google.protobuf.Timestamp
+	20, // 15: bebeberloga.v1.IdentityKeyRecord.valid_until:type_name -> google.protobuf.Timestamp
+	20, // 16: bebeberloga.v1.RecoveryPublicKey.created_at:type_name -> google.protobuf.Timestamp
+	20, // 17: bebeberloga.v1.PersonalBackup.created_at:type_name -> google.protobuf.Timestamp
 	1,  // 18: bebeberloga.v1.IdentityResetRequest.state:type_name -> bebeberloga.v1.IdentityResetState
-	19, // 19: bebeberloga.v1.IdentityResetRequest.created_at:type_name -> google.protobuf.Timestamp
-	19, // 20: bebeberloga.v1.IdentityResetRequest.applies_at:type_name -> google.protobuf.Timestamp
-	20, // 21: bebeberloga.v1.DeviceRegistration.platform:type_name -> bebeberloga.v1.DevicePlatform
-	5,  // 22: bebeberloga.v1.Session.account:type_name -> bebeberloga.v1.Account
-	7,  // 23: bebeberloga.v1.Session.device:type_name -> bebeberloga.v1.Device
-	7,  // 24: bebeberloga.v1.DeviceVerificationRequest.device:type_name -> bebeberloga.v1.Device
-	19, // 25: bebeberloga.v1.DeviceVerificationRequest.expires_at:type_name -> google.protobuf.Timestamp
-	4,  // 26: bebeberloga.v1.Relationship.user:type_name -> bebeberloga.v1.User
-	2,  // 27: bebeberloga.v1.Relationship.kind:type_name -> bebeberloga.v1.RelationshipKind
-	19, // 28: bebeberloga.v1.Relationship.since:type_name -> google.protobuf.Timestamp
-	3,  // 29: bebeberloga.v1.PushEndpoint.transport:type_name -> bebeberloga.v1.PushTransport
-	19, // 30: bebeberloga.v1.PushEndpoint.updated_at:type_name -> google.protobuf.Timestamp
-	31, // [31:31] is the sub-list for method output_type
-	31, // [31:31] is the sub-list for method input_type
-	31, // [31:31] is the sub-list for extension type_name
-	31, // [31:31] is the sub-list for extension extendee
-	0,  // [0:31] is the sub-list for field type_name
+	20, // 19: bebeberloga.v1.IdentityResetRequest.created_at:type_name -> google.protobuf.Timestamp
+	20, // 20: bebeberloga.v1.IdentityResetRequest.applies_at:type_name -> google.protobuf.Timestamp
+	21, // 21: bebeberloga.v1.DeviceRegistration.platform:type_name -> bebeberloga.v1.DevicePlatform
+	14, // 22: bebeberloga.v1.DeviceRegistration.proof:type_name -> bebeberloga.v1.DeviceLoginProof
+	5,  // 23: bebeberloga.v1.Session.account:type_name -> bebeberloga.v1.Account
+	7,  // 24: bebeberloga.v1.Session.device:type_name -> bebeberloga.v1.Device
+	7,  // 25: bebeberloga.v1.DeviceVerificationRequest.device:type_name -> bebeberloga.v1.Device
+	20, // 26: bebeberloga.v1.DeviceVerificationRequest.expires_at:type_name -> google.protobuf.Timestamp
+	4,  // 27: bebeberloga.v1.Relationship.user:type_name -> bebeberloga.v1.User
+	2,  // 28: bebeberloga.v1.Relationship.kind:type_name -> bebeberloga.v1.RelationshipKind
+	20, // 29: bebeberloga.v1.Relationship.since:type_name -> google.protobuf.Timestamp
+	3,  // 30: bebeberloga.v1.PushEndpoint.transport:type_name -> bebeberloga.v1.PushTransport
+	20, // 31: bebeberloga.v1.PushEndpoint.updated_at:type_name -> google.protobuf.Timestamp
+	32, // [32:32] is the sub-list for method output_type
+	32, // [32:32] is the sub-list for method input_type
+	32, // [32:32] is the sub-list for extension type_name
+	32, // [32:32] is the sub-list for extension extendee
+	0,  // [0:32] is the sub-list for field type_name
 }
 
 func init() { file_bebeberloga_v1_identity_proto_init() }
@@ -1701,7 +1778,7 @@ func file_bebeberloga_v1_identity_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_bebeberloga_v1_identity_proto_rawDesc), len(file_bebeberloga_v1_identity_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   15,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

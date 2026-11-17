@@ -681,8 +681,9 @@ type Channel struct {
 	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// Id последнего сообщения — для бейджей непрочитанного без запроса истории.
 	LastMessageId string `protobuf:"bytes,18,opt,name=last_message_id,json=lastMessageId,proto3" json:"last_message_id,omitempty"`
-	// Запись с названием и темой (TEXT, VOICE; GROUP_DM и THREAD — S). Не задана у DM и PERSONAL,
-	// пока клиент создателя не создал группу чата канала, и для устройства с опубликованным Remove
+	// Запись с названием и темой (TEXT, VOICE; GROUP_DM и THREAD — S). У канала сообщества она
+	// есть с создания: канал, группа чата и первая запись создаются одним запросом
+	// (CRYPTO.md §6.8.5). Не задана у DM и PERSONAL и для устройства с опубликованным Remove
 	// (CRYPTO.md §2.8): такое устройство показывает последнюю принятую запись. Клиент без ключа
 	// головного поколения показывает вместо названия заглушку (SCREENS/03).
 	Meta          *ChannelMeta `protobuf:"bytes,19,opt,name=meta,proto3" json:"meta,omitempty"`
@@ -1350,7 +1351,6 @@ type Invite struct {
 	// 0 — без лимита.
 	MaxUses uint32 `protobuf:"varint,7,opt,name=max_uses,json=maxUses,proto3" json:"max_uses,omitempty"`
 	Uses    uint32 `protobuf:"varint,8,opt,name=uses,proto3" json:"uses,omitempty"`
-	Revoked bool   `protobuf:"varint,9,opt,name=revoked,proto3" json:"revoked,omitempty"`
 	// Полная ссылка `https://<инстанс>/join/<code>`.
 	Url           string `protobuf:"bytes,10,opt,name=url,proto3" json:"url,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1441,13 +1441,6 @@ func (x *Invite) GetUses() uint32 {
 		return x.Uses
 	}
 	return 0
-}
-
-func (x *Invite) GetRevoked() bool {
-	if x != nil {
-		return x.Revoked
-	}
-	return false
 }
 
 func (x *Invite) GetUrl() string {
@@ -2229,7 +2222,7 @@ const file_bebeberloga_v1_community_proto_rawDesc = "" +
 	"\arole_id\x18\x02 \x01(\tH\x00R\x06roleId\x12\x19\n" +
 	"\auser_id\x18\x03 \x01(\tH\x00R\x06userId\x12\x1b\n" +
 	"\tallow_see\x18\x04 \x01(\bR\ballowSeeB\t\n" +
-	"\asubject\"\xce\x02\n" +
+	"\asubject\"\xc3\x02\n" +
 	"\x06Invite\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12!\n" +
 	"\fcommunity_id\x18\x02 \x01(\tR\vcommunityId\x12\x1d\n" +
@@ -2242,10 +2235,10 @@ const file_bebeberloga_v1_community_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12\x19\n" +
 	"\bmax_uses\x18\a \x01(\rR\amaxUses\x12\x12\n" +
-	"\x04uses\x18\b \x01(\rR\x04uses\x12\x18\n" +
-	"\arevoked\x18\t \x01(\bR\arevoked\x12\x10\n" +
+	"\x04uses\x18\b \x01(\rR\x04uses\x12\x10\n" +
 	"\x03url\x18\n" +
-	" \x01(\tR\x03url\"\xc0\x03\n" +
+	" \x01(\tR\x03urlJ\x04\b\t\x10\n" +
+	"R\arevoked\"\xc0\x03\n" +
 	"\rInvitePreview\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12%\n" +
 	"\x0ecommunity_name\x18\x02 \x01(\tR\rcommunityName\x12*\n" +
