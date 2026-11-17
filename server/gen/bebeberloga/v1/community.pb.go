@@ -36,8 +36,8 @@ const (
 	ChannelType_CHANNEL_TYPE_UNSPECIFIED ChannelType = 0
 	// Текстовый канал сообщества; одна MLS-группа.
 	ChannelType_CHANNEL_TYPE_TEXT ChannelType = 1
-	// Голосовой канал; у него постоянная MLS-группа чата (создаётся первым сообщением)
-	// и короткоживущая группа звонка (создаётся первым вошедшим).
+	// Голосовой канал; у него постоянная MLS-группа чата (создаётся вместе с каналом: без неё
+	// у названия нет ключа, ADR-0026) и короткоживущая группа звонка (создаётся первым вошедшим).
 	ChannelType_CHANNEL_TYPE_VOICE ChannelType = 2
 	// Личные сообщения 1:1; `community_id` пуст, участники — в `participant_ids`.
 	ChannelType_CHANNEL_TYPE_DM ChannelType = 3
@@ -540,6 +540,117 @@ func (x *Category) GetPrivate() bool {
 	return false
 }
 
+// Запись канала с названием и темой и её открытые поля (CRYPTO.md §6.8). Название и тема —
+// содержимое: сервер хранит их только зашифрованными подключом головного поколения ключа истории
+// канала и не читает (ADR-0026). Открытой строки названия или темы в контракте нет.
+type ChannelMeta struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Канал, чья это запись.
+	ChannelId string `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	// Поколение ключа истории, подключом которого зашифрован `blob`; 0 — записи сейчас нет.
+	Generation uint32 `protobuf:"varint,2,opt,name=generation,proto3" json:"generation,omitempty"`
+	// Версия записи в `blob` — всегда `latest_version`; 0 — записи сейчас нет.
+	Version uint64 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+	// SealedChannelMeta (CRYPTO.md §6.8.1): название, тема, автор правки и подпись его устройства,
+	// зашифрованные XChaCha20-Poly1305; длина кратна 256 байтам, не больше 8 КиБ. Пусто — записи
+	// сейчас нет: её не отдал коммитер, начавший поколение, и ещё не записала правка.
+	Blob []byte `protobuf:"bytes,4,opt,name=blob,proto3" json:"blob,omitempty"`
+	// Хэш записи текущей версии (SHA-256 с солью внутри записи, 32 байта). Задан и тогда, когда
+	// `blob` стёрт; пусто — записи у канала ещё не было. Сервер запомнил его, когда принял эту
+	// версию от участника с правом `channel.edit`, и хранит хэш только текущей версии; клиент
+	// сверяет с ним расшифрованную запись, а автор узнаёт по нему свою правку (CRYPTO.md §6.8.2).
+	RecordHash []byte `protobuf:"bytes,5,opt,name=record_hash,json=recordHash,proto3" json:"record_hash,omitempty"`
+	// Когда сервер принял текущую версию. Задано и тогда, когда `blob` стёрт; не задано — записи
+	// у канала ещё не было.
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// Номер текущей версии — наибольшей, принятой правкой `PUT /channels/{id}/meta`; 0 — записи у
+	// канала ещё не было. Следующая правка берёт версию больше неё, но не больше чем на 65 536;
+	// коммитер, начинающий поколение, называет её в `ChannelMetaCarry.seen_version`. Задан и тогда,
+	// когда записи сейчас нет.
+	LatestVersion uint64 `protobuf:"varint,7,opt,name=latest_version,json=latestVersion,proto3" json:"latest_version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChannelMeta) Reset() {
+	*x = ChannelMeta{}
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelMeta) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelMeta) ProtoMessage() {}
+
+func (x *ChannelMeta) ProtoReflect() protoreflect.Message {
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChannelMeta.ProtoReflect.Descriptor instead.
+func (*ChannelMeta) Descriptor() ([]byte, []int) {
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ChannelMeta) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *ChannelMeta) GetGeneration() uint32 {
+	if x != nil {
+		return x.Generation
+	}
+	return 0
+}
+
+func (x *ChannelMeta) GetVersion() uint64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *ChannelMeta) GetBlob() []byte {
+	if x != nil {
+		return x.Blob
+	}
+	return nil
+}
+
+func (x *ChannelMeta) GetRecordHash() []byte {
+	if x != nil {
+		return x.RecordHash
+	}
+	return nil
+}
+
+func (x *ChannelMeta) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *ChannelMeta) GetLatestVersion() uint64 {
+	if x != nil {
+		return x.LatestVersion
+	}
+	return 0
+}
+
 // Канал любого типа, включая ЛС: история, закрепы и read-state адресуются
 // одинаково через `/channels/{id}`.
 type Channel struct {
@@ -550,13 +661,7 @@ type Channel struct {
 	CommunityId string `protobuf:"bytes,3,opt,name=community_id,json=communityId,proto3" json:"community_id,omitempty"`
 	// Пусто, если канал вне категории.
 	CategoryId string `protobuf:"bytes,4,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	// Для TEXT/VOICE: нормализованное имя (строчные, дефисы, без пробелов), 1–64 символа.
-	// Для GROUP_DM — имя группы (S). Для DM пусто. Для приватной THREAD (S) пусто: название
-	// приватной ветки — содержимое, оно передаётся внутри группы (ARCHITECTURE.md §4.1).
-	Name string `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
-	// Тема канала, до 1024 символов (SCREENS/11 §3.1).
-	Topic    string `protobuf:"bytes,6,opt,name=topic,proto3" json:"topic,omitempty"`
-	Position uint32 `protobuf:"varint,7,opt,name=position,proto3" json:"position,omitempty"`
+	Position   uint32 `protobuf:"varint,7,opt,name=position,proto3" json:"position,omitempty"`
 	// Канал виден только по явным разрешениям `channel.see` (PERMISSIONS.md §3).
 	Private           bool              `protobuf:"varint,8,opt,name=private,proto3" json:"private,omitempty"`
 	HistoryVisibility HistoryVisibility `protobuf:"varint,9,opt,name=history_visibility,json=historyVisibility,proto3,enum=bebeberloga.v1.HistoryVisibility" json:"history_visibility,omitempty"`
@@ -576,13 +681,18 @@ type Channel struct {
 	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// Id последнего сообщения — для бейджей непрочитанного без запроса истории.
 	LastMessageId string `protobuf:"bytes,18,opt,name=last_message_id,json=lastMessageId,proto3" json:"last_message_id,omitempty"`
+	// Запись с названием и темой (TEXT, VOICE; GROUP_DM и THREAD — S). Не задана у DM и PERSONAL,
+	// пока клиент создателя не создал группу чата канала, и для устройства с опубликованным Remove
+	// (CRYPTO.md §2.8): такое устройство показывает последнюю принятую запись. Клиент без ключа
+	// головного поколения показывает вместо названия заглушку (SCREENS/03).
+	Meta          *ChannelMeta `protobuf:"bytes,19,opt,name=meta,proto3" json:"meta,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Channel) Reset() {
 	*x = Channel{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[2]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -594,7 +704,7 @@ func (x *Channel) String() string {
 func (*Channel) ProtoMessage() {}
 
 func (x *Channel) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[2]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -607,7 +717,7 @@ func (x *Channel) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Channel.ProtoReflect.Descriptor instead.
 func (*Channel) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{2}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Channel) GetId() string {
@@ -634,20 +744,6 @@ func (x *Channel) GetCommunityId() string {
 func (x *Channel) GetCategoryId() string {
 	if x != nil {
 		return x.CategoryId
-	}
-	return ""
-}
-
-func (x *Channel) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *Channel) GetTopic() string {
-	if x != nil {
-		return x.Topic
 	}
 	return ""
 }
@@ -736,15 +832,22 @@ func (x *Channel) GetLastMessageId() string {
 	return ""
 }
 
+func (x *Channel) GetMeta() *ChannelMeta {
+	if x != nil {
+		return x.Meta
+	}
+	return nil
+}
+
 // Приватный канал, который владелец или администратор не видит, но может добавить
-// в него себя (PERMISSIONS.md §3 п. 2: «🔒 закрытый для тебя»). Только имя и место в списке.
+// в него себя (PERMISSIONS.md §3 п. 2: «🔒 закрытый для тебя»). Только место в списке: названия
+// нет — пока они не в канале, ключа от названия у них нет (ADR-0026 п. 6).
 type LockedChannel struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	CommunityId   string                 `protobuf:"bytes,2,opt,name=community_id,json=communityId,proto3" json:"community_id,omitempty"`
 	CategoryId    string                 `protobuf:"bytes,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Type          ChannelType            `protobuf:"varint,4,opt,name=type,proto3,enum=bebeberloga.v1.ChannelType" json:"type,omitempty"`
-	Name          string                 `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
 	Position      uint32                 `protobuf:"varint,6,opt,name=position,proto3" json:"position,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -752,7 +855,7 @@ type LockedChannel struct {
 
 func (x *LockedChannel) Reset() {
 	*x = LockedChannel{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[3]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -764,7 +867,7 @@ func (x *LockedChannel) String() string {
 func (*LockedChannel) ProtoMessage() {}
 
 func (x *LockedChannel) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[3]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -777,7 +880,7 @@ func (x *LockedChannel) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LockedChannel.ProtoReflect.Descriptor instead.
 func (*LockedChannel) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{3}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *LockedChannel) GetId() string {
@@ -806,13 +909,6 @@ func (x *LockedChannel) GetType() ChannelType {
 		return x.Type
 	}
 	return ChannelType_CHANNEL_TYPE_UNSPECIFIED
-}
-
-func (x *LockedChannel) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
 }
 
 func (x *LockedChannel) GetPosition() uint32 {
@@ -844,7 +940,7 @@ type Role struct {
 
 func (x *Role) Reset() {
 	*x = Role{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[4]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -856,7 +952,7 @@ func (x *Role) String() string {
 func (*Role) ProtoMessage() {}
 
 func (x *Role) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[4]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -869,7 +965,7 @@ func (x *Role) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Role.ProtoReflect.Descriptor instead.
 func (*Role) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{4}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Role) GetId() string {
@@ -951,7 +1047,7 @@ type Member struct {
 
 func (x *Member) Reset() {
 	*x = Member{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[5]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -963,7 +1059,7 @@ func (x *Member) String() string {
 func (*Member) ProtoMessage() {}
 
 func (x *Member) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[5]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -976,7 +1072,7 @@ func (x *Member) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Member.ProtoReflect.Descriptor instead.
 func (*Member) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{5}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Member) GetCommunityId() string {
@@ -1031,7 +1127,7 @@ type EffectivePermissions struct {
 
 func (x *EffectivePermissions) Reset() {
 	*x = EffectivePermissions{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[6]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1043,7 +1139,7 @@ func (x *EffectivePermissions) String() string {
 func (*EffectivePermissions) ProtoMessage() {}
 
 func (x *EffectivePermissions) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[6]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1056,7 +1152,7 @@ func (x *EffectivePermissions) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EffectivePermissions.ProtoReflect.Descriptor instead.
 func (*EffectivePermissions) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{6}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *EffectivePermissions) GetCommunityId() string {
@@ -1097,7 +1193,7 @@ type ChannelPermissions struct {
 
 func (x *ChannelPermissions) Reset() {
 	*x = ChannelPermissions{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[7]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1109,7 +1205,7 @@ func (x *ChannelPermissions) String() string {
 func (*ChannelPermissions) ProtoMessage() {}
 
 func (x *ChannelPermissions) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[7]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1122,7 +1218,7 @@ func (x *ChannelPermissions) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChannelPermissions.ProtoReflect.Descriptor instead.
 func (*ChannelPermissions) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{7}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ChannelPermissions) GetChannelId() string {
@@ -1156,7 +1252,7 @@ type ChannelAccess struct {
 
 func (x *ChannelAccess) Reset() {
 	*x = ChannelAccess{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[8]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1168,7 +1264,7 @@ func (x *ChannelAccess) String() string {
 func (*ChannelAccess) ProtoMessage() {}
 
 func (x *ChannelAccess) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[8]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1181,7 +1277,7 @@ func (x *ChannelAccess) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChannelAccess.ProtoReflect.Descriptor instead.
 func (*ChannelAccess) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{8}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ChannelAccess) GetChannelId() string {
@@ -1263,7 +1359,7 @@ type Invite struct {
 
 func (x *Invite) Reset() {
 	*x = Invite{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[9]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1275,7 +1371,7 @@ func (x *Invite) String() string {
 func (*Invite) ProtoMessage() {}
 
 func (x *Invite) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[9]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1288,7 +1384,7 @@ func (x *Invite) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Invite.ProtoReflect.Descriptor instead.
 func (*Invite) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{9}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Invite) GetCode() string {
@@ -1362,12 +1458,12 @@ func (x *Invite) GetUrl() string {
 }
 
 // Превью приглашения для неавторизованного или не вступившего пользователя (SCREENS/06 §2.2).
+// Канал превью не называет: ключа от названия у приглашённого нет (ADR-0026 п. 6).
 type InvitePreview struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	Code               string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
 	CommunityName      string                 `protobuf:"bytes,2,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
 	CommunityIconId    string                 `protobuf:"bytes,3,opt,name=community_icon_id,json=communityIconId,proto3" json:"community_icon_id,omitempty"`
-	ChannelName        string                 `protobuf:"bytes,4,opt,name=channel_name,json=channelName,proto3" json:"channel_name,omitempty"`
 	ChannelType        ChannelType            `protobuf:"varint,5,opt,name=channel_type,json=channelType,proto3,enum=bebeberloga.v1.ChannelType" json:"channel_type,omitempty"`
 	MemberCount        uint32                 `protobuf:"varint,6,opt,name=member_count,json=memberCount,proto3" json:"member_count,omitempty"`
 	OnlineCount        uint32                 `protobuf:"varint,7,opt,name=online_count,json=onlineCount,proto3" json:"online_count,omitempty"`
@@ -1381,7 +1477,7 @@ type InvitePreview struct {
 
 func (x *InvitePreview) Reset() {
 	*x = InvitePreview{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[10]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1393,7 +1489,7 @@ func (x *InvitePreview) String() string {
 func (*InvitePreview) ProtoMessage() {}
 
 func (x *InvitePreview) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[10]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1406,7 +1502,7 @@ func (x *InvitePreview) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InvitePreview.ProtoReflect.Descriptor instead.
 func (*InvitePreview) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{10}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *InvitePreview) GetCode() string {
@@ -1426,13 +1522,6 @@ func (x *InvitePreview) GetCommunityName() string {
 func (x *InvitePreview) GetCommunityIconId() string {
 	if x != nil {
 		return x.CommunityIconId
-	}
-	return ""
-}
-
-func (x *InvitePreview) GetChannelName() string {
-	if x != nil {
-		return x.ChannelName
 	}
 	return ""
 }
@@ -1496,7 +1585,7 @@ type Ban struct {
 
 func (x *Ban) Reset() {
 	*x = Ban{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[11]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1508,7 +1597,7 @@ func (x *Ban) String() string {
 func (*Ban) ProtoMessage() {}
 
 func (x *Ban) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[11]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1521,7 +1610,7 @@ func (x *Ban) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Ban.ProtoReflect.Descriptor instead.
 func (*Ban) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{11}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Ban) GetCommunityId() string {
@@ -1594,7 +1683,7 @@ type VoicePresence struct {
 
 func (x *VoicePresence) Reset() {
 	*x = VoicePresence{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[12]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1606,7 +1695,7 @@ func (x *VoicePresence) String() string {
 func (*VoicePresence) ProtoMessage() {}
 
 func (x *VoicePresence) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[12]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1619,7 +1708,7 @@ func (x *VoicePresence) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VoicePresence.ProtoReflect.Descriptor instead.
 func (*VoicePresence) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{12}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *VoicePresence) GetChannelId() string {
@@ -1700,7 +1789,8 @@ func (x *VoicePresence) GetJoinedAt() *timestamppb.Timestamp {
 }
 
 // Настройки уведомлений пользователя для сообщества или канала. Хранятся на сервере
-// и синхронизируются между устройствами (OPEN-QUESTIONS №6).
+// и синхронизируются между устройствами (OPEN-QUESTIONS №6); применяет их клиент: сервер не
+// знает, кого упомянули (ADR-0027 п. 8).
 type NotificationSettings struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Scope:
@@ -1723,7 +1813,7 @@ type NotificationSettings struct {
 
 func (x *NotificationSettings) Reset() {
 	*x = NotificationSettings{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[13]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1735,7 +1825,7 @@ func (x *NotificationSettings) String() string {
 func (*NotificationSettings) ProtoMessage() {}
 
 func (x *NotificationSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[13]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1748,7 +1838,7 @@ func (x *NotificationSettings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotificationSettings.ProtoReflect.Descriptor instead.
 func (*NotificationSettings) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{13}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *NotificationSettings) GetScope() isNotificationSettings_Scope {
@@ -1832,15 +1922,17 @@ type ReadState struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	ChannelId         string                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
 	LastReadMessageId string                 `protobuf:"bytes,2,opt,name=last_read_message_id,json=lastReadMessageId,proto3" json:"last_read_message_id,omitempty"`
-	// Число непрочитанных сообщений с упоминанием меня (по mention-hint).
-	MentionCount  uint32 `protobuf:"varint,3,opt,name=mention_count,json=mentionCount,proto3" json:"mention_count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Число кандидатов: непрочитанных чужих сообщений канала, у которых есть хинты упоминаний или
+	// «@все» / «@здесь». Упоминания среди них клиент считает сам (`GET /users/me/mention-candidates`,
+	// CRYPTO.md §6.4); пока не посчитал, канал показывает обычный бейдж непрочитанного.
+	MentionCandidateCount uint32 `protobuf:"varint,4,opt,name=mention_candidate_count,json=mentionCandidateCount,proto3" json:"mention_candidate_count,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ReadState) Reset() {
 	*x = ReadState{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[14]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1852,7 +1944,7 @@ func (x *ReadState) String() string {
 func (*ReadState) ProtoMessage() {}
 
 func (x *ReadState) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[14]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1865,7 +1957,7 @@ func (x *ReadState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadState.ProtoReflect.Descriptor instead.
 func (*ReadState) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{14}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ReadState) GetChannelId() string {
@@ -1882,9 +1974,9 @@ func (x *ReadState) GetLastReadMessageId() string {
 	return ""
 }
 
-func (x *ReadState) GetMentionCount() uint32 {
+func (x *ReadState) GetMentionCandidateCount() uint32 {
 	if x != nil {
-		return x.MentionCount
+		return x.MentionCandidateCount
 	}
 	return 0
 }
@@ -1903,7 +1995,7 @@ type GroupSummary struct {
 
 func (x *GroupSummary) Reset() {
 	*x = GroupSummary{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[15]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1915,7 +2007,7 @@ func (x *GroupSummary) String() string {
 func (*GroupSummary) ProtoMessage() {}
 
 func (x *GroupSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[15]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1928,7 +2020,7 @@ func (x *GroupSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GroupSummary.ProtoReflect.Descriptor instead.
 func (*GroupSummary) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{15}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GroupSummary) GetChannelId() string {
@@ -1981,7 +2073,7 @@ type CommunityRemoval struct {
 
 func (x *CommunityRemoval) Reset() {
 	*x = CommunityRemoval{}
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[16]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1993,7 +2085,7 @@ func (x *CommunityRemoval) String() string {
 func (*CommunityRemoval) ProtoMessage() {}
 
 func (x *CommunityRemoval) ProtoReflect() protoreflect.Message {
-	mi := &file_bebeberloga_v1_community_proto_msgTypes[16]
+	mi := &file_bebeberloga_v1_community_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2006,7 +2098,7 @@ func (x *CommunityRemoval) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommunityRemoval.ProtoReflect.Descriptor instead.
 func (*CommunityRemoval) Descriptor() ([]byte, []int) {
-	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{16}
+	return file_bebeberloga_v1_community_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *CommunityRemoval) GetCommunityId() string {
@@ -2061,15 +2153,26 @@ const file_bebeberloga_v1_community_proto_rawDesc = "" +
 	"\fcommunity_id\x18\x02 \x01(\tR\vcommunityId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1a\n" +
 	"\bposition\x18\x04 \x01(\rR\bposition\x12\x18\n" +
-	"\aprivate\x18\x05 \x01(\bR\aprivate\"\xaf\x05\n" +
+	"\aprivate\x18\x05 \x01(\bR\aprivate\"\xfd\x01\n" +
+	"\vChannelMeta\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x1e\n" +
+	"\n" +
+	"generation\x18\x02 \x01(\rR\n" +
+	"generation\x12\x18\n" +
+	"\aversion\x18\x03 \x01(\x04R\aversion\x12\x12\n" +
+	"\x04blob\x18\x04 \x01(\fR\x04blob\x12\x1f\n" +
+	"\vrecord_hash\x18\x05 \x01(\fR\n" +
+	"recordHash\x129\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12%\n" +
+	"\x0elatest_version\x18\a \x01(\x04R\rlatestVersion\"\xcf\x05\n" +
 	"\aChannel\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12/\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x1b.bebeberloga.v1.ChannelTypeR\x04type\x12!\n" +
 	"\fcommunity_id\x18\x03 \x01(\tR\vcommunityId\x12\x1f\n" +
 	"\vcategory_id\x18\x04 \x01(\tR\n" +
-	"categoryId\x12\x12\n" +
-	"\x04name\x18\x05 \x01(\tR\x04name\x12\x14\n" +
-	"\x05topic\x18\x06 \x01(\tR\x05topic\x12\x1a\n" +
+	"categoryId\x12\x1a\n" +
 	"\bposition\x18\a \x01(\rR\bposition\x12\x18\n" +
 	"\aprivate\x18\b \x01(\bR\aprivate\x12P\n" +
 	"\x12history_visibility\x18\t \x01(\x0e2!.bebeberloga.v1.HistoryVisibilityR\x11historyVisibility\x12 \n" +
@@ -2084,15 +2187,15 @@ const file_bebeberloga_v1_community_proto_rawDesc = "" +
 	"\rcall_group_id\x18\x10 \x01(\tR\vcallGroupId\x129\n" +
 	"\n" +
 	"created_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12&\n" +
-	"\x0flast_message_id\x18\x12 \x01(\tR\rlastMessageId\"\xc4\x01\n" +
+	"\x0flast_message_id\x18\x12 \x01(\tR\rlastMessageId\x12/\n" +
+	"\x04meta\x18\x13 \x01(\v2\x1b.bebeberloga.v1.ChannelMetaR\x04metaJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x04nameR\x05topic\"\xbc\x01\n" +
 	"\rLockedChannel\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
 	"\fcommunity_id\x18\x02 \x01(\tR\vcommunityId\x12\x1f\n" +
 	"\vcategory_id\x18\x03 \x01(\tR\n" +
 	"categoryId\x12/\n" +
-	"\x04type\x18\x04 \x01(\x0e2\x1b.bebeberloga.v1.ChannelTypeR\x04type\x12\x12\n" +
-	"\x04name\x18\x05 \x01(\tR\x04name\x12\x1a\n" +
-	"\bposition\x18\x06 \x01(\rR\bposition\"\xbd\x02\n" +
+	"\x04type\x18\x04 \x01(\x0e2\x1b.bebeberloga.v1.ChannelTypeR\x04type\x12\x1a\n" +
+	"\bposition\x18\x06 \x01(\rR\bpositionJ\x04\b\x05\x10\x06R\x04name\"\xbd\x02\n" +
 	"\x04Role\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
 	"\fcommunity_id\x18\x02 \x01(\tR\vcommunityId\x12\x12\n" +
@@ -2142,12 +2245,11 @@ const file_bebeberloga_v1_community_proto_rawDesc = "" +
 	"\x04uses\x18\b \x01(\rR\x04uses\x12\x18\n" +
 	"\arevoked\x18\t \x01(\bR\arevoked\x12\x10\n" +
 	"\x03url\x18\n" +
-	" \x01(\tR\x03url\"\xcf\x03\n" +
+	" \x01(\tR\x03url\"\xc0\x03\n" +
 	"\rInvitePreview\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12%\n" +
 	"\x0ecommunity_name\x18\x02 \x01(\tR\rcommunityName\x12*\n" +
-	"\x11community_icon_id\x18\x03 \x01(\tR\x0fcommunityIconId\x12!\n" +
-	"\fchannel_name\x18\x04 \x01(\tR\vchannelName\x12>\n" +
+	"\x11community_icon_id\x18\x03 \x01(\tR\x0fcommunityIconId\x12>\n" +
 	"\fchannel_type\x18\x05 \x01(\x0e2\x1b.bebeberloga.v1.ChannelTypeR\vchannelType\x12!\n" +
 	"\fmember_count\x18\x06 \x01(\rR\vmemberCount\x12!\n" +
 	"\fonline_count\x18\a \x01(\rR\vonlineCount\x12L\n" +
@@ -2155,7 +2257,7 @@ const file_bebeberloga_v1_community_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12%\n" +
 	"\x0ealready_member\x18\n" +
-	" \x01(\bR\ralreadyMember\"\x8d\x02\n" +
+	" \x01(\bR\ralreadyMemberJ\x04\b\x04\x10\x05R\fchannel_name\"\x8d\x02\n" +
 	"\x03Ban\x12!\n" +
 	"\fcommunity_id\x18\x01 \x01(\tR\vcommunityId\x12(\n" +
 	"\x04user\x18\x02 \x01(\v2\x14.bebeberloga.v1.UserR\x04user\x12!\n" +
@@ -2189,12 +2291,12 @@ const file_bebeberloga_v1_community_proto_rawDesc = "" +
 	"\x05level\x18\x05 \x01(\x0e2!.bebeberloga.v1.NotificationLevelR\x05level\x12(\n" +
 	"\x10skip_mention_all\x18\x06 \x01(\bR\x0eskipMentionAll\x12,\n" +
 	"\x12skip_role_mentions\x18\a \x01(\bR\x10skipRoleMentionsB\a\n" +
-	"\x05scope\"\x80\x01\n" +
+	"\x05scope\"\xa8\x01\n" +
 	"\tReadState\x12\x1d\n" +
 	"\n" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12/\n" +
-	"\x14last_read_message_id\x18\x02 \x01(\tR\x11lastReadMessageId\x12#\n" +
-	"\rmention_count\x18\x03 \x01(\rR\fmentionCount\"\xc7\x01\n" +
+	"\x14last_read_message_id\x18\x02 \x01(\tR\x11lastReadMessageId\x126\n" +
+	"\x17mention_candidate_count\x18\x04 \x01(\rR\x15mentionCandidateCountJ\x04\b\x03\x10\x04R\rmention_count\"\xc7\x01\n" +
 	"\fGroupSummary\x12\x1d\n" +
 	"\n" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x19\n" +
@@ -2255,7 +2357,7 @@ func file_bebeberloga_v1_community_proto_rawDescGZIP() []byte {
 }
 
 var file_bebeberloga_v1_community_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_bebeberloga_v1_community_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_bebeberloga_v1_community_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_bebeberloga_v1_community_proto_goTypes = []any{
 	(ChannelType)(0),              // 0: bebeberloga.v1.ChannelType
 	(HistoryVisibility)(0),        // 1: bebeberloga.v1.HistoryVisibility
@@ -2264,52 +2366,55 @@ var file_bebeberloga_v1_community_proto_goTypes = []any{
 	(CommunityRemovalReason)(0),   // 4: bebeberloga.v1.CommunityRemovalReason
 	(*Community)(nil),             // 5: bebeberloga.v1.Community
 	(*Category)(nil),              // 6: bebeberloga.v1.Category
-	(*Channel)(nil),               // 7: bebeberloga.v1.Channel
-	(*LockedChannel)(nil),         // 8: bebeberloga.v1.LockedChannel
-	(*Role)(nil),                  // 9: bebeberloga.v1.Role
-	(*Member)(nil),                // 10: bebeberloga.v1.Member
-	(*EffectivePermissions)(nil),  // 11: bebeberloga.v1.EffectivePermissions
-	(*ChannelPermissions)(nil),    // 12: bebeberloga.v1.ChannelPermissions
-	(*ChannelAccess)(nil),         // 13: bebeberloga.v1.ChannelAccess
-	(*Invite)(nil),                // 14: bebeberloga.v1.Invite
-	(*InvitePreview)(nil),         // 15: bebeberloga.v1.InvitePreview
-	(*Ban)(nil),                   // 16: bebeberloga.v1.Ban
-	(*VoicePresence)(nil),         // 17: bebeberloga.v1.VoicePresence
-	(*NotificationSettings)(nil),  // 18: bebeberloga.v1.NotificationSettings
-	(*ReadState)(nil),             // 19: bebeberloga.v1.ReadState
-	(*GroupSummary)(nil),          // 20: bebeberloga.v1.GroupSummary
-	(*CommunityRemoval)(nil),      // 21: bebeberloga.v1.CommunityRemoval
-	(*timestamppb.Timestamp)(nil), // 22: google.protobuf.Timestamp
-	(*User)(nil),                  // 23: bebeberloga.v1.User
+	(*ChannelMeta)(nil),           // 7: bebeberloga.v1.ChannelMeta
+	(*Channel)(nil),               // 8: bebeberloga.v1.Channel
+	(*LockedChannel)(nil),         // 9: bebeberloga.v1.LockedChannel
+	(*Role)(nil),                  // 10: bebeberloga.v1.Role
+	(*Member)(nil),                // 11: bebeberloga.v1.Member
+	(*EffectivePermissions)(nil),  // 12: bebeberloga.v1.EffectivePermissions
+	(*ChannelPermissions)(nil),    // 13: bebeberloga.v1.ChannelPermissions
+	(*ChannelAccess)(nil),         // 14: bebeberloga.v1.ChannelAccess
+	(*Invite)(nil),                // 15: bebeberloga.v1.Invite
+	(*InvitePreview)(nil),         // 16: bebeberloga.v1.InvitePreview
+	(*Ban)(nil),                   // 17: bebeberloga.v1.Ban
+	(*VoicePresence)(nil),         // 18: bebeberloga.v1.VoicePresence
+	(*NotificationSettings)(nil),  // 19: bebeberloga.v1.NotificationSettings
+	(*ReadState)(nil),             // 20: bebeberloga.v1.ReadState
+	(*GroupSummary)(nil),          // 21: bebeberloga.v1.GroupSummary
+	(*CommunityRemoval)(nil),      // 22: bebeberloga.v1.CommunityRemoval
+	(*timestamppb.Timestamp)(nil), // 23: google.protobuf.Timestamp
+	(*User)(nil),                  // 24: bebeberloga.v1.User
 }
 var file_bebeberloga_v1_community_proto_depIdxs = []int32{
-	22, // 0: bebeberloga.v1.Community.created_at:type_name -> google.protobuf.Timestamp
-	0,  // 1: bebeberloga.v1.Channel.type:type_name -> bebeberloga.v1.ChannelType
-	1,  // 2: bebeberloga.v1.Channel.history_visibility:type_name -> bebeberloga.v1.HistoryVisibility
-	22, // 3: bebeberloga.v1.Channel.created_at:type_name -> google.protobuf.Timestamp
-	0,  // 4: bebeberloga.v1.LockedChannel.type:type_name -> bebeberloga.v1.ChannelType
-	2,  // 5: bebeberloga.v1.Role.preset:type_name -> bebeberloga.v1.RolePreset
-	23, // 6: bebeberloga.v1.Member.user:type_name -> bebeberloga.v1.User
-	22, // 7: bebeberloga.v1.Member.joined_at:type_name -> google.protobuf.Timestamp
-	12, // 8: bebeberloga.v1.EffectivePermissions.channels:type_name -> bebeberloga.v1.ChannelPermissions
-	22, // 9: bebeberloga.v1.Invite.created_at:type_name -> google.protobuf.Timestamp
-	22, // 10: bebeberloga.v1.Invite.expires_at:type_name -> google.protobuf.Timestamp
-	0,  // 11: bebeberloga.v1.InvitePreview.channel_type:type_name -> bebeberloga.v1.ChannelType
-	22, // 12: bebeberloga.v1.InvitePreview.community_created_at:type_name -> google.protobuf.Timestamp
-	22, // 13: bebeberloga.v1.InvitePreview.expires_at:type_name -> google.protobuf.Timestamp
-	23, // 14: bebeberloga.v1.Ban.user:type_name -> bebeberloga.v1.User
-	22, // 15: bebeberloga.v1.Ban.created_at:type_name -> google.protobuf.Timestamp
-	22, // 16: bebeberloga.v1.VoicePresence.joined_at:type_name -> google.protobuf.Timestamp
-	22, // 17: bebeberloga.v1.NotificationSettings.silenced_until:type_name -> google.protobuf.Timestamp
-	3,  // 18: bebeberloga.v1.NotificationSettings.level:type_name -> bebeberloga.v1.NotificationLevel
-	22, // 19: bebeberloga.v1.GroupSummary.last_rotation_at:type_name -> google.protobuf.Timestamp
-	4,  // 20: bebeberloga.v1.CommunityRemoval.reason:type_name -> bebeberloga.v1.CommunityRemovalReason
-	22, // 21: bebeberloga.v1.CommunityRemoval.at:type_name -> google.protobuf.Timestamp
-	22, // [22:22] is the sub-list for method output_type
-	22, // [22:22] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	23, // 0: bebeberloga.v1.Community.created_at:type_name -> google.protobuf.Timestamp
+	23, // 1: bebeberloga.v1.ChannelMeta.created_at:type_name -> google.protobuf.Timestamp
+	0,  // 2: bebeberloga.v1.Channel.type:type_name -> bebeberloga.v1.ChannelType
+	1,  // 3: bebeberloga.v1.Channel.history_visibility:type_name -> bebeberloga.v1.HistoryVisibility
+	23, // 4: bebeberloga.v1.Channel.created_at:type_name -> google.protobuf.Timestamp
+	7,  // 5: bebeberloga.v1.Channel.meta:type_name -> bebeberloga.v1.ChannelMeta
+	0,  // 6: bebeberloga.v1.LockedChannel.type:type_name -> bebeberloga.v1.ChannelType
+	2,  // 7: bebeberloga.v1.Role.preset:type_name -> bebeberloga.v1.RolePreset
+	24, // 8: bebeberloga.v1.Member.user:type_name -> bebeberloga.v1.User
+	23, // 9: bebeberloga.v1.Member.joined_at:type_name -> google.protobuf.Timestamp
+	13, // 10: bebeberloga.v1.EffectivePermissions.channels:type_name -> bebeberloga.v1.ChannelPermissions
+	23, // 11: bebeberloga.v1.Invite.created_at:type_name -> google.protobuf.Timestamp
+	23, // 12: bebeberloga.v1.Invite.expires_at:type_name -> google.protobuf.Timestamp
+	0,  // 13: bebeberloga.v1.InvitePreview.channel_type:type_name -> bebeberloga.v1.ChannelType
+	23, // 14: bebeberloga.v1.InvitePreview.community_created_at:type_name -> google.protobuf.Timestamp
+	23, // 15: bebeberloga.v1.InvitePreview.expires_at:type_name -> google.protobuf.Timestamp
+	24, // 16: bebeberloga.v1.Ban.user:type_name -> bebeberloga.v1.User
+	23, // 17: bebeberloga.v1.Ban.created_at:type_name -> google.protobuf.Timestamp
+	23, // 18: bebeberloga.v1.VoicePresence.joined_at:type_name -> google.protobuf.Timestamp
+	23, // 19: bebeberloga.v1.NotificationSettings.silenced_until:type_name -> google.protobuf.Timestamp
+	3,  // 20: bebeberloga.v1.NotificationSettings.level:type_name -> bebeberloga.v1.NotificationLevel
+	23, // 21: bebeberloga.v1.GroupSummary.last_rotation_at:type_name -> google.protobuf.Timestamp
+	4,  // 22: bebeberloga.v1.CommunityRemoval.reason:type_name -> bebeberloga.v1.CommunityRemovalReason
+	23, // 23: bebeberloga.v1.CommunityRemoval.at:type_name -> google.protobuf.Timestamp
+	24, // [24:24] is the sub-list for method output_type
+	24, // [24:24] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_bebeberloga_v1_community_proto_init() }
@@ -2318,11 +2423,11 @@ func file_bebeberloga_v1_community_proto_init() {
 		return
 	}
 	file_bebeberloga_v1_identity_proto_init()
-	file_bebeberloga_v1_community_proto_msgTypes[8].OneofWrappers = []any{
+	file_bebeberloga_v1_community_proto_msgTypes[9].OneofWrappers = []any{
 		(*ChannelAccess_RoleId)(nil),
 		(*ChannelAccess_UserId)(nil),
 	}
-	file_bebeberloga_v1_community_proto_msgTypes[13].OneofWrappers = []any{
+	file_bebeberloga_v1_community_proto_msgTypes[14].OneofWrappers = []any{
 		(*NotificationSettings_CommunityId)(nil),
 		(*NotificationSettings_ChannelId)(nil),
 	}
@@ -2332,7 +2437,7 @@ func file_bebeberloga_v1_community_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_bebeberloga_v1_community_proto_rawDesc), len(file_bebeberloga_v1_community_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   17,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

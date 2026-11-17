@@ -1579,7 +1579,7 @@ type CommunitySnapshot struct {
 	// Кто сейчас в голосовых каналах сообщества.
 	VoicePresences []*VoicePresence `protobuf:"bytes,7,rep,name=voice_presences,json=voicePresences,proto3" json:"voice_presences,omitempty"`
 	// Для владельца и администраторов: приватные каналы, в которые они себя не добавили
-	// («🔒 закрытый для тебя», PERMISSIONS.md §3 п. 2). У остальных пусто.
+	// («🔒 закрытый для тебя», PERMISSIONS.md §3 п. 2) — без названий. У остальных пусто.
 	LockedChannels []*LockedChannel `protobuf:"bytes,8,rep,name=locked_channels,json=lockedChannels,proto3" json:"locked_channels,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -3332,6 +3332,8 @@ func (x *CategoryDeleted) GetCategoryId() string {
 	return ""
 }
 
+// Канал создан. Записи с названием (`Channel.meta`) ещё нет: её приносит клиент создателя
+// вместе с группой чата канала, и тогда приходит ChannelUpdated (FLOWS/03).
 type ChannelCreated struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Channel       *Channel               `protobuf:"bytes,1,opt,name=channel,proto3" json:"channel,omitempty"`
@@ -3376,6 +3378,9 @@ func (x *ChannelCreated) GetChannel() *Channel {
 	return nil
 }
 
+// Изменились открытые поля канала или его запись с названием и темой: правка
+// `PUT /channels/{id}/meta` либо commit, начавший поколение ключа истории (CRYPTO.md §6.8).
+// Клиент проверяет запись и, если не принял её, оставляет прежнее название.
 type ChannelUpdated struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Channel       *Channel               `protobuf:"bytes,1,opt,name=channel,proto3" json:"channel,omitempty"`
@@ -3473,7 +3478,8 @@ func (x *ChannelDeleted) GetChannelId() string {
 	return ""
 }
 
-// Список «закрытых для тебя» каналов владельца или администратора изменился.
+// Список «закрытых для тебя» каналов владельца или администратора изменился. Названий в нём
+// нет (ADR-0026 п. 6).
 type LockedChannelsUpdated struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	CommunityId    string                 `protobuf:"bytes,1,opt,name=community_id,json=communityId,proto3" json:"community_id,omitempty"`

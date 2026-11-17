@@ -56,7 +56,7 @@ tags:
   - name: invites
     description: Приглашения
   - name: messages
-    description: Шифртекст сообщений, история, удаление, закрепы, mention-hint
+    description: Шифртекст сообщений, история, удаление, закрепы, кандидаты упоминаний
   - name: read-state
     description: Состояние чтения
   - name: notifications
@@ -488,6 +488,12 @@ paths:
       description: |
         Требует пароль и имя пользователя (SCREENS/07 §9). Отклоняется с CONFLICT, пока пользователь
         владеет сообществами: их нужно передать или удалить (список — в поле `details`).
+
+        Устройствам аккаунта, у которых `removed_at` ещё нет, сервер ставит его, а действующему
+        ключу идентичности — `valid_until`, равные времени удаления; у устройств, удалённых раньше,
+        время удаления не меняется. Подписи, принятые сервером в момент удаления или позже, не
+        проходят проверку. Id, отметка об удалении, ключи идентичности и открытые записи устройств не
+        стираются до ответа на OPEN-QUESTIONS №52 (CRYPTO.md §6.2.8).
       operationId: deleteMe
       requestBody:
         required: true
@@ -636,38 +642,41 @@ paths:
                 $ref: '#/components/schemas/PersonalBackup'
         default:
           $ref: '#/components/responses/Error'
-  /users/me/mention-hints:
-    put:
+  /users/me/mention-candidates:
+    get:
       tags: [messages]
-      summary: Зарегистрировать свои mention-hint во всех каналах одним запросом
+      summary: Кандидаты в упоминания
       description: |
-        Хинт своего `user_id` и своих ролей для каждого канала и поколения ключа истории (CRYPTO.md
-        §6.4). Клиент шлёт после нового поколения в любом канале, смены ролей, входа и возвращения.
-        Хинт, пришедший позже сообщения, сервер сопоставляет задним числом и пересчитывает бейджи.
-      operationId: putMyMentionHints
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [entries]
-              properties:
-                entries:
-                  type: array
-                  maxItems: 1000
-                  items:
-                    type: object
-                    required: [channel_id, generation, hints]
-                    properties:
-                      channel_id: { $ref: '#/components/schemas/Id' }
-                      generation: { type: integer, minimum: 1 }
-                      hints:
-                        type: array
-                        maxItems: 64
-                        items: { $ref: '#/components/schemas/Bytes' }
+        Непрочитанные чужие сообщения, у которых есть хинты упоминаний или «@все» / «@здесь», — по
+        всем каналам пользователя или по одному (ADR-0027 п. 5, CRYPTO.md §6.4). Клиент забирает их
+        после офлайна, считает хинты своего id и своих ролей и сравнивает сам: сервер не знает,
+        какие кандидаты окажутся упоминаниями. Шифртекста и ключей сообщений в ответе нет. Порядок
+        — по `message_id`; пагинация курсором `after`.
+
+        В список попадают только сообщения, которые сервер отдал бы этому устройству в ленте
+        канала (CRYPTO.md §6.3.8 п. 3). Запросы, которые клиент делает сам, от совпадения хинта не
+        зависят: тела кандидатов он забирает одинаково у совпавших и несовпавших (CRYPTO.md §6.4).
+      operationId: listMentionCandidates
+      parameters:
+        - name: channel_id
+          in: query
+          description: Только этот канал; без параметра — все каналы пользователя.
+          schema: { $ref: '#/components/schemas/Id' }
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Limit'
       responses:
-        '204': { description: Сохранено }
+        '200':
+          description: Кандидаты
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [candidates, page]
+                properties:
+                  candidates:
+                    type: array
+                    items: { $ref: '#/components/schemas/MentionCandidate' }
+                  page: { $ref: '#/components/schemas/PageInfo' }
         default:
           $ref: '#/components/responses/Error'
   /users/me/recovery-key/identity:
@@ -710,7 +719,7 @@ paths:
     get:
       tags: [devices]
       summary: Устройства пользователя (для вкладки «Безопасность» и проверки подписей истории)
-      description: 'Только тип, дата добавления, статус проверки и открытые ключи; город и время входа видит лишь владелец. С `include_removed=true` — и удалённые устройства с `removed_at`: их записи сервер хранит навсегда, по ним проверяются подписи сообщений в истории (CRYPTO.md §6.2.8).'
+      description: 'По удалённому аккаунту запрос тоже отвечает 200: записи устройств при удалении аккаунта не стираются до ответа на OPEN-QUESTIONS №52. Кому отдаётся ответ — OPEN-QUESTIONS №66. Только тип, дата добавления, статус проверки и открытые ключи; город и время входа видит лишь владелец. С `include_removed=true` — и удалённые устройства с `removed_at`: их записи сервер хранит навсегда: по ним проверяются подписи сообщений в истории и записи канала с названием и темой (CRYPTO.md §6.2.8, §6.8.3).'
       operationId: listUserDevices
       parameters:
         - name: include_removed
@@ -736,7 +745,7 @@ paths:
     get:
       tags: [users]
       summary: История ключей идентичности пользователя
-      description: Все ключи идентичности с периодами действия, включая прежние после «Начать заново»; сервер хранит навсегда (CRYPTO.md §6.2.6, §6.3.9).
+      description: Все ключи идентичности с периодами действия, включая прежние после «Начать заново» и действовавший при удалении аккаунта; сервер хранит их навсегда (CRYPTO.md §6.2.6, §6.2.8, §6.3.9). По удалённому аккаунту запрос тоже отвечает 200 (до ответа на OPEN-QUESTIONS №52). Кому отдаётся ответ — OPEN-QUESTIONS №66.
       operationId: listIdentityKeys
       responses:
         '200':
@@ -1156,7 +1165,9 @@ paths:
       summary: Открыть ЛС (или групповой чат, S)
       description: |
         Идемпотентно для одного получателя: существующий ЛС возвращается как есть. MLS-группу
-        создаёт клиент после этого вызова (`POST /mls/groups` с `channel_id`). Ошибка BLOCKED.
+        создаёт клиент после этого вызова (`POST /mls/groups` с `channel_id`). Название группового
+        чата (S) в запрос не входит: это зашифрованная запись (`PUT /channels/{channel_id}/meta`,
+        ADR-0026). Ошибка BLOCKED.
       operationId: createDmChannel
       requestBody:
         required: true
@@ -1172,10 +1183,6 @@ paths:
                   maxItems: 9
                   description: Собеседники без вызывающего.
                   items: { $ref: '#/components/schemas/Id' }
-                name:
-                  type: string
-                  maxLength: 64
-                  description: Имя группового чата (S).
       responses:
         '200':
           description: Канал
@@ -1207,7 +1214,10 @@ paths:
       summary: Создать сообщество
       description: |
         Создаёт сообщество, пресеты ролей и каналы по умолчанию (FLOWS/03 ш. 2), назначает
-        вызывающего владельцем. MLS-группы текстовых каналов создаёт клиент. Ошибка COMMUNITY_LIMIT.
+        вызывающего владельцем. Каналы создаются без названий: название — содержимое (ADR-0026).
+        Клиент создателя создаёт группу чата каждого канала, и текстового, и голосового
+        (`POST /mls/groups`), и тем же запросом записывает название из своей локализации
+        (FLOWS/03 ш. 3). Ошибка COMMUNITY_LIMIT.
       operationId: createCommunity
       requestBody:
         required: true
@@ -1463,9 +1473,11 @@ paths:
       tags: [channels]
       summary: Создать канал
       description: |
-        Право `channel.edit`; для приватного — ещё `role.edit`. Сервер создаёт канал и рассылает
-        ChannelCreated; MLS-группу создаёт клиент создателя (`POST /mls/groups`) и добавляет
-        устройства всех, кто видит канал (FLOWS/03 «Создать канал»).
+        Право `channel.edit`; для приватного — ещё `role.edit`. Названия в запросе нет: название и
+        тема — зашифрованная запись (ADR-0026). Сервер создаёт канал и рассылает ChannelCreated;
+        клиент создателя создаёт группу чата канала (`POST /mls/groups`) с первой записью и добавляет
+        устройства всех, кто видит канал (FLOWS/03 «Создать канал»). До этого у канала нет записи,
+        и клиенты показывают заглушку вместо названия.
       operationId: createChannel
       requestBody:
         required: true
@@ -1473,12 +1485,11 @@ paths:
           application/json:
             schema:
               type: object
-              required: [type, name]
+              required: [type]
               properties:
                 type:
                   type: string
                   enum: [CHANNEL_TYPE_TEXT, CHANNEL_TYPE_VOICE]
-                name: { $ref: '#/components/schemas/ChannelName' }
                 category_id: { $ref: '#/components/schemas/Id' }
                 private: { type: boolean }
                 allowed_role_ids:
@@ -1515,7 +1526,9 @@ paths:
     patch:
       tags: [channels]
       summary: Изменить канал
-      description: Право `channel.edit`. Обзор канала (SCREENS/11 §3.1).
+      description: |
+        Право `channel.edit`. Обзор канала (SCREENS/11 §3.1). Название и тема здесь не меняются:
+        это зашифрованная запись — `PUT /channels/{channel_id}/meta`.
       operationId: updateChannel
       requestBody:
         required: true
@@ -1524,8 +1537,6 @@ paths:
             schema:
               type: object
               properties:
-                name: { $ref: '#/components/schemas/ChannelName' }
-                topic: { type: string, maxLength: 1024 }
                 category_id:
                   type: string
                   format: uuid
@@ -1547,10 +1558,53 @@ paths:
     delete:
       tags: [channels]
       summary: Удалить канал
-      description: Удаляет MLS-группу, шифртекст и blob-ы вложений.
+      description: Удаляет MLS-группу, запись с названием и темой, шифртекст и blob-ы вложений (ADR-0028 п. 3).
       operationId: deleteChannel
       responses:
         '204': { description: Удалён }
+        default:
+          $ref: '#/components/responses/Error'
+  /channels/{channel_id}/meta:
+    parameters:
+      - $ref: '#/components/parameters/ChannelId'
+    put:
+      tags: [channels]
+      summary: Записать название и тему канала
+      description: |
+        Новая версия зашифрованной записи с названием и темой (ADR-0026, CRYPTO.md §6.8.5; FLOWS/03
+        «Переименовать канал, сменить тему»). Право `channel.edit`; устройство должно состоять в
+        группе канала — у остальных нет ключа. Сервер содержимого не видит: он проверяет право,
+        членство, поколение, версию и частоту, ставит запись на место прежней и рассылает
+        ChannelUpdated видящим канал. Хранит он только текущую версию: её номер, хэш, время приёма
+        и шифртекст; прежние стираются. Запрос идемпотентен: повтор принятой правки — та же версия
+        и тот же хэш — получает 200 с текущей записью, сервер ничего не меняет и событий не
+        рассылает.
+
+        Ошибки: PERMISSION_DENIED; NOT_GROUP_MEMBER; GROUP_FROZEN; HISTORY_GENERATION_MISMATCH с
+        `current_generation` — поколение устарело, клиент догоняет commit-ы, шифрует ту же
+        запись под текущим поколением (версия и хэш прежние) и повторяет сам, до 3 раз; VALIDATION_FAILED и PAYLOAD_TOO_LARGE — длина записи не кратна
+        256 байтам, хэш не в 32 байта или запись больше 8 КиБ; CHANNEL_META_VERSION_CONFLICT с
+        `current_meta_version` — версию занял другой участник, клиент показывает новое название и
+        предлагает повторить правку;
+        CHANNEL_META_VERSION_TOO_FAR с `current_meta_version` — версия больше текущей сильнее, чем
+        на 65 536, клиент правку не повторяет; RATE_LIMITED с `retry_after_ms` — с прошлой принятой
+        правки этого канала не прошло 10 секунд или исчерпан лимит правок пользователя по всем
+        каналам (до 5 подряд, дальше одна в 10 секунд); клиент повторяет ту же правку сам,
+        пользователь отказа не видит.
+      operationId: putChannelMeta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelMetaWrite'
+      responses:
+        '200':
+          description: Запись принята
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelMeta'
         default:
           $ref: '#/components/responses/Error'
   /channels/{channel_id}/access:
@@ -1599,7 +1653,7 @@ paths:
       summary: Добавить себя в приватный канал (владелец или администратор)
       description: |
         PERMISSIONS.md §3 п. 2: владелец и администратор не попадают в приватный канал автоматически,
-        видят его как «🔒 закрытый для тебя» (`CommunitySnapshot.locked_channels`) и могут добавить
+        видят его как «🔒 закрытый для тебя» без названия (`CommunitySnapshot.locked_channels`) и могут добавить
         себя. Сервер ставит разрешение `channel.see` для пользователя, шлёт Add-proposals для его
         устройств, рассылает ChannelCreated ему, LockedChannelsUpdated и системное сообщение
         KIND_CHANNEL_SELF_JOINED участникам канала.
@@ -1836,9 +1890,9 @@ paths:
       tags: [bans]
       summary: Забанить
       description: |
-        Право `member.remove`. При `delete_messages_window_seconds` > 0 сервер ставит tombstone на
-        сообщения за период и рассылает MessageDeleted пачками (FLOWS/10). Допустимые значения:
-        0, 3600, 86400, 604800.
+        Право `member.remove`. При `delete_messages_window_seconds` > 0 сервер стирает сообщения за
+        период, оставляя отметки об удалении (ADR-0028 п. 3), и рассылает MessageDeleted пачками
+        (FLOWS/10). Допустимые значения: 0, 3600, 86400, 604800.
       operationId: banMember
       requestBody:
         required: true
@@ -2005,7 +2059,8 @@ paths:
       description: |
         Пагинация по UUIDv7: `before` — вверх по истории, `after` — вниз; без курсоров — последние
         `limit`. Сообщения до момента вступления не отдаются, если в канале выключено «Новые участники
-        видят историю» (ADR-0015). Tombstones отдаются с `deleted: true` и без шифртекста.
+        видят историю» (ADR-0015). От удалённого сообщения остаётся отметка: `id`, `channel_id`,
+        `deleted: true` и `deleted_at` (ADR-0028 п. 3).
       operationId: listMessages
       parameters:
         - $ref: '#/components/parameters/Before'
@@ -2030,10 +2085,13 @@ paths:
       tags: [messages]
       summary: Отправить шифртекст сообщения
       description: |
-        Сервер проверяет `chat.post`, при вложениях — `chat.upload`, при `broadcast_mention` или
-        хинтах ролей — `chat.ping_all` (без права упоминание сохраняется, но без уведомлений),
-        членство устройства в группе, поколение ключа истории (текущее поколение канала) и размер
-        шифртекста (≤ 128 КиБ). Ошибки: PERMISSION_DENIED, HISTORY_GENERATION_MISMATCH (клиент
+        Сервер проверяет `chat.post`, при вложениях — `chat.upload`, членство устройства в группе,
+        поколение ключа истории (текущее поколение канала), размер шифртекста (≤ 128 КиБ) и число
+        хинтов (0, 1, 2, 4, 8, 16, 32 или 50 по 16 байт, иначе VALIDATION_FAILED). Хинты он хранит и
+        отдаёт, но ни с чем не сравнивает: кого упомянули, сервер не знает (ADR-0027). На сообщение
+        он ставит отметку `author_can_ping_all` — было ли у отправителя право `chat.ping_all`; без
+        права сообщение принимается, а клиенты получателей не засчитывают упоминания ролей, «@все»
+        и «@здесь» (CRYPTO.md §6.4). Ошибки: PERMISSION_DENIED, HISTORY_GENERATION_MISMATCH (клиент
         догоняет commit-ы и повторяет до 3 раз; смена эпохи без нового поколения отправку не
         прерывает, CRYPTO.md §6.2.8), MESSAGE_ID_OUT_OF_WINDOW (время в `id` старше 30 сут или
         больше чем на 5 мин впереди), GROUP_FROZEN, MESSAGE_EXISTS, ATTACHMENT_INVALID,
@@ -2074,7 +2132,7 @@ paths:
     delete:
       tags: [messages]
       summary: Удалить сообщение
-      description: Своё — без права; чужое — `chat.moderate`. Сервер удаляет шифртекст, хранит tombstone, рассылает MessageDeleted.
+      description: Своё — без права; чужое — `chat.moderate`. Сервер сразу стирает шифртекст, обёрнутый ключ сообщения, хинты и blob-ы вложений, оставляет отметку об удалении (id, канал, время; ADR-0028 п. 3) и рассылает MessageDeleted.
       operationId: deleteMessage
       responses:
         '204': { description: Удалено }
@@ -2120,36 +2178,6 @@ paths:
       operationId: unpinMessage
       responses:
         '204': { description: Откреплено }
-        default:
-          $ref: '#/components/responses/Error'
-  /channels/{channel_id}/mention-hints:
-    parameters:
-      - $ref: '#/components/parameters/ChannelId'
-    put:
-      tags: [messages]
-      deprecated: true
-      summary: Зарегистрировать свои mention-hint в канале (заменено `PUT /users/me/mention-hints`)
-      description: |
-        Участник присылает HMAC своего id и id своих ролей с секретом канала из MLS exporter
-        (ARCHITECTURE.md §4.4). Сервер сравнивает их с хинтами входящих сообщений для бейджей и
-        адресных push, не узнавая адресата. Переотправляется после смены эпохи, если секрет
-        изменился (правило — CRYPTO.md).
-      operationId: putMentionHints
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [epoch, hints]
-              properties:
-                epoch: { $ref: '#/components/schemas/Int64' }
-                hints:
-                  type: array
-                  maxItems: 64
-                  items: { $ref: '#/components/schemas/Bytes' }
-      responses:
-        '204': { description: Сохранено }
         default:
           $ref: '#/components/responses/Error'
 
@@ -2295,9 +2323,11 @@ paths:
       tags: [files]
       summary: Начать загрузку зашифрованного вложения
       description: |
-        Право `chat.upload` в канале. Сервер проверяет размер против лимита инстанса и выдаёт
-        presigned URL для PUT в хранилище (FLOWS/06 «Вложения»). Blob, не привязанный к сообщению
-        в течение часа, удаляется.
+        Право `chat.upload` в канале. Сервер сравнивает размер blob-а с лимитом инстанса
+        (PAYLOAD_TOO_LARGE) и выдаёт presigned URL для PUT в хранилище (FLOWS/06 «Вложения»). Файл
+        перед шифрованием дополнен до выровненной длины (CRYPTO.md §7.2, ADR-0028 п. 6): сервер
+        принимает только размер, которому соответствует выровненная длина, иначе VALIDATION_FAILED.
+        Превью — такой же blob. Blob, не привязанный к сообщению в течение часа, удаляется.
       operationId: createFile
       requestBody:
         required: true
@@ -2310,7 +2340,7 @@ paths:
                 channel_id: { $ref: '#/components/schemas/Id' }
                 size:
                   allOf: [{ $ref: '#/components/schemas/Int64' }]
-                  description: Размер шифртекста в байтах.
+                  description: Размер blob-а в байтах — заголовок, выровненное содержимое и теги чанков (CRYPTO.md §7.2).
                 ciphertext_hash: { $ref: '#/components/schemas/Bytes' }
       responses:
         '201':
@@ -2382,6 +2412,11 @@ paths:
         или звонок, и передаёт начальную связку ключей истории (ADR-0015). Ошибка CONFLICT, если у
         канала уже есть действующая группа этой роли.
 
+        Группа чата текстового и голосового канала создаётся вместе с каналом и несёт первую запись
+        с названием и темой — `initial_channel_meta` (версия 1, поколение 1; право `channel.edit`;
+        CRYPTO.md §6.8.5). Без неё такая группа не создаётся (VALIDATION_FAILED): у названия не было
+        бы ключа.
+
         Пересоздание группы по команде оператора или восстановление личной группы (CRYPTO.md §2.10):
         `predecessor_group_id` задан, и тем же запросом идут начальный commit, добавляющий начальный
         состав (устройства группы P в эпохе E без удалённых; заявки входят следующим Add, §2.10.3), и
@@ -2391,8 +2426,21 @@ paths:
         состав сверяется с R₀ на момент запроса — Remove, опубликованные после выдачи плана, из него
         исключены. Так же создаётся новая группа звонка при сбое (CRYPTO.md §5.1): без тега
         непрерывности, создателя назначает DS. Создавать новую группу вправе только устройство,
-        назначенное создателем этого пересоздания (CRYPTO.md §2.10.5). Ошибки BAD_DELTA, BAD_WELCOME,
-        UNAUTHORIZED_CHANGE, CHANNEL_MEMBER_LIMIT, GROUP_FROZEN, NOT_DESIGNATED, REMOVAL_PENDING.
+        назначенное создателем этого пересоздания (CRYPTO.md §2.10.5). Начальный commit начинает
+        поколение ключа истории, поэтому несёт запись канала в `channel_meta` — запись текущей
+        версии, сошедшуюся с хэшем сервера, или элемент с версией 0 (CRYPTO.md §6.8.6–§6.8.7). Сервер сохраняет её, только если её версия равна
+        `latest_version`; иначе группа создаётся, а канал остаётся без записи, пока участник с
+        правом `channel.edit` не запишет название правкой или поколение не начнёт коммитер с
+        записью текущей версии. Ошибки BAD_DELTA, BAD_WELCOME, UNAUTHORIZED_CHANGE,
+        CHANNEL_MEMBER_LIMIT, GROUP_FROZEN, NOT_DESIGNATED, REMOVAL_PENDING,
+        CHANNEL_META_VERSION_CONFLICT.
+
+        Первая запись (`initial_channel_meta`): PERMISSION_DENIED — нет права `channel.edit`;
+        VALIDATION_FAILED — записи нет, её версия не 1, длина не кратна 256 байтам или хэш не в
+        32 байта; PAYLOAD_TOO_LARGE — запись больше 8 КиБ; CONFLICT — у канала уже была запись
+        или группа чата, в том числе замороженная или заменённая (CRYPTO.md §6.8.5). Повтор того
+        же запроса от того же устройства — тот же `group_id` и та же первая запись, пока её не
+        заменила правка, — получает прежний ответ.
 
         GroupInfo не передаётся: external commit в 1.0 не используется (ADR-0019).
       operationId: createGroup
@@ -2435,6 +2483,14 @@ paths:
                     properties:
                       device_id: { $ref: '#/components/schemas/Id' }
                       blob: { $ref: '#/components/schemas/Bytes' }
+                initial_channel_meta:
+                  allOf: [{ $ref: '#/components/schemas/ChannelMetaWrite' }]
+                  description: Первая запись с названием и темой — для новой группы чата текстового или голосового канала (CRYPTO.md §6.8.5).
+                channel_meta:
+                  type: array
+                  maxItems: 1
+                  description: При пересоздании — запись канала под поколением новой группы; в 1.0 ровно один элемент — запись самого канала (CRYPTO.md §6.8.7).
+                  items: { $ref: '#/components/schemas/ChannelMetaCarry' }
       responses:
         '201':
           description: Группа
@@ -2498,10 +2554,21 @@ paths:
         для новых устройств и связка ключей истории для новой эпохи — так состояние группы на сервере
         меняется атомарно (ADR-0015). Повтор уже принятого commit-а получает тот же ответ.
 
+        Commit, начинающий поколение ключа истории, в группе чата текстового или голосового канала
+        несёт запись канала с названием и темой под подключом нового поколения — `channel_meta`
+        (CRYPTO.md §6.8.6); без неё — BAD_DELTA. Если `seen_version` отстал от правки —
+        CHANNEL_META_VERSION_CONFLICT с `current_meta_version`: клиент забирает запись и повторяет
+        тот же commit с новым `channel_meta`. Коммитер несёт запись текущей версии,
+        сошедшуюся с хэшем сервера, — свою принятую или текущую с сервера; запись, которую его
+        устройство отвергло по подписи или по порогу версий, он не несёт (CRYPTO.md §6.8.6).
+        Сервер сохраняет её, только если её версия равна `latest_version`; при другой версии и при
+        `version = 0` commit принимается, а канал остаётся без записи. Элемент `channel_meta`
+        повтора уже принятого commit-а не применяется.
+
         Commit принимается только от устройства, назначенного на эту эпоху (`MlsUpdateRequested.designated_device_id`), иначе
         NOT_DESIGNATED. Ошибки: NOT_GROUP_MEMBER, REMOVAL_PENDING, PROPOSALS_MISSING, UNAUTHORIZED_CHANGE (в том числе
         `kind = HANDSHAKE_KIND_PROPOSAL`: предложения публикует только сервер), BAD_DELTA,
-        BAD_WELCOME, BAD_MESSAGE, CHANNEL_MEMBER_LIMIT, GROUP_FROZEN. External commit в 1.0 не
+        BAD_WELCOME, BAD_MESSAGE, CHANNEL_MEMBER_LIMIT, GROUP_FROZEN, CHANNEL_META_VERSION_CONFLICT. External commit в 1.0 не
         используется: на `kind = HANDSHAKE_KIND_EXTERNAL_COMMIT` — EXTERNAL_COMMIT_UNSUPPORTED
         (ADR-0019). Реакция клиента на каждый код — CRYPTO.md §2.13.
       operationId: createHandshake
@@ -2541,6 +2608,11 @@ paths:
                   description: Мосты ключей истории устройствам, которые добавляет этот commit (CRYPTO.md §6.3.6).
                   items: { $ref: '#/components/schemas/HistoryBridge' }
                 personal_backup: { $ref: '#/components/schemas/PersonalBackup' }
+                channel_meta:
+                  type: array
+                  maxItems: 1
+                  description: Запись канала под поколением после commit-а — обязательна, если commit начинает поколение ключа истории; в 1.0 ровно один элемент — запись самого канала (CRYPTO.md §6.8.6).
+                  items: { $ref: '#/components/schemas/ChannelMetaCarry' }
       responses:
         '201':
           description: Принято и упорядочено
@@ -3270,10 +3342,6 @@ components:
     Username:
       type: string
       pattern: '^[a-z0-9._]{2,32}$'
-    ChannelName:
-      type: string
-      pattern: '^[\p{Ll}\p{Nd}_-]{1,64}$'
-      description: Нормализованное имя канала (строчные буквы, цифры, дефис, подчёркивание).
     PageInfo:
       type: object
       x-proto-message: bebeberloga.v1.PageInfo
@@ -3298,6 +3366,7 @@ components:
         current_epoch: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: Для EPOCH_MISMATCH. }
         successor_group_id: { allOf: [{ $ref: '#/components/schemas/Id' }], description: 'Для GROUP_FROZEN: группа, которая заменила эту; пусто, пока пересоздание не завершено.' }
         current_generation: { type: integer, description: 'Для HISTORY_GENERATION_MISMATCH: текущее поколение ключа истории канала.' }
+        current_meta_version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Для CHANNEL_META_VERSION_CONFLICT и CHANNEL_META_VERSION_TOO_FAR: `ChannelMeta.latest_version` канала.' }
         field_errors:
           type: array
           items:
@@ -3372,6 +3441,8 @@ components:
         - ERROR_CODE_HISTORY_GENERATION_MISMATCH
         - ERROR_CODE_NOT_DESIGNATED
         - ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW
+        - ERROR_CODE_CHANNEL_META_VERSION_CONFLICT
+        - ERROR_CODE_CHANNEL_META_VERSION_TOO_FAR
         - ERROR_CODE_SOUND_INVALID
         - ERROR_CODE_SOUND_SLOTS_FULL
 
@@ -3424,6 +3495,21 @@ components:
           type: array
           description: Цепочка замен ключа от первого ключа инстанса до действующего, по порядку.
           items: { $ref: '#/components/schemas/ExternalSenderKeyRotation' }
+        device_location_enabled:
+          type: boolean
+          description: Инстанс показывает владельцу устройства город последнего подключения. По умолчанию false; включает оператор. Сам адрес сервер не записывает (ADR-0028 п. 2).
+        ice_urls:
+          type: array
+          description: 'Адреса STUN и TURN инстанса — URI по RFC 7064 и RFC 7065, включая запасной путь `turns:turn.<домен>:443?transport=tcp` (ADR-0029 п. 1, п. 4). Учётных данных TURN здесь нет: ответ доступен без входа. Откуда клиент их получает и в каком виде, определяет B07.'
+          items: { type: string }
+        client_version:
+          type: string
+          description: Версия клиента того выпуска, к которому относится сервер (ADR-0030 п. 4).
+        client_download_url:
+          type: string
+          format: uri
+          pattern: '^(https://[^/?#@]+([/?#].*)?)?$'
+          description: 'Куда вести пользователя за новой версией клиента; задаёт оператор. Только `https://` и без части «имя@» перед именем сайта (userinfo, RFC 3986 §3.2.1): ссылку с другой схемой или с такой частью сервер не принимает от оператора и не отдаёт, а клиент не открывает. Пусто — ссылка не задана.'
     ExternalSenderKeyRotation:
       type: object
       x-proto-message: bebeberloga.v1.ExternalSenderKeyRotation
@@ -3545,7 +3631,7 @@ components:
         verification: { $ref: '#/components/schemas/DeviceVerification' }
         created_at: { $ref: '#/components/schemas/Timestamp' }
         last_seen_at: { $ref: '#/components/schemas/Timestamp' }
-        last_seen_location: { type: string }
+        last_seen_location: { type: string, description: 'Город последнего подключения. Пусто, пока оператор не включил показ (`InstanceInfo.device_location_enabled`).' }
         current: { type: boolean }
         history_hpke_key: { $ref: '#/components/schemas/Bytes' }
         history_hpke_key_signature: { $ref: '#/components/schemas/Bytes' }
@@ -3564,7 +3650,8 @@ components:
       x-proto-message: bebeberloga.v1.PublicDevice
       x-go-type: bebeberlogav1.PublicDevice
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      required: [id, user_id, platform, verification, created_at]
+      description: 'Открытая запись устройства. У удалённого устройства и у устройств удалённого аккаунта `platform` и `verification` могут отсутствовать: что стирается при удалении — OPEN-QUESTIONS №52. Подпись проверяется по `signature_pubkey`, `identity_signature` и `removed_at`, а не по `verification` (CRYPTO.md §6.2.5).'
+      required: [id, user_id, created_at]
       properties:
         id: { $ref: '#/components/schemas/Id' }
         user_id: { $ref: '#/components/schemas/Id' }
@@ -3589,7 +3676,7 @@ components:
         valid_from: { $ref: '#/components/schemas/Timestamp' }
         valid_until:
           allOf: [{ $ref: '#/components/schemas/Timestamp' }]
-          description: Пусто у действующего ключа.
+          description: Пусто у действующего ключа; у удалённого аккаунта закрыт временем удаления.
     RecoveryPublicKey:
       type: object
       x-proto-message: bebeberloga.v1.RecoveryPublicKey
@@ -3730,8 +3817,6 @@ components:
         type: { $ref: '#/components/schemas/ChannelType' }
         community_id: { $ref: '#/components/schemas/Id' }
         category_id: { $ref: '#/components/schemas/Id' }
-        name: { type: string }
-        topic: { type: string }
         position: { type: integer }
         private: { type: boolean }
         history_visibility: { $ref: '#/components/schemas/HistoryVisibility' }
@@ -3746,6 +3831,57 @@ components:
         call_group_id: { $ref: '#/components/schemas/Id' }
         created_at: { $ref: '#/components/schemas/Timestamp' }
         last_message_id: { $ref: '#/components/schemas/Id' }
+        meta:
+          allOf: [{ $ref: '#/components/schemas/ChannelMeta' }]
+          description: Зашифрованная запись с названием и темой; открытой строки названия у канала нет (ADR-0026). Не задана у ЛС и личного канала, пока не создана группа чата канала, и для устройства с опубликованным Remove (CRYPTO.md §2.8).
+    ChannelMeta:
+      type: object
+      description: Запись канала с названием и темой и её открытые поля (CRYPTO.md §6.8). Сервер запись не читает.
+      x-proto-message: bebeberloga.v1.ChannelMeta
+      x-go-type: bebeberlogav1.ChannelMeta
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [channel_id, generation, version, latest_version]
+      properties:
+        channel_id: { $ref: '#/components/schemas/Id' }
+        generation: { type: integer, minimum: 0, description: 'Поколение ключа истории, подключом которого зашифрован `blob`; 0 — записи сейчас нет.' }
+        version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Версия записи в `blob` — всегда `latest_version`; 0 — записи сейчас нет.' }
+        blob:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: SealedChannelMeta (CRYPTO.md §6.8.1); длина кратна 256 байтам, не больше 8 КиБ. Пусто — записи сейчас нет.
+        record_hash:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: Хэш записи текущей версии (SHA-256 с солью внутри записи, 32 байта), который сервер запомнил при её приёме; хэшей прежних версий он не хранит. Клиент сверяет с ним расшифрованную запись, а автор узнаёт по нему свою правку. Задан и тогда, когда `blob` стёрт; пусто — записи у канала ещё не было.
+        created_at:
+          allOf: [{ $ref: '#/components/schemas/Timestamp' }]
+          description: Когда сервер принял текущую версию. Задано и тогда, когда `blob` стёрт; не задано — записи у канала ещё не было.
+        latest_version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Номер текущей версии — наибольшей, принятой правкой; 0 — записи у канала ещё не было. Следующая правка берёт версию больше неё, но не больше чем на 65 536. Задан и тогда, когда записи сейчас нет.' }
+    ChannelMetaWrite:
+      type: object
+      description: Новая версия записи канала — тело `PUT /channels/{channel_id}/meta` и `initial_channel_meta` (CRYPTO.md §6.8.5).
+      required: [generation, version, blob, record_hash]
+      properties:
+        generation: { type: integer, minimum: 1, description: Текущее поколение ключа истории канала. }
+        version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Больше `latest_version`, но не больше чем на 65 536; у первой записи — 1.' }
+        blob:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: SealedChannelMeta; длина кратна 256 байтам, не больше 8 КиБ.
+        record_hash:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: Хэш подписанной записи, 32 байта.
+    ChannelMetaCarry:
+      type: object
+      description: Запись канала, которую несёт commit, начинающий поколение ключа истории (CRYPTO.md §6.8.6).
+      x-proto-message: bebeberloga.v1.ChannelMetaCarry
+      x-go-type: bebeberlogav1.ChannelMetaCarry
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [channel_id, seen_version, version]
+      properties:
+        channel_id: { $ref: '#/components/schemas/Id' }
+        seen_version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: '`ChannelMeta.latest_version`, который видел коммитер.' }
+        version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Версия записи в `blob`. Не равна `latest_version` — сервер запись не сохраняет, и канал остаётся без записи. 0 — записи текущей версии у коммитера нет или его устройство отвергло её по подписи или по порогу версий.' }
+        blob:
+          allOf: [{ $ref: '#/components/schemas/Bytes' }]
+          description: SealedChannelMeta под поколением после commit-а; пусто при `version = 0`.
     RolePreset:
       type: string
       x-proto-enum: bebeberloga.v1.RolePreset
@@ -3904,13 +4040,12 @@ components:
       x-proto-message: bebeberloga.v1.LockedChannel
       x-go-type: bebeberlogav1.LockedChannel
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      required: [id, community_id, type, name, position]
+      required: [id, community_id, type, position]
       properties:
         id: { $ref: '#/components/schemas/Id' }
         community_id: { $ref: '#/components/schemas/Id' }
         category_id: { $ref: '#/components/schemas/Id' }
         type: { $ref: '#/components/schemas/ChannelType' }
-        name: { type: string }
         position: { type: integer }
     CommunityRemoval:
       type: object
@@ -3972,12 +4107,11 @@ components:
       x-proto-message: bebeberloga.v1.InvitePreview
       x-go-type: bebeberlogav1.InvitePreview
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      required: [code, community_name, community_icon_id, channel_name, channel_type, member_count, online_count]
+      required: [code, community_name, community_icon_id, channel_type, member_count, online_count]
       properties:
         code: { type: string }
         community_name: { type: string }
         community_icon_id: { type: string }
-        channel_name: { type: string }
         channel_type: { $ref: '#/components/schemas/ChannelType' }
         member_count: { type: integer }
         online_count: { type: integer }
@@ -4036,11 +4170,13 @@ components:
       x-proto-message: bebeberloga.v1.ReadState
       x-go-type: bebeberlogav1.ReadState
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      required: [channel_id, last_read_message_id, mention_count]
+      required: [channel_id, last_read_message_id, mention_candidate_count]
       properties:
         channel_id: { $ref: '#/components/schemas/Id' }
         last_read_message_id: { $ref: '#/components/schemas/Id' }
-        mention_count: { type: integer }
+        mention_candidate_count:
+          type: integer
+          description: Число непрочитанных чужих сообщений с хинтами упоминаний или «@все» / «@здесь». Упоминания среди них клиент считает сам (`GET /users/me/mention-candidates`).
 
     # --- сообщения и файлы ---------------------------------------------------
     BroadcastMention:
@@ -4057,7 +4193,9 @@ components:
       required: [id, size, uploaded]
       properties:
         id: { $ref: '#/components/schemas/Id' }
-        size: { $ref: '#/components/schemas/Int64' }
+        size:
+          allOf: [{ $ref: '#/components/schemas/Int64' }]
+          description: Размер blob-а в байтах — выровненный (CRYPTO.md §7.2); истинный размер файла лежит в зашифрованном конверте.
         ciphertext_hash: { $ref: '#/components/schemas/Bytes' }
         uploaded: { type: boolean }
     SystemMessage:
@@ -4078,7 +4216,7 @@ components:
       x-proto-message: bebeberloga.v1.MessageMeta
       x-go-type: bebeberlogav1.MessageMeta
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      required: [id, channel_id, author_user_id, created_at, pinned, deleted]
+      required: [id, channel_id, author_user_id, pinned, deleted, author_can_ping_all]
       properties:
         id: { $ref: '#/components/schemas/Id' }
         channel_id: { $ref: '#/components/schemas/Id' }
@@ -4088,20 +4226,42 @@ components:
         author_device_id: { $ref: '#/components/schemas/Id' }
         created_at: { $ref: '#/components/schemas/Timestamp' }
         ciphertext: { $ref: '#/components/schemas/Bytes' }
-        size: { type: integer, description: Размер шифртекста в байтах. }
+        size: { type: integer, description: Размер шифртекста в байтах; у удалённого сообщения — 0. }
         wrapped_message_key: { $ref: '#/components/schemas/Bytes' }
         history_key_generation: { type: integer }
         mention_hints:
           type: array
+          description: Хинты упоминаний и хинты-пустышки по 16 байт (CRYPTO.md §6.4). Сервер их не сопоставляет.
           items: { $ref: '#/components/schemas/Bytes' }
         broadcast_mention: { $ref: '#/components/schemas/BroadcastMention' }
         attachments:
           type: array
           items: { $ref: '#/components/schemas/Attachment' }
         pinned: { type: boolean }
-        deleted: { type: boolean }
+        deleted:
+          type: boolean
+          description: 'Сообщение удалено: шифртекст, обёрнутый ключ, хинты и вложения стёрты; заполнены только `id`, `channel_id`, `deleted` и `deleted_at` (ADR-0028 п. 3). Остальные обязательные поля у отметки пусты: `author_user_id` — пустая строка, `pinned` и `author_can_ping_all` — false.'
         deleted_at: { $ref: '#/components/schemas/Timestamp' }
         system: { $ref: '#/components/schemas/SystemMessage' }
+        author_can_ping_all:
+          type: boolean
+          description: 'Ставит сервер: было ли у отправителя право `chat.ping_all` в момент приёма. Клиент получателя засчитывает упоминание роли, «@все» и «@здесь», только если отметка стоит (ADR-0027 п. 7).'
+    MentionCandidate:
+      type: object
+      description: Кандидат в упоминания — непрочитанное чужое сообщение с хинтами или широким упоминанием, без шифртекста (ADR-0027 п. 5).
+      x-proto-message: bebeberloga.v1.MentionCandidate
+      x-go-type: bebeberlogav1.MentionCandidate
+      x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
+      required: [message_id, channel_id, history_key_generation, broadcast_mention, author_can_ping_all]
+      properties:
+        message_id: { $ref: '#/components/schemas/Id' }
+        channel_id: { $ref: '#/components/schemas/Id' }
+        history_key_generation: { type: integer }
+        mention_hints:
+          type: array
+          items: { $ref: '#/components/schemas/Bytes' }
+        broadcast_mention: { $ref: '#/components/schemas/BroadcastMention' }
+        author_can_ping_all: { type: boolean }
     MessageInput:
       type: object
       required: [id, group_id, epoch, ciphertext, wrapped_message_key, history_key_generation]
@@ -4123,6 +4283,7 @@ components:
         mention_hints:
           type: array
           maxItems: 50
+          description: 'Хинты упомянутых пользователей и ролей вперемешку с хинтами-пустышками, по 16 байт: 0, 1, 2, 4, 8, 16, 32 или 50 штук (CRYPTO.md §6.4).'
           items: { $ref: '#/components/schemas/Bytes' }
         broadcast_mention: { $ref: '#/components/schemas/BroadcastMention' }
         attachment_ids:
@@ -4378,6 +4539,7 @@ components:
           items: { $ref: '#/components/schemas/Id' }
         reason: { $ref: '#/components/schemas/RecreationReason' }
         next_generation: { type: integer, description: 'Поколение ключа истории, которое начнёт новая группа (CRYPTO.md §6.3.10): при DISPUTE и PERSONAL_RESTORE — ровно оно, при JOURNAL_LOSS — не больше next_generation + 65 536, иначе BAD_DELTA.' }
+        channel_meta_latest_version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: '`ChannelMeta.latest_version` канала — для `seen_version` в начальном commit-е (CRYPTO.md §6.8.7); 0 у каналов без записи и у групп звонков.' }
 
     # --- голос и звуки -------------------------------------------------------
     VoiceJoin:

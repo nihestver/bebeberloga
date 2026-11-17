@@ -1,35 +1,36 @@
 # Протокол
 
-Каталог заполняется промптами B1 (транспорт и схемы) и B2 (криптографический дизайн) в фазе 0–1. Контракты, решённые планом и ADR, не пересматриваются без нового ADR. Состояние работ — [`STATUS.md`](STATUS.md).
-
-> **Ожидает B21.** ADR-0026–0029 (2026-11-15) меняют контракт: название и тема канала — зашифрованная запись, хинты упоминаний сопоставляет клиент, длина файлов выравнивается, появляется `RETENTION.md`. Файлы этого каталога и `proto/` пока описывают прежний контракт; при расхождении действует ADR. Приводит их в соответствие промпт [`B21`](../prompts/B21-metadata-contract.md); B3, B4 (кроме ч.0), B5 и B6 запускаются после него.
+Каталог заполняется промптами B1 (транспорт и схемы), B2 (криптографический дизайн) и B21 (контракт под ADR-0026–0029: метаданные) в фазе 0–1. Контракты, решённые планом и ADR, не пересматриваются без нового ADR. Состояние работ — [`STATUS.md`](STATUS.md).
 
 ## Состав
 
 | Файл | Что содержит | Промпт | Статус |
 |---|---|---|---|
 | [`GATEWAY.md`](GATEWAY.md) | WebSocket-шлюз: `Identify` → `Ready`, события с монотонным `seq`, heartbeat, `Resume(seq)` с буфером 5 минут, сжатие zstd, лимиты и коды закрытия 41xx, адресация событий, команды клиента (включая `PlaySound`), шардинг по пользователю | B1 | черновик 2 (после ревью), готов для B6 |
-| [`REST.md`](REST.md) + [`openapi.yaml`](openapi.yaml) | Контракт REST (OpenAPI 3.0.3, Apache-2.0), из которого генерируются обработчики и клиент (`just gen`, ADR-0017); модели — Protobuf через `x-proto-message`/`x-go-type`: учётная запись, устройства и KeyPackage, сообщества/каналы/роли/участники/приглашения/баны, история сообщений (пагинация по UUIDv7), файлы, MLS DS, голос, саундборд, уведомления; таблица ошибок и коды прав | B1 | черновик 2, `redocly lint` чистый |
-| [`MESSAGES.md`](MESSAGES.md) | Конверт сообщения по типам (`SealedMessage` под ключом истории, без MLS-копии — CRYPTO.md §6.2) (text, edit, delete, reaction, pin, file-key, call-key, history-keys, device-notice; poll-vote зарезервирован), упоминания и mention-hint, лимиты (текст 4 000, шифртекст 128 КиБ) | B1 (крипто-часть — B2) | черновик 2 |
-| [`CRYPTO.md`](CRYPTO.md) | MLS-профиль, ключи идентичности и устройств, Delivery Service (карта состава, назначенный коммитер, возврат устройства и журнал оператора, пересоздание по команде оператора, горизонт офлайна, ключ инстанса), вывод SFrame-ключей, ключи истории и связки, формат блобов, формальные инварианты | B2 | черновик 1 целиком (§0–§10, инварианты I1–I60, таблица переходов §2.14); четыре прогона ревью безопасности и clean room, защита от участника-вредителя отдана модерации (ADR-0021 п. 17); готов к PR |
+| [`REST.md`](REST.md) + [`openapi.yaml`](openapi.yaml) | Контракт REST (OpenAPI 3.0.3, Apache-2.0), из которого генерируются обработчики и клиент (`just gen`, ADR-0017); модели — Protobuf через `x-proto-message`/`x-go-type`: учётная запись, устройства и KeyPackage, сообщества/каналы/роли/участники/приглашения/баны, история сообщений (пагинация по UUIDv7), файлы, MLS DS, голос, саундборд, уведомления; запись канала с названием и темой, кандидаты упоминаний; таблица ошибок и коды прав | B1, B21 | черновик 3 (B21: ADR-0026–0030), `redocly lint` чистый |
+| [`MESSAGES.md`](MESSAGES.md) | Конверт сообщения по типам (`SealedMessage` под ключом истории, без MLS-копии — CRYPTO.md §6.2) (text, edit, delete, reaction, pin, file-key, call-key, history-keys, device-notice; poll-vote зарезервирован), упоминания и mention-hint (сопоставляет клиент, ADR-0027), лимиты (текст 4 000, шифртекст 128 КиБ) | B1 (крипто-часть — B2, B21) | черновик 3 |
+| [`CRYPTO.md`](CRYPTO.md) | MLS-профиль, ключи идентичности и устройств, Delivery Service (карта состава, назначенный коммитер, возврат устройства и журнал оператора, пересоздание по команде оператора, горизонт офлайна, ключ инстанса), вывод SFrame-ключей, ключи истории и связки, запись канала с названием и темой (§6.8), хинты упоминаний (§6.4), выравнивание длины файлов (§7.2), что видит сервер (§6.7), формат блобов, формальные инварианты | B2, B21 | черновик 1 целиком (§0–§10, таблица переходов §2.14), B21 — черновик 2 разделов 6–9 и инварианты I1–I71; четыре прогона ревью безопасности и clean room, защита от участника-вредителя отдана модерации (ADR-0021 п. 17); готов к PR |
+| [`RETENTION.md`](RETENTION.md) | Что и сколько хранит сервер (ADR-0028 п. 9): таблицы базы, ключи Valkey, потоки NATS, хранилище объектов, журналы — что хранится, зачем, сколько и что это удаляет; чего сервер не хранит совсем | B21 | черновик 1; шесть сроков ждут решения владельца (OPEN-QUESTIONS №48–53) |
 | [`AVATARS.md`](AVATARS.md) | Id встроенных аватаров (`User.avatar_id`): список — контракт между клиентами, файлы в `design/avatars/` | B8 | готово |
 | `MEDIA.md` | Комнаты SFU, токены с правами, webhooks, смена эпохи звонка, лимиты качества стрима | B7 (контракт `voice/*` и `PlaySound`/`SoundPlayed` уже в REST и gateway) | не начат |
-| [`../../proto/`](../../proto/bebeberloga/v1) | Protobuf-схемы `bebeberloga.v1` — единственный источник моделей для Go/TS/Kotlin/Swift: `common`, `error`, `identity`, `community`, `sound`, `message`, `envelope`, `mls`, `gateway` | B1 | черновик 2, `buf lint` чистый |
+| [`../../proto/`](../../proto/bebeberloga/v1) | Protobuf-схемы `bebeberloga.v1` — единственный источник моделей для Go/TS/Kotlin/Swift: `common`, `error`, `identity`, `community`, `sound`, `message`, `envelope`, `mls`, `gateway` | B1, B21 | черновик 3 (B21), `buf lint` и `buf breaking` (`WIRE_JSON`, ADR-0031) чистые |
 
 ## Уже зафиксировано
 
-- MLS RFC 9420 через OpenMLS; ciphersuite `MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519` (0x0001); credential Basic. Одна группа на DM, групповой DM, текстовый канал, приватную ветку, активный звонок ([ADR-0004](../adr/0004-e2ee-mls-sframe.md)).
+- MLS RFC 9420 через OpenMLS; ciphersuite `MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519` (0x0001); credential Basic. Одна группа на DM, групповой DM, текстовый канал, чат голосового канала (создаётся вместе с каналом, ADR-0026), приватную ветку, активный звонок ([ADR-0004](../adr/0004-e2ee-mls-sframe.md)).
 - Сервер = Delivery Service + Authentication Service: принимает commit только для текущей эпохи; external-sender-предложения Add/Remove по правам; commit делает онлайн-участник, которого назначает DS. External commit и GroupInfo в 1.0 не используются: любой вход — Add сервера и commit участника, возврат после горизонта офлайна — Remove + Add, рассинхрон — пересоздание группы канала ([ADR-0019](../adr/0019-no-external-commit-1-0.md), `CRYPTO.md` §2). Ротация эпохи при смене состава и не реже раза в сутки.
 - Лимит участников канала по умолчанию 2 000 ([ADR-0005](../adr/0005-channel-member-limit.md)).
 - История видна всем, кто видит канал, через ключи истории канала ([ADR-0015](../adr/0015-history-visible-to-members.md)).
-- Файлы: XChaCha20-Poly1305 чанками по 1 МиБ, presigned URL в S3, ключ и хэш — в зашифрованном конверте сообщения (`FileRef`, CRYPTO.md §6.2, §7); превью генерирует отправитель.
+- Файлы: XChaCha20-Poly1305 чанками по 1 МиБ, presigned URL в S3, ключ, хэш и истинный размер — в зашифрованном конверте сообщения (`FileRef`, CRYPTO.md §6.2, §7); превью генерирует отправитель. Файл и превью перед шифрованием дополняются до длины по схеме Padmé: сервер видит только выровненный размер blob-а ([ADR-0028](../adr/0028-server-data-minimization.md), CRYPTO.md §7.2).
 - Push: только id группы и сообщения (UnifiedPush, FCM, APNs).
-- Упоминания: `mention-hint` — HMAC id упоминаемого на подключе поколения ключа истории (CRYPTO.md §6.4) в открытых метаданных сообщения; сервер сравнивает его с хинтами, которые зарегистрировали участники, и узнаёт, кого упомянули (ради адресного уведомления), но не текст сообщения.
-- Удаление и редактирование — новые зашифрованные конверты (`edit`, `delete`) по id исходного сообщения; сервер ставит tombstone на шифртекст по команде автора или модератора.
+- Упоминания: `mention-hint` — HMAC подключом поколения ключа истории от вида цели, id упомянутого и id сообщения (CRYPTO.md §6.4) в открытых метаданных сообщения, вперемешку с хинтами-пустышками. Сопоставляет хинты клиент получателя; сервер их только хранит и отдаёт и не знает, кого упомянули ([ADR-0027](../adr/0027-mentions-matched-by-client.md)). После офлайна клиент забирает кандидатов без шифртекста и считает упоминания сам.
+- Название и тема канала — содержимое: запись под подключом головного поколения ключа истории канала, подписанная устройством автора правки. Сервер хранит только текущую версию записи — шифртекст, номер, хэш с солью и время приёма; автор commit-а, начавшего поколение, несёт запись текущей версии под новым поколением тем же запросом ([ADR-0026](../adr/0026-channel-names-encrypted.md), [ADR-0032](../adr/0032-channel-meta-current-hash-versions.md), CRYPTO.md §6.8).
+- Удаление и редактирование — новые зашифрованные конверты (`edit`, `delete`) по id исходного сообщения; по команде автора или модератора сервер стирает шифртекст, обёрнутый ключ, хинты и вложения и оставляет отметку об удалении (ADR-0028).
+- Сервер хранит минимум: адреса клиентов и User-Agent на диск не пишутся, истории присутствия нет; что и сколько хранится — [`RETENTION.md`](RETENTION.md).
 - Стрим: отдельный участник «стрим» в комнате звонка; SFU пересылает только подписавшимся; simulcast из двух слоёв; H.264 всегда, HEVC/AV1 — если все зрители декодируют ([ADR-0008](../adr/0008-stream-media-engine.md)).
 - Soundboard: звуки — публичные ассеты; команда `PlaySound` идёт через gateway, сервер проверяет право 14, присутствие в канале и кулдаун и рассылает `SoundPlayed`; каждый клиент играет локальную копию.
 - Модель данных ядра — [`docs/spec/ARCHITECTURE.md`](../spec/ARCHITECTURE.md) раздел 5.3.
-- Контракты: OpenAPI 3.0.3 поверх Protobuf-моделей (`x-proto-message`/`x-go-type`), `oapi-codegen`/`openapi-typescript`, Protobuf через buf с удалёнными плагинами, id — UUIDv7 строкой, JSON — protojson, сгенерированный код коммитится ([ADR-0017](../adr/0017-api-contracts.md)).
+- Контракты: OpenAPI 3.0.3 поверх Protobuf-моделей (`x-proto-message`/`x-go-type`), `oapi-codegen`/`openapi-typescript`, Protobuf через buf с удалёнными плагинами, id — UUIDv7 строкой, JSON — protojson, сгенерированный код коммитится ([ADR-0017](../adr/0017-api-contracts.md)). Совместимость схем проверяет `buf breaking` в категории `WIRE_JSON`: поле удаляется вместе с записью номера и имени в `reserved`, каждое ломающее изменение записывается в `STATUS.md` ([ADR-0031](../adr/0031-buf-breaking-wire-json.md)).
 
 ## Покрытие пользовательских потоков
 
@@ -76,14 +77,19 @@
 | Шаг | Вызов или событие |
 |---|---|
 | 1 Мастер | клиент |
-| 2 Создать сообщество, пресеты ролей, каналы по умолчанию, владелец | `POST /communities` → `CommunitySnapshot`; `CommunityCreated` другим своим устройствам |
-| 3 MLS-группы текстовых каналов; группы голосового — лениво | `POST /mls/groups {channel_id, kind: GROUP_KIND_CHAT}`; группа звонка — при `POST /channels/{id}/voice/join` с `call_group_exists: false` |
+| 2 Создать сообщество, пресеты ролей, каналы по умолчанию без названий, владелец | `POST /communities` → `CommunitySnapshot` (у каналов нет `meta`); `CommunityCreated` другим своим устройствам |
+| 3 Группа чата и запись с названием для каждого канала, и текстового, и голосового; группа звонка — первым вошедшим | `POST /mls/groups {channel_id, kind: GROUP_KIND_CHAT, initial_channel_meta{generation: 1, version: 1, blob, record_hash}}` → `ChannelUpdated` с `Channel.meta`; названия («общий», «Болталка») — из локализации клиента, сервер их не видит (CRYPTO.md §6.8.5); группа звонка — при `POST /channels/{id}/voice/join` с `call_group_exists: false` |
 | 4 Открыть первый канал | клиент |
 | 5 Лимит; откат | `COMMUNITY_LIMIT`; `DELETE /communities/{id}` + серверная уборка (STATUS.md) |
 | Канал 1 | клиент (права из `EffectivePermissions`) |
-| Канал 2 Создать канал | `POST /communities/{id}/channels {type, name, category_id, private, allowed_role_ids, allowed_user_ids}` |
-| Канал 3 `ChannelCreated`; группа и добавление устройств пакетами | событие `ChannelCreated`; `POST /mls/groups`; `POST /users/{id}/key-packages/claim` × участники; `POST /mls/groups/{id}/handshakes` (commit + welcomes) |
-| Канал 4 Появление у всех | `ChannelCreated` видящим канал |
+| Канал 2 Создать канал — название в запрос не входит | `POST /communities/{id}/channels {type, category_id, private, allowed_role_ids, allowed_user_ids}` |
+| Канал 3 `ChannelCreated`; группа чата, запись с названием и темой, добавление устройств пакетами | событие `ChannelCreated` (без `meta`); `POST /mls/groups` с `initial_channel_meta` → `ChannelUpdated`; `POST /users/{id}/key-packages/claim` × участники; `POST /mls/groups/{id}/handshakes` (commit + welcomes) |
+| Канал 4 Появление у всех; заглушка вместо названия, пока устройство не в группе | `ChannelCreated` и `ChannelUpdated` видящим канал; название клиент расшифровывает после `MlsWelcome` и связки |
+| Переименовать 1 Правка в настройках канала | клиент (право `channel.edit`, устройство в группе канала) |
+| Переименовать 2 Новая запись под текущим поколением, подпись устройства | `PUT /channels/{id}/meta {generation, version, blob, record_hash}` (CRYPTO.md §6.8.5) |
+| Переименовать 3 Проверки сервера; ошибки | право 3, членство в группе, поколение, версия → `ChannelUpdated`; `HISTORY_GENERATION_MISMATCH{current_generation}` — клиент догоняет commit-ы и повторяет сам; `CHANNEL_META_VERSION_CONFLICT{current_meta_version}` — клиент показывает новое название и предлагает повторить правку; `RATE_LIMITED{retry_after_ms}` (одна правка в 10 с на канал; у пользователя по всем каналам — 5 подряд, дальше одна в 10 с) — клиент повторяет сам; `CHANNEL_META_VERSION_TOO_FAR` — клиент не повторяет (CRYPTO.md §6.8.5) |
+| Переименовать 4 Название и тема меняются у всех, у кого есть ключи | `ChannelUpdated`; клиент проверяет запись (CRYPTO.md §6.8.3) |
+| Новое поколение ключа истории (ротация, разрыв, пересоздание) | запись канала под новым поколением — `channel_meta[]` в том же `POST /mls/groups/{id}/handshakes` или `POST /mls/groups` (CRYPTO.md §6.8.6–§6.8.7); `seen_version` отстал — `CHANNEL_META_VERSION_CONFLICT`, повтор того же commit-а; запись сохраняется, только если её версия равна `latest_version` |
 
 ### 04 — Приглашение и вступление
 
@@ -92,9 +98,9 @@
 | Создать 1 Действующая ссылка или новая | `GET /channels/{id}/invites?mine=true`; `POST /communities/{id}/invites {channel_id, ttl_seconds: 604800, max_uses: 0}` → `InviteCreated` |
 | Создать 2 Копировать; пригласить друга в ЛС | клиент; ЛС — обычное `text`-сообщение со ссылкой (OPEN-QUESTIONS №5); `InviteCreated` — создателю и участникам с `community.admin` |
 | Создать 3 Настроить ссылку | `POST /communities/{id}/invites` с параметрами; старая действует |
-| Вступить 1 Превью; ошибки | `GET /invites/{code}` → `INVITE_EXPIRED`, `INVITE_REVOKED`, `INVITE_USES_EXHAUSTED`, `BANNED`, `CHANNEL_MEMBER_LIMIT`, `INVITES_PAUSED` |
+| Вступить 1 Превью (канал не называет); ошибки | `GET /invites/{code}` → `InvitePreview` без названия канала; `INVITE_EXPIRED`, `INVITE_REVOKED`, `INVITE_USES_EXHAUSTED`, `BANNED`, `CHANNEL_MEMBER_LIMIT`, `INVITES_PAUSED` |
 | Вступить 2 Принять | `POST /invites/{code}/accept` → `MemberJoined` участникам, `CommunityCreated` своим устройствам |
-| Вступить 3 Add-предложения, Skeleton до commit; ожидание, если никого нет в сети | `MlsHandshake{from_external_sender}` членам групп; `MlsUpdateRequested{designated_device_id}`; commit назначенным онлайн-участником; без онлайн-участников заявка ждёт (ADR-0019) |
+| Вступить 3 Add-предложения, Skeleton до commit, заглушка вместо названия канала; ожидание, если никого нет в сети | `MlsHandshake{from_external_sender}` членам групп; `MlsUpdateRequested{designated_device_id}`; commit назначенным онлайн-участником; без онлайн-участников заявка ждёт (ADR-0019) |
 | Вступить 4 Связка ключей истории; история | `MlsWelcome` → `GET /mls/groups/{id}/history-key-bundle` → `GET /channels/{id}/history-key-links` → `GET /channels/{id}/messages` (при выключенной истории вход — разрыв цепочки, сервер не отдаёт сообщения до вступления; повторное включение — тоже разрыв, CRYPTO.md §6.3.3) |
 | Вступить 5 Системное сообщение о входе | `MessageCreated{system: KIND_MEMBER_JOINED}` в канале системных сообщений |
 
@@ -117,15 +123,18 @@
 |---|---|
 | Отправка 1 UUIDv7, «отправляется» | клиент |
 | Отправка 2 Шифрование и отправка | `POST /channels/{id}/messages {id, group_id, epoch, ciphertext (SealedMessage), wrapped_message_key, history_key_generation, mention_hints, broadcast_mention, attachment_ids}` (CRYPTO.md §6.2) |
-| Отправка 3 Права, сохранение, рассылка, push | сервер: `chat.post`, `chat.upload`, `chat.ping_all`; `MessageCreated`; push без текста |
+| Отправка 3 Права, отметка права 8, сохранение, рассылка, push | сервер: `chat.post`, `chat.upload`; отметка `MessageMeta.author_can_ping_all` по `chat.ping_all`; `MessageCreated`; push без текста |
 | Отправка 4 Ошибки | очередь без сети; `PERMISSION_DENIED{missing_permission}`; `HISTORY_GENERATION_MISMATCH{current_generation}` → `GET /mls/groups/{id}/handshakes?after_seq=` и повтор до 3 раз |
-| Отправка 5 У других | `MessageCreated`; бейдж по `mention_hints`/`broadcast_mention`; `ReadStateUpdated` |
+| Отправка 5 У других | `MessageCreated`; упомянут ли пользователь, решает его клиент по `mention_hints`, `broadcast_mention` и `author_can_ping_all` (CRYPTO.md §6.4); `ReadStateUpdated` |
+| Упоминания после офлайна 1 Число кандидатов | `Ready.read_states[].mention_candidate_count` |
+| Упоминания после офлайна 2 Кандидаты без шифртекста, подсчёт | `GET /users/me/mention-candidates` → `MentionCandidate{message_id, channel_id, history_key_generation, mention_hints, broadcast_mention, author_can_ping_all}`; сопоставление — клиент |
+| Упоминания после офлайна 3 Бейдж; подсчёт без ключа поколения откладывается | клиент |
 | Ответ | `TextBody.reply_to` |
 | Правка | `MessageCreated` с конвертом `EditBody` |
-| Удаление | `DELETE /channels/{id}/messages/{mid}` → `MessageDeleted`; плюс конверт `DeleteBody` |
+| Удаление | `DELETE /channels/{id}/messages/{mid}` → сервер стирает шифртекст, обёрнутый ключ, хинты и blob-ы вложений, оставляет отметку → `MessageDeleted`; плюс конверт `DeleteBody` |
 | Реакция | `MessageCreated` с конвертом `ReactionBody` |
 | Вложения 1 Выбор файлов | клиент; лимиты из `InstanceLimits` |
-| Вложения 2 Ключ, шифрование, загрузка, метаданные в конверт | `POST /files` → `PUT upload_url` → `POST /files/{id}/complete`; `FileRef` в `TextBody.attachments` |
+| Вложения 2 Ключ, выравнивание длины, шифрование, загрузка, метаданные в конверт | `POST /files {size — размер blob-а}` → `PUT upload_url` → `POST /files/{id}/complete`; `FileRef` с истинным размером в `TextBody.attachments` (CRYPTO.md §7.2) |
 | Вложения 3 Прогресс и отмена | `DELETE /files/{id}`; сообщение не отправляется |
 | Вложения 4 Получение | `GET /files/{id}` → скачивание и расшифровка; `Skeleton` по `FileRef.width/height` |
 
@@ -180,13 +189,13 @@
 | Шаг | Вызов или событие |
 |---|---|
 | Приватный канал 1 | `POST /communities/{id}/channels {private, allowed_*}` или `PUT /channels/{id}/access {private, entries}` |
-| Приватный канал 2 Переопределения `channel.see`, состав группы | сервер; `PermissionsUpdated` затронутым; владельцу и администраторам, не выбранным в канал, — `LockedChannelsUpdated` («🔒 закрытый для тебя», PERMISSIONS §3 п. 2); самодобавление — `POST /channels/{id}/access/self` → системное `KIND_CHANNEL_SELF_JOINED` |
+| Приватный канал 2 Переопределения `channel.see`, состав группы | сервер; `PermissionsUpdated` затронутым; владельцу и администраторам, не выбранным в канал, — `LockedChannelsUpdated` («🔒 закрытый для тебя» без названия, PERMISSIONS §3 п. 2); самодобавление — `POST /channels/{id}/access/self` → системное `KIND_CHANNEL_SELF_JOINED` |
 | Приватный канал 3 Remove, commit | `MlsHandshake{from_external_sender, HANDSHAKE_KIND_PROPOSAL}` → commit участником |
 | Приватный канал 4 Канал исчезает | `ChannelDeleted` потерявшим доступ |
 | Роли 1 Сохранить роль | `POST /communities/{id}/roles`, `PATCH /roles/{id}`, `PUT /communities/{id}/members/{uid}/roles` |
 | Роли 2 Пересчёт прав, `PermissionsUpdated` | `RoleUpdated`, `MemberUpdated`, `PermissionsUpdated`; при смене `channel.see` — шаг 3 выше |
 | Выгнать 1 Подтверждение | клиент |
-| Выгнать/забанить 2 | `DELETE /communities/{id}/members/{uid}` → `MemberLeft{COMMUNITY_REMOVAL_REASON_KICKED}`; `PUT /communities/{id}/bans/{uid} {reason, delete_messages_window_seconds}` → `BanAdded`, `MemberLeft{COMMUNITY_REMOVAL_REASON_BANNED}`, `MessageDeleted` пачками; Remove-предложения во всех группах |
+| Выгнать/забанить 2 | `DELETE /communities/{id}/members/{uid}` → `MemberLeft{COMMUNITY_REMOVAL_REASON_KICKED}`; `PUT /communities/{id}/bans/{uid} {reason, delete_messages_window_seconds}` → `BanAdded`, `MemberLeft{COMMUNITY_REMOVAL_REASON_BANNED}`, `MessageDeleted` пачками — шифртексты и вложения за период стёрты, остались отметки; Remove-предложения во всех группах |
 | Выгнать 3 Modal у выгнанного | `CommunityRemoved{reason: COMMUNITY_REMOVAL_REASON_KICKED | COMMUNITY_REMOVAL_REASON_BANNED}`; если устройство было офлайн дольше буфера Resume — `Ready.community_removals` / `GET /users/me/community-removals`, подтверждение показа `DELETE …/community-removals/{community_id}` |
 | Выгнать 4 Журнал (S) | без события участникам |
 | Снять бан | `DELETE /communities/{id}/bans/{uid}` → `BanRemoved` |

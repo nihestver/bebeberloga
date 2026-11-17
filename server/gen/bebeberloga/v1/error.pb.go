@@ -154,6 +154,15 @@ const (
 	// Время в UUIDv7 сообщения старше 30 сут или опережает время приёма больше чем на 5 мин
 	// (CRYPTO.md §6.2.8). HTTP 400.
 	ErrorCode_ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW ErrorCode = 517
+	// Запись канала с названием и темой (CRYPTO.md §6.8). Правка `PUT /channels/{id}/meta`: версию
+	// уже занял другой участник — клиент показывает новое название и предлагает повторить правку.
+	// Commit, начинающий поколение: `seen_version` его записи отстал от правки — клиент забирает
+	// запись и повторяет тот же commit с новой записью. `current_meta_version`. HTTP 409.
+	ErrorCode_ERROR_CODE_CHANNEL_META_VERSION_CONFLICT ErrorCode = 518
+	// Правка `PUT /channels/{id}/meta`: версия больше текущей сильнее, чем на 65 536, — версия на
+	// устройстве намного впереди сервера (CRYPTO.md §6.8.5). Клиент правку не повторяет; чинит
+	// пересоздание группы канала оператором. `current_meta_version`. HTTP 409.
+	ErrorCode_ERROR_CODE_CHANNEL_META_VERSION_TOO_FAR ErrorCode = 519
 	// --- саундборд ---------------------------------------------------------
 	// Звук не в формате Opus/ogg (клиент перекодирует перед загрузкой, FLOWS/09 ш. 2)
 	// или длиннее 5 с. HTTP 400.
@@ -220,67 +229,71 @@ var (
 		515: "ERROR_CODE_HISTORY_GENERATION_MISMATCH",
 		516: "ERROR_CODE_NOT_DESIGNATED",
 		517: "ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW",
+		518: "ERROR_CODE_CHANNEL_META_VERSION_CONFLICT",
+		519: "ERROR_CODE_CHANNEL_META_VERSION_TOO_FAR",
 		600: "ERROR_CODE_SOUND_INVALID",
 		601: "ERROR_CODE_SOUND_SLOTS_FULL",
 	}
 	ErrorCode_value = map[string]int32{
-		"ERROR_CODE_UNSPECIFIED":                 0,
-		"ERROR_CODE_VALIDATION_FAILED":           1,
-		"ERROR_CODE_UNAUTHENTICATED":             2,
-		"ERROR_CODE_PERMISSION_DENIED":           3,
-		"ERROR_CODE_NOT_FOUND":                   4,
-		"ERROR_CODE_CONFLICT":                    5,
-		"ERROR_CODE_RATE_LIMITED":                6,
-		"ERROR_CODE_PAYLOAD_TOO_LARGE":           7,
-		"ERROR_CODE_INTERNAL":                    8,
-		"ERROR_CODE_UNAVAILABLE":                 9,
-		"ERROR_CODE_USERNAME_TAKEN":              100,
-		"ERROR_CODE_EMAIL_IN_USE":                101,
-		"ERROR_CODE_REGISTRATION_CLOSED":         102,
-		"ERROR_CODE_INVALID_CREDENTIALS":         103,
-		"ERROR_CODE_EMAIL_NOT_VERIFIED":          104,
-		"ERROR_CODE_TOKEN_INVALID":               105,
-		"ERROR_CODE_PASSWORD_MISMATCH":           106,
-		"ERROR_CODE_DEVICE_UNVERIFIED":           200,
-		"ERROR_CODE_NO_KEY_PACKAGES":             202,
-		"ERROR_CODE_VERIFICATION_EXPIRED":        203,
-		"ERROR_CODE_SIGNATURE_INVALID":           204,
-		"ERROR_CODE_INVALID_KEY_PACKAGE":         205,
-		"ERROR_CODE_IDENTITY_RESET_PENDING":      206,
-		"ERROR_CODE_IDENTITY_RESET_LIMITED":      207,
-		"ERROR_CODE_CHANNEL_MEMBER_LIMIT":        300,
-		"ERROR_CODE_COMMUNITY_LIMIT":             301,
-		"ERROR_CODE_BANNED":                      302,
-		"ERROR_CODE_INVITE_EXPIRED":              303,
-		"ERROR_CODE_INVITE_REVOKED":              304,
-		"ERROR_CODE_INVITE_USES_EXHAUSTED":       305,
-		"ERROR_CODE_INVITES_PAUSED":              306,
-		"ERROR_CODE_ROLE_HIERARCHY":              307,
-		"ERROR_CODE_OWNER_CANNOT_LEAVE":          308,
-		"ERROR_CODE_PRESET_ROLE_IMMUTABLE":       309,
-		"ERROR_CODE_VOICE_CHANNEL_FULL":          310,
-		"ERROR_CODE_NOT_IN_VOICE":                311,
-		"ERROR_CODE_BLOCKED":                     400,
-		"ERROR_CODE_RELATIONSHIP_EXISTS":         401,
-		"ERROR_CODE_EPOCH_MISMATCH":              500,
-		"ERROR_CODE_NOT_GROUP_MEMBER":            501,
-		"ERROR_CODE_MESSAGE_EXISTS":              502,
-		"ERROR_CODE_ATTACHMENT_INVALID":          503,
-		"ERROR_CODE_TOO_MANY_ATTACHMENTS":        504,
-		"ERROR_CODE_EXTERNAL_COMMIT_UNSUPPORTED": 505,
-		"ERROR_CODE_PROPOSALS_MISSING":           506,
-		"ERROR_CODE_REMOVAL_PENDING":             507,
-		"ERROR_CODE_BAD_DELTA":                   508,
-		"ERROR_CODE_BAD_WELCOME":                 509,
-		"ERROR_CODE_BAD_MESSAGE":                 510,
-		"ERROR_CODE_UNAUTHORIZED_CHANGE":         511,
-		"ERROR_CODE_ALREADY_MEMBER":              512,
-		"ERROR_CODE_GROUP_FROZEN":                513,
-		"ERROR_CODE_HISTORY_GENERATION_MISMATCH": 515,
-		"ERROR_CODE_NOT_DESIGNATED":              516,
-		"ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW":    517,
-		"ERROR_CODE_SOUND_INVALID":               600,
-		"ERROR_CODE_SOUND_SLOTS_FULL":            601,
+		"ERROR_CODE_UNSPECIFIED":                   0,
+		"ERROR_CODE_VALIDATION_FAILED":             1,
+		"ERROR_CODE_UNAUTHENTICATED":               2,
+		"ERROR_CODE_PERMISSION_DENIED":             3,
+		"ERROR_CODE_NOT_FOUND":                     4,
+		"ERROR_CODE_CONFLICT":                      5,
+		"ERROR_CODE_RATE_LIMITED":                  6,
+		"ERROR_CODE_PAYLOAD_TOO_LARGE":             7,
+		"ERROR_CODE_INTERNAL":                      8,
+		"ERROR_CODE_UNAVAILABLE":                   9,
+		"ERROR_CODE_USERNAME_TAKEN":                100,
+		"ERROR_CODE_EMAIL_IN_USE":                  101,
+		"ERROR_CODE_REGISTRATION_CLOSED":           102,
+		"ERROR_CODE_INVALID_CREDENTIALS":           103,
+		"ERROR_CODE_EMAIL_NOT_VERIFIED":            104,
+		"ERROR_CODE_TOKEN_INVALID":                 105,
+		"ERROR_CODE_PASSWORD_MISMATCH":             106,
+		"ERROR_CODE_DEVICE_UNVERIFIED":             200,
+		"ERROR_CODE_NO_KEY_PACKAGES":               202,
+		"ERROR_CODE_VERIFICATION_EXPIRED":          203,
+		"ERROR_CODE_SIGNATURE_INVALID":             204,
+		"ERROR_CODE_INVALID_KEY_PACKAGE":           205,
+		"ERROR_CODE_IDENTITY_RESET_PENDING":        206,
+		"ERROR_CODE_IDENTITY_RESET_LIMITED":        207,
+		"ERROR_CODE_CHANNEL_MEMBER_LIMIT":          300,
+		"ERROR_CODE_COMMUNITY_LIMIT":               301,
+		"ERROR_CODE_BANNED":                        302,
+		"ERROR_CODE_INVITE_EXPIRED":                303,
+		"ERROR_CODE_INVITE_REVOKED":                304,
+		"ERROR_CODE_INVITE_USES_EXHAUSTED":         305,
+		"ERROR_CODE_INVITES_PAUSED":                306,
+		"ERROR_CODE_ROLE_HIERARCHY":                307,
+		"ERROR_CODE_OWNER_CANNOT_LEAVE":            308,
+		"ERROR_CODE_PRESET_ROLE_IMMUTABLE":         309,
+		"ERROR_CODE_VOICE_CHANNEL_FULL":            310,
+		"ERROR_CODE_NOT_IN_VOICE":                  311,
+		"ERROR_CODE_BLOCKED":                       400,
+		"ERROR_CODE_RELATIONSHIP_EXISTS":           401,
+		"ERROR_CODE_EPOCH_MISMATCH":                500,
+		"ERROR_CODE_NOT_GROUP_MEMBER":              501,
+		"ERROR_CODE_MESSAGE_EXISTS":                502,
+		"ERROR_CODE_ATTACHMENT_INVALID":            503,
+		"ERROR_CODE_TOO_MANY_ATTACHMENTS":          504,
+		"ERROR_CODE_EXTERNAL_COMMIT_UNSUPPORTED":   505,
+		"ERROR_CODE_PROPOSALS_MISSING":             506,
+		"ERROR_CODE_REMOVAL_PENDING":               507,
+		"ERROR_CODE_BAD_DELTA":                     508,
+		"ERROR_CODE_BAD_WELCOME":                   509,
+		"ERROR_CODE_BAD_MESSAGE":                   510,
+		"ERROR_CODE_UNAUTHORIZED_CHANGE":           511,
+		"ERROR_CODE_ALREADY_MEMBER":                512,
+		"ERROR_CODE_GROUP_FROZEN":                  513,
+		"ERROR_CODE_HISTORY_GENERATION_MISMATCH":   515,
+		"ERROR_CODE_NOT_DESIGNATED":                516,
+		"ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW":      517,
+		"ERROR_CODE_CHANNEL_META_VERSION_CONFLICT": 518,
+		"ERROR_CODE_CHANNEL_META_VERSION_TOO_FAR":  519,
+		"ERROR_CODE_SOUND_INVALID":                 600,
+		"ERROR_CODE_SOUND_SLOTS_FULL":              601,
 	}
 )
 
@@ -389,8 +402,11 @@ type Error struct {
 	SuccessorGroupId string `protobuf:"bytes,9,opt,name=successor_group_id,json=successorGroupId,proto3" json:"successor_group_id,omitempty"`
 	// Для HISTORY_GENERATION_MISMATCH: текущее поколение ключа истории канала.
 	CurrentGeneration uint32 `protobuf:"varint,10,opt,name=current_generation,json=currentGeneration,proto3" json:"current_generation,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Для CHANNEL_META_VERSION_CONFLICT и CHANNEL_META_VERSION_TOO_FAR: `ChannelMeta.latest_version`
+	// канала.
+	CurrentMetaVersion uint64 `protobuf:"varint,11,opt,name=current_meta_version,json=currentMetaVersion,proto3" json:"current_meta_version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *Error) Reset() {
@@ -493,6 +509,13 @@ func (x *Error) GetCurrentGeneration() uint32 {
 	return 0
 }
 
+func (x *Error) GetCurrentMetaVersion() uint64 {
+	if x != nil {
+		return x.CurrentMetaVersion
+	}
+	return 0
+}
+
 var File_bebeberloga_v1_error_proto protoreflect.FileDescriptor
 
 const file_bebeberloga_v1_error_proto_rawDesc = "" +
@@ -501,7 +524,7 @@ const file_bebeberloga_v1_error_proto_rawDesc = "" +
 	"\n" +
 	"FieldError\x12\x14\n" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\"\xaf\x03\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"\xe1\x03\n" +
 	"\x05Error\x12-\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x19.bebeberloga.v1.ErrorCodeR\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12-\n" +
@@ -513,7 +536,8 @@ const file_bebeberloga_v1_error_proto_rawDesc = "" +
 	"\adetails\x18\b \x01(\v2\x17.google.protobuf.StructR\adetails\x12,\n" +
 	"\x12successor_group_id\x18\t \x01(\tR\x10successorGroupId\x12-\n" +
 	"\x12current_generation\x18\n" +
-	" \x01(\rR\x11currentGeneration*\xc9\x0f\n" +
+	" \x01(\rR\x11currentGeneration\x120\n" +
+	"\x14current_meta_version\x18\v \x01(\x04R\x12currentMetaVersion*\xa6\x10\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cERROR_CODE_VALIDATION_FAILED\x10\x01\x12\x1e\n" +
@@ -569,7 +593,9 @@ const file_bebeberloga_v1_error_proto_rawDesc = "" +
 	"\x17ERROR_CODE_GROUP_FROZEN\x10\x81\x04\x12+\n" +
 	"&ERROR_CODE_HISTORY_GENERATION_MISMATCH\x10\x83\x04\x12\x1e\n" +
 	"\x19ERROR_CODE_NOT_DESIGNATED\x10\x84\x04\x12(\n" +
-	"#ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW\x10\x85\x04\x12\x1d\n" +
+	"#ERROR_CODE_MESSAGE_ID_OUT_OF_WINDOW\x10\x85\x04\x12-\n" +
+	"(ERROR_CODE_CHANNEL_META_VERSION_CONFLICT\x10\x86\x04\x12,\n" +
+	"'ERROR_CODE_CHANNEL_META_VERSION_TOO_FAR\x10\x87\x04\x12\x1d\n" +
 	"\x18ERROR_CODE_SOUND_INVALID\x10\xd8\x04\x12 \n" +
 	"\x1bERROR_CODE_SOUND_SLOTS_FULL\x10\xd9\x04\"\x06\b\xc9\x01\x10\xc9\x01\"\x06\b\x82\x04\x10\x82\x04*\x1fERROR_CODE_RECOVERY_KEY_INVALID*\x1dERROR_CODE_GROUP_UNDER_REVIEWB\xc3\x01\n" +
 	"\x12com.bebeberloga.v1B\n" +

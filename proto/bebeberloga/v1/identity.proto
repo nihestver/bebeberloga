@@ -74,8 +74,12 @@ message Device {
   bytes identity_signature = 7;
   DeviceVerification verification = 8;
   google.protobuf.Timestamp created_at = 9;
+  // Время последней активности устройства. Нужно горизонту офлайна (CRYPTO.md §2.11); адрес
+  // клиента при этом не записывается (ADR-0028 п. 1, п. 4).
   google.protobuf.Timestamp last_seen_at = 10;
-  // Город по IP последнего подключения, если инстанс это показывает.
+  // Город последнего подключения. Пусто, пока оператор не включил показ
+  // (`InstanceInfo.device_location_enabled`, по умолчанию выключено); включённый, сервер
+  // записывает только название города, сам адрес — нет (ADR-0028 п. 2).
   string last_seen_location = 11;
   // Это устройство — то, с которого сделан запрос.
   bool current = 12;
@@ -99,16 +103,16 @@ message PublicDevice {
   bytes history_hpke_key = 8;
   bytes history_hpke_key_signature = 9;
   // Время удаления; запись удалённого устройства сервер хранит навсегда — по ней проверяются
-  // подписи его сообщений в истории (CRYPTO.md §6.2.8).
+  // подписи его сообщений в истории и записи канала (CRYPTO.md §6.2.8).
   google.protobuf.Timestamp removed_at = 10;
 }
 
 // Ключ идентичности пользователя с периодом действия: история ключей после «Начать заново»
-// (CRYPTO.md §6.2.6). Сервер хранит её навсегда.
+// (CRYPTO.md §6.2.6). Сервер хранит её навсегда (CRYPTO.md §6.2.8).
 message IdentityKeyRecord {
   bytes identity_pubkey = 1;
   google.protobuf.Timestamp valid_from = 2;
-  // Пусто у действующего ключа.
+  // Пусто у действующего ключа; у удалённого аккаунта закрыт временем удаления.
   google.protobuf.Timestamp valid_until = 3;
 }
 

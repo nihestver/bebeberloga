@@ -239,12 +239,17 @@ export type Device = Message<"bebeberloga.v1.Device"> & {
   createdAt?: Timestamp;
 
   /**
+   * Время последней активности устройства. Нужно горизонту офлайна (CRYPTO.md §2.11); адрес
+   * клиента при этом не записывается (ADR-0028 п. 1, п. 4).
+   *
    * @generated from field: google.protobuf.Timestamp last_seen_at = 10;
    */
   lastSeenAt?: Timestamp;
 
   /**
-   * Город по IP последнего подключения, если инстанс это показывает.
+   * Город последнего подключения. Пусто, пока оператор не включил показ
+   * (`InstanceInfo.device_location_enabled`, по умолчанию выключено); включённый, сервер
+   * записывает только название города, сам адрес — нет (ADR-0028 п. 2).
    *
    * @generated from field: string last_seen_location = 11;
    */
@@ -333,7 +338,7 @@ export type PublicDevice = Message<"bebeberloga.v1.PublicDevice"> & {
 
   /**
    * Время удаления; запись удалённого устройства сервер хранит навсегда — по ней проверяются
-   * подписи его сообщений в истории (CRYPTO.md §6.2.8).
+   * подписи его сообщений в истории и записи канала (CRYPTO.md §6.2.8).
    *
    * @generated from field: google.protobuf.Timestamp removed_at = 10;
    */
@@ -349,7 +354,7 @@ export const PublicDeviceSchema: GenMessage<PublicDevice> = /*@__PURE__*/
 
 /**
  * Ключ идентичности пользователя с периодом действия: история ключей после «Начать заново»
- * (CRYPTO.md §6.2.6). Сервер хранит её навсегда.
+ * (CRYPTO.md §6.2.6). Сервер хранит её навсегда (CRYPTO.md §6.2.8).
  *
  * @generated from message bebeberloga.v1.IdentityKeyRecord
  */
@@ -365,7 +370,7 @@ export type IdentityKeyRecord = Message<"bebeberloga.v1.IdentityKeyRecord"> & {
   validFrom?: Timestamp;
 
   /**
-   * Пусто у действующего ключа.
+   * Пусто у действующего ключа; у удалённого аккаунта закрыт временем удаления.
    *
    * @generated from field: google.protobuf.Timestamp valid_until = 3;
    */

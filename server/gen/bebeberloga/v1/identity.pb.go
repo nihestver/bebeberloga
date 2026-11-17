@@ -536,8 +536,12 @@ type Device struct {
 	IdentitySignature []byte                 `protobuf:"bytes,7,opt,name=identity_signature,json=identitySignature,proto3" json:"identity_signature,omitempty"`
 	Verification      DeviceVerification     `protobuf:"varint,8,opt,name=verification,proto3,enum=bebeberloga.v1.DeviceVerification" json:"verification,omitempty"`
 	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	LastSeenAt        *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=last_seen_at,json=lastSeenAt,proto3" json:"last_seen_at,omitempty"`
-	// Город по IP последнего подключения, если инстанс это показывает.
+	// Время последней активности устройства. Нужно горизонту офлайна (CRYPTO.md §2.11); адрес
+	// клиента при этом не записывается (ADR-0028 п. 1, п. 4).
+	LastSeenAt *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=last_seen_at,json=lastSeenAt,proto3" json:"last_seen_at,omitempty"`
+	// Город последнего подключения. Пусто, пока оператор не включил показ
+	// (`InstanceInfo.device_location_enabled`, по умолчанию выключено); включённый, сервер
+	// записывает только название города, сам адрес — нет (ADR-0028 п. 2).
 	LastSeenLocation string `protobuf:"bytes,11,opt,name=last_seen_location,json=lastSeenLocation,proto3" json:"last_seen_location,omitempty"`
 	// Это устройство — то, с которого сделан запрос.
 	Current bool `protobuf:"varint,12,opt,name=current,proto3" json:"current,omitempty"`
@@ -692,7 +696,7 @@ type PublicDevice struct {
 	HistoryHpkeKey          []byte                 `protobuf:"bytes,8,opt,name=history_hpke_key,json=historyHpkeKey,proto3" json:"history_hpke_key,omitempty"`
 	HistoryHpkeKeySignature []byte                 `protobuf:"bytes,9,opt,name=history_hpke_key_signature,json=historyHpkeKeySignature,proto3" json:"history_hpke_key_signature,omitempty"`
 	// Время удаления; запись удалённого устройства сервер хранит навсегда — по ней проверяются
-	// подписи его сообщений в истории (CRYPTO.md §6.2.8).
+	// подписи его сообщений в истории и записи канала (CRYPTO.md §6.2.8).
 	RemovedAt     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=removed_at,json=removedAt,proto3" json:"removed_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -799,12 +803,12 @@ func (x *PublicDevice) GetRemovedAt() *timestamppb.Timestamp {
 }
 
 // Ключ идентичности пользователя с периодом действия: история ключей после «Начать заново»
-// (CRYPTO.md §6.2.6). Сервер хранит её навсегда.
+// (CRYPTO.md §6.2.6). Сервер хранит её навсегда (CRYPTO.md §6.2.8).
 type IdentityKeyRecord struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	IdentityPubkey []byte                 `protobuf:"bytes,1,opt,name=identity_pubkey,json=identityPubkey,proto3" json:"identity_pubkey,omitempty"`
 	ValidFrom      *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=valid_from,json=validFrom,proto3" json:"valid_from,omitempty"`
-	// Пусто у действующего ключа.
+	// Пусто у действующего ключа; у удалённого аккаунта закрыт временем удаления.
 	ValidUntil    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

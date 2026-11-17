@@ -59,11 +59,12 @@ message FileRef {
   string name = 2;
   // MIME-тип.
   string mime_type = 3;
-  // Размер открытого файла в байтах.
+  // Истинный размер открытого файла в байтах — без добавки до выровненной длины. Получатель
+  // обрезает расшифрованное по нему и проверяет, что добавка нулевая (CRYPTO.md §7.2).
   uint64 size = 4;
-  // Ключ XChaCha20-Poly1305 (32 байта). Схема чанков по 1 МиБ и nonce — CRYPTO.md (B2).
+  // Ключ XChaCha20-Poly1305 (32 байта). Схема чанков по 1 МиБ и nonce — CRYPTO.md §7.
   bytes key = 5;
-  // Хэш открытого файла (BLAKE3, 32 байта).
+  // Хэш открытого файла без добавки (BLAKE3, 32 байта).
   bytes content_hash = 6;
   // Хэш шифртекста, чтобы сверить с Attachment.ciphertext_hash.
   bytes ciphertext_hash = 7;
@@ -76,6 +77,23 @@ message FileRef {
   bool spoiler = 11;
   // Описание (альтернативный текст), до 500 символов (STATUS.md).
   string description = 12;
+  // Превью изображения или видео — второй зашифрованный blob (ARCHITECTURE.md §4.5); не задано,
+  // если превью нет.
+  FilePreview preview = 13;
+}
+
+// Второй blob вложения — превью. Шифруется подключом того же ключа файла (объект вида 2,
+// CRYPTO.md §7.1) и выравнивается так же, как файл.
+message FilePreview {
+  // Id blob-а превью на сервере (Attachment.id).
+  string attachment_id = 1;
+  // Истинный размер открытого превью в байтах — без добавки (CRYPTO.md §7.2).
+  uint64 size = 2;
+  // Хэш шифртекста, чтобы сверить с Attachment.ciphertext_hash.
+  bytes ciphertext_hash = 3;
+  // Хэш открытого превью без добавки (BLAKE3, 32 байта); сверяется после расшифровки
+  // (CRYPTO.md §7.3).
+  bytes content_hash = 4;
 }
 
 // Превью ссылки (S): генерирует клиент отправителя (ARCHITECTURE.md §8).

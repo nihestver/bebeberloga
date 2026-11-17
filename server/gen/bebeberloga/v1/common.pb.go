@@ -501,7 +501,9 @@ type InstanceLimits struct {
 	MaxTextLength uint32 `protobuf:"varint,1,opt,name=max_text_length,json=maxTextLength,proto3" json:"max_text_length,omitempty"`
 	// Максимум вложений в сообщении (10, FLOWS/06).
 	MaxAttachments uint32 `protobuf:"varint,2,opt,name=max_attachments,json=maxAttachments,proto3" json:"max_attachments,omitempty"`
-	// Максимальный размер файла в байтах (настройка инстанса, FEATURES 3.8).
+	// Максимальный размер файла в байтах (настройка инстанса, FEATURES 3.8). Сравнивается с
+	// размером зашифрованного blob-а, который больше файла на добавку до выровненной длины и на
+	// служебные байты (CRYPTO.md §7.2).
 	MaxFileSize uint64 `protobuf:"varint,3,opt,name=max_file_size,json=maxFileSize,proto3" json:"max_file_size,omitempty"`
 	// Лимит участников канала (ADR-0005; по умолчанию 2 000).
 	ChannelMemberLimit uint32 `protobuf:"varint,4,opt,name=channel_member_limit,json=channelMemberLimit,proto3" json:"channel_member_limit,omitempty"`
@@ -627,8 +629,25 @@ type InstanceInfo struct {
 	ExternalSenderKey []byte `protobuf:"bytes,8,opt,name=external_sender_key,json=externalSenderKey,proto3" json:"external_sender_key,omitempty"`
 	// Цепочка замен ключа от первого ключа инстанса до действующего, по порядку.
 	ExternalSenderRotations []*ExternalSenderKeyRotation `protobuf:"bytes,9,rep,name=external_sender_rotations,json=externalSenderRotations,proto3" json:"external_sender_rotations,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Инстанс показывает владельцу устройства город последнего подключения
+	// (`Device.last_seen_location`). По умолчанию false; включает оператор. Включённый, сервер
+	// записывает только название города по локальной базе, сам адрес — нет (ADR-0028 п. 2).
+	DeviceLocationEnabled bool `protobuf:"varint,10,opt,name=device_location_enabled,json=deviceLocationEnabled,proto3" json:"device_location_enabled,omitempty"`
+	// Адреса STUN и TURN инстанса — URI по RFC 7064 и RFC 7065 (`stun:`, `turn:`, `turns:`), включая
+	// запасной путь `turns:turn.<домен>:443?transport=tcp` (ADR-0029 п. 1). Клиент использует только
+	// их: сторонних серверов нет (ADR-0029 п. 4). Учётных данных TURN здесь нет — ответ доступен без
+	// входа. Откуда клиент их получает и в каком виде, определяет B07 (медиасервисы).
+	IceUrls []string `protobuf:"bytes,11,rep,name=ice_urls,json=iceUrls,proto3" json:"ice_urls,omitempty"`
+	// Версия клиента того выпуска, к которому относится сервер, и ссылка, по которой её скачать.
+	// О новой версии клиент узнаёт только отсюда; куда ведёт ссылка, решает оператор
+	// (ADR-0030 п. 4). Пусто — оператор ссылку не задал.
+	ClientVersion string `protobuf:"bytes,12,opt,name=client_version,json=clientVersion,proto3" json:"client_version,omitempty"`
+	// Только `https://` и без части «имя@» перед именем сайта (userinfo, RFC 3986 §3.2.1): с ней
+	// адрес выглядит как адрес инстанса, а ведёт на другой сайт. Ссылку с другой схемой или с
+	// такой частью сервер не принимает от оператора и не отдаёт, а клиент не открывает.
+	ClientDownloadUrl string `protobuf:"bytes,13,opt,name=client_download_url,json=clientDownloadUrl,proto3" json:"client_download_url,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *InstanceInfo) Reset() {
@@ -722,6 +741,34 @@ func (x *InstanceInfo) GetExternalSenderRotations() []*ExternalSenderKeyRotation
 		return x.ExternalSenderRotations
 	}
 	return nil
+}
+
+func (x *InstanceInfo) GetDeviceLocationEnabled() bool {
+	if x != nil {
+		return x.DeviceLocationEnabled
+	}
+	return false
+}
+
+func (x *InstanceInfo) GetIceUrls() []string {
+	if x != nil {
+		return x.IceUrls
+	}
+	return nil
+}
+
+func (x *InstanceInfo) GetClientVersion() string {
+	if x != nil {
+		return x.ClientVersion
+	}
+	return ""
+}
+
+func (x *InstanceInfo) GetClientDownloadUrl() string {
+	if x != nil {
+		return x.ClientDownloadUrl
+	}
+	return ""
 }
 
 // Ответ `GET /health`: сервер жив, его версия и состояние зависимостей. Доступен без входа;
@@ -877,7 +924,7 @@ const file_bebeberloga_v1_common_proto_rawDesc = "" +
 	"\x15community_sound_slots\x18\x06 \x01(\rR\x13communitySoundSlots\x12H\n" +
 	"\x11max_stream_preset\x18\a \x01(\x0e2\x1c.bebeberloga.v1.StreamPresetR\x0fmaxStreamPreset\x121\n" +
 	"\x15max_client_frame_size\x18\b \x01(\rR\x12maxClientFrameSize\x120\n" +
-	"\x14communities_per_user\x18\t \x01(\rR\x12communitiesPerUser\"\xd6\x03\n" +
+	"\x14communities_per_user\x18\t \x01(\rR\x12communitiesPerUser\"\x80\x05\n" +
 	"\fInstanceInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12S\n" +
 	"\x13registration_policy\x18\x02 \x01(\x0e2\".bebeberloga.v1.RegistrationPolicyR\x12registrationPolicy\x12\x1b\n" +
@@ -888,7 +935,12 @@ const file_bebeberloga_v1_common_proto_rawDesc = "" +
 	"\x10protocol_version\x18\x06 \x01(\rR\x0fprotocolVersion\x126\n" +
 	"\x06limits\x18\a \x01(\v2\x1e.bebeberloga.v1.InstanceLimitsR\x06limits\x12.\n" +
 	"\x13external_sender_key\x18\b \x01(\fR\x11externalSenderKey\x12e\n" +
-	"\x19external_sender_rotations\x18\t \x03(\v2).bebeberloga.v1.ExternalSenderKeyRotationR\x17externalSenderRotations\"\xf7\x01\n" +
+	"\x19external_sender_rotations\x18\t \x03(\v2).bebeberloga.v1.ExternalSenderKeyRotationR\x17externalSenderRotations\x126\n" +
+	"\x17device_location_enabled\x18\n" +
+	" \x01(\bR\x15deviceLocationEnabled\x12\x19\n" +
+	"\bice_urls\x18\v \x03(\tR\aiceUrls\x12%\n" +
+	"\x0eclient_version\x18\f \x01(\tR\rclientVersion\x12.\n" +
+	"\x13client_download_url\x18\r \x01(\tR\x11clientDownloadUrl\"\xf7\x01\n" +
 	"\fHealthStatus\x123\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1b.bebeberloga.v1.HealthStateR\x06status\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12@\n" +

@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file bebeberloga/v1/envelope.proto.
  */
 export const file_bebeberloga_v1_envelope: GenFile = /*@__PURE__*/
-  fileDesc("Ch1iZWJlYmVybG9nYS92MS9lbnZlbG9wZS5wcm90bxIOYmViZWJlcmxvZ2EudjEi4AQKD01lc3NhZ2VFbnZlbG9wZRISCgptZXNzYWdlX2lkGAEgASgJEisKB3NlbnRfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEigKBHRleHQYCiABKAsyGC5iZWJlYmVybG9nYS52MS5UZXh0Qm9keUgAEigKBGVkaXQYCyABKAsyGC5iZWJlYmVybG9nYS52MS5FZGl0Qm9keUgAEiwKBmRlbGV0ZRgMIAEoCzIaLmJlYmViZXJsb2dhLnYxLkRlbGV0ZUJvZHlIABIwCghyZWFjdGlvbhgNIAEoCzIcLmJlYmViZXJsb2dhLnYxLlJlYWN0aW9uQm9keUgAEiYKA3BpbhgOIAEoCzIXLmJlYmViZXJsb2dhLnYxLlBpbkJvZHlIABIvCghmaWxlX2tleRgPIAEoCzIbLmJlYmViZXJsb2dhLnYxLkZpbGVLZXlCb2R5SAASMwoIY2FsbF9rZXkYECABKAsyGy5iZWJlYmVybG9nYS52MS5DYWxsS2V5Qm9keUICGAFIABI7CgxoaXN0b3J5X2tleXMYESABKAsyHy5iZWJlYmVybG9nYS52MS5IaXN0b3J5S2V5c0JvZHlCAhgBSAASOQoNZGV2aWNlX25vdGljZRgSIAEoCzIgLmJlYmViZXJsb2dhLnYxLkRldmljZU5vdGljZUJvZHlIABI5Cg1wZXJzb25hbF9zeW5jGBQgASgLMiAuYmViZWJlcmxvZ2EudjEuUGVyc29uYWxTeW5jQm9keUgAQgYKBGJvZHlKBAgTEBRSCXBvbGxfdm90ZSJwCgdNZW50aW9uEhEKB3VzZXJfaWQYASABKAlIABIRCgdyb2xlX2lkGAIgASgJSAASFAoKY2hhbm5lbF9pZBgDIAEoCUgAEg0KA2FsbBgEIAEoCEgAEhAKBm9ubGluZRgFIAEoCEgAQggKBnRhcmdldCLjAQoHRmlsZVJlZhIVCg1hdHRhY2htZW50X2lkGAEgASgJEgwKBG5hbWUYAiABKAkSEQoJbWltZV90eXBlGAMgASgJEgwKBHNpemUYBCABKAQSCwoDa2V5GAUgASgMEhQKDGNvbnRlbnRfaGFzaBgGIAEoDBIXCg9jaXBoZXJ0ZXh0X2hhc2gYByABKAwSDQoFd2lkdGgYCCABKA0SDgoGaGVpZ2h0GAkgASgNEhEKCXRodW1ibmFpbBgKIAEoDBIPCgdzcG9pbGVyGAsgASgIEhMKC2Rlc2NyaXB0aW9uGAwgASgJInkKC0xpbmtQcmV2aWV3EgsKA3VybBgBIAEoCRIRCglzaXRlX25hbWUYAiABKAkSDQoFdGl0bGUYAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSJgoFaW1hZ2UYBSABKAsyFy5iZWJlYmVybG9nYS52MS5GaWxlUmVmIs4BCghUZXh0Qm9keRIMCgR0ZXh0GAEgASgJEhAKCHJlcGx5X3RvGAIgASgJEhUKDXJlcGx5X21lbnRpb24YAyABKAgSKQoIbWVudGlvbnMYBCADKAsyFy5iZWJlYmVybG9nYS52MS5NZW50aW9uEiwKC2F0dGFjaG1lbnRzGAUgAygLMhcuYmViZWJlcmxvZ2EudjEuRmlsZVJlZhIyCg1saW5rX3ByZXZpZXdzGAYgAygLMhsuYmViZWJlcmxvZ2EudjEuTGlua1ByZXZpZXciigEKCEVkaXRCb2R5EhEKCXRhcmdldF9pZBgBIAEoCRIMCgR0ZXh0GAIgASgJEikKCG1lbnRpb25zGAMgAygLMhcuYmViZWJlcmxvZ2EudjEuTWVudGlvbhIyCg1saW5rX3ByZXZpZXdzGAQgAygLMhsuYmViZWJlcmxvZ2EudjEuTGlua1ByZXZpZXciHwoKRGVsZXRlQm9keRIRCgl0YXJnZXRfaWQYASABKAkiPAoMUmVhY3Rpb25Cb2R5EhEKCXRhcmdldF9pZBgBIAEoCRINCgVlbW9qaRgCIAEoCRIKCgJvbhgDIAEoCCIsCgdQaW5Cb2R5EhEKCXRhcmdldF9pZBgBIAEoCRIOCgZwaW5uZWQYAiABKAgiTwoLRmlsZUtleUJvZHkSGQoRdGFyZ2V0X21lc3NhZ2VfaWQYASABKAkSJQoEZmlsZRgCIAEoCzIXLmJlYmViZXJsb2dhLnYxLkZpbGVSZWYiSgoLQ2FsbEtleUJvZHkSEgoKY2hhbm5lbF9pZBgBIAEoCRINCgVlcG9jaBgCIAEoBBIUCgxrZXlfbWF0ZXJpYWwYAyABKAw6AhgBIj8KD0hpc3RvcnlLZXlzQm9keRIoCgRrZXlzGAEgAygLMhouYmViZWJlcmxvZ2EudjEuSGlzdG9yeUtleToCGAEiYQoKSGlzdG9yeUtleRISCgpnZW5lcmF0aW9uGAEgASgNEgsKA2tleRgCIAEoDBIuCgp2YWxpZF9mcm9tGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcDoCGAEi2gEKEERldmljZU5vdGljZUJvZHkSMwoEa2luZBgBIAEoDjIlLmJlYmViZXJsb2dhLnYxLkRldmljZU5vdGljZUJvZHkuS2luZBIPCgd1c2VyX2lkGAIgASgJEhMKC2RldmljZV9uYW1lGAMgASgJImsKBEtpbmQSFAoQS0lORF9VTlNQRUNJRklFRBAAEhUKEUtJTkRfREVWSUNFX0FEREVEEAESHQoZS0lORF9JREVOVElUWV9LRVlfQ0hBTkdFRBACEhcKE0tJTkRfREVWSUNFX1JFTU9WRUQQAyK9AQoQUGVyc29uYWxTeW5jQm9keRI4Cgx2ZXJpZmljYXRpb24YASADKAsyIi5iZWJlYmVybG9nYS52MS5WZXJpZmljYXRpb25TdGF0dXMSNgoPdHJ1c3RlZF9kb21haW5zGAIgAygLMh0uYmViZWJlcmxvZ2EudjEuVHJ1c3RlZERvbWFpbhI3CgxyZWNvdmVyeV9rZXkYAyABKAsyIS5iZWJlYmVybG9nYS52MS5SZWNvdmVyeUtleVJlY29yZCJWChFSZWNvdmVyeUtleVJlY29yZBIRCglkZXZpY2VfaWQYASABKAkSLgoKY3JlYXRlZF9hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAidQoSVmVyaWZpY2F0aW9uU3RhdHVzEg8KB3VzZXJfaWQYASABKAkSFAoMaWRlbnRpdHlfa2V5GAIgASgMEhAKCHZlcmlmaWVkGAMgASgIEiYKAmF0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCIwCg1UcnVzdGVkRG9tYWluEg4KBmRvbWFpbhgBIAEoCRIPCgd0cnVzdGVkGAIgASgIQsYBChJjb20uYmViZWJlcmxvZ2EudjFCDUVudmVsb3BlUHJvdG9QAVpIZ2l0aHViLmNvbS9uaWhlc3R2ZXIvYmViZWJlcmxvZ2Evc2VydmVyL2dlbi9iZWJlYmVybG9nYS92MTtiZWJlYmVybG9nYXYxogIDQlhYqgIOQmViZWJlcmxvZ2EuVjHKAg5CZWJlYmVybG9nYVxWMeICGkJlYmViZXJsb2dhXFYxXEdQQk1ldGFkYXRh6gIPQmViZWJlcmxvZ2E6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("Ch1iZWJlYmVybG9nYS92MS9lbnZlbG9wZS5wcm90bxIOYmViZWJlcmxvZ2EudjEi4AQKD01lc3NhZ2VFbnZlbG9wZRISCgptZXNzYWdlX2lkGAEgASgJEisKB3NlbnRfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEigKBHRleHQYCiABKAsyGC5iZWJlYmVybG9nYS52MS5UZXh0Qm9keUgAEigKBGVkaXQYCyABKAsyGC5iZWJlYmVybG9nYS52MS5FZGl0Qm9keUgAEiwKBmRlbGV0ZRgMIAEoCzIaLmJlYmViZXJsb2dhLnYxLkRlbGV0ZUJvZHlIABIwCghyZWFjdGlvbhgNIAEoCzIcLmJlYmViZXJsb2dhLnYxLlJlYWN0aW9uQm9keUgAEiYKA3BpbhgOIAEoCzIXLmJlYmViZXJsb2dhLnYxLlBpbkJvZHlIABIvCghmaWxlX2tleRgPIAEoCzIbLmJlYmViZXJsb2dhLnYxLkZpbGVLZXlCb2R5SAASMwoIY2FsbF9rZXkYECABKAsyGy5iZWJlYmVybG9nYS52MS5DYWxsS2V5Qm9keUICGAFIABI7CgxoaXN0b3J5X2tleXMYESABKAsyHy5iZWJlYmVybG9nYS52MS5IaXN0b3J5S2V5c0JvZHlCAhgBSAASOQoNZGV2aWNlX25vdGljZRgSIAEoCzIgLmJlYmViZXJsb2dhLnYxLkRldmljZU5vdGljZUJvZHlIABI5Cg1wZXJzb25hbF9zeW5jGBQgASgLMiAuYmViZWJlcmxvZ2EudjEuUGVyc29uYWxTeW5jQm9keUgAQgYKBGJvZHlKBAgTEBRSCXBvbGxfdm90ZSJwCgdNZW50aW9uEhEKB3VzZXJfaWQYASABKAlIABIRCgdyb2xlX2lkGAIgASgJSAASFAoKY2hhbm5lbF9pZBgDIAEoCUgAEg0KA2FsbBgEIAEoCEgAEhAKBm9ubGluZRgFIAEoCEgAQggKBnRhcmdldCKRAgoHRmlsZVJlZhIVCg1hdHRhY2htZW50X2lkGAEgASgJEgwKBG5hbWUYAiABKAkSEQoJbWltZV90eXBlGAMgASgJEgwKBHNpemUYBCABKAQSCwoDa2V5GAUgASgMEhQKDGNvbnRlbnRfaGFzaBgGIAEoDBIXCg9jaXBoZXJ0ZXh0X2hhc2gYByABKAwSDQoFd2lkdGgYCCABKA0SDgoGaGVpZ2h0GAkgASgNEhEKCXRodW1ibmFpbBgKIAEoDBIPCgdzcG9pbGVyGAsgASgIEhMKC2Rlc2NyaXB0aW9uGAwgASgJEiwKB3ByZXZpZXcYDSABKAsyGy5iZWJlYmVybG9nYS52MS5GaWxlUHJldmlldyJhCgtGaWxlUHJldmlldxIVCg1hdHRhY2htZW50X2lkGAEgASgJEgwKBHNpemUYAiABKAQSFwoPY2lwaGVydGV4dF9oYXNoGAMgASgMEhQKDGNvbnRlbnRfaGFzaBgEIAEoDCJ5CgtMaW5rUHJldmlldxILCgN1cmwYASABKAkSEQoJc2l0ZV9uYW1lGAIgASgJEg0KBXRpdGxlGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEiYKBWltYWdlGAUgASgLMhcuYmViZWJlcmxvZ2EudjEuRmlsZVJlZiLOAQoIVGV4dEJvZHkSDAoEdGV4dBgBIAEoCRIQCghyZXBseV90bxgCIAEoCRIVCg1yZXBseV9tZW50aW9uGAMgASgIEikKCG1lbnRpb25zGAQgAygLMhcuYmViZWJlcmxvZ2EudjEuTWVudGlvbhIsCgthdHRhY2htZW50cxgFIAMoCzIXLmJlYmViZXJsb2dhLnYxLkZpbGVSZWYSMgoNbGlua19wcmV2aWV3cxgGIAMoCzIbLmJlYmViZXJsb2dhLnYxLkxpbmtQcmV2aWV3IooBCghFZGl0Qm9keRIRCgl0YXJnZXRfaWQYASABKAkSDAoEdGV4dBgCIAEoCRIpCghtZW50aW9ucxgDIAMoCzIXLmJlYmViZXJsb2dhLnYxLk1lbnRpb24SMgoNbGlua19wcmV2aWV3cxgEIAMoCzIbLmJlYmViZXJsb2dhLnYxLkxpbmtQcmV2aWV3Ih8KCkRlbGV0ZUJvZHkSEQoJdGFyZ2V0X2lkGAEgASgJIjwKDFJlYWN0aW9uQm9keRIRCgl0YXJnZXRfaWQYASABKAkSDQoFZW1vamkYAiABKAkSCgoCb24YAyABKAgiLAoHUGluQm9keRIRCgl0YXJnZXRfaWQYASABKAkSDgoGcGlubmVkGAIgASgIIk8KC0ZpbGVLZXlCb2R5EhkKEXRhcmdldF9tZXNzYWdlX2lkGAEgASgJEiUKBGZpbGUYAiABKAsyFy5iZWJlYmVybG9nYS52MS5GaWxlUmVmIkoKC0NhbGxLZXlCb2R5EhIKCmNoYW5uZWxfaWQYASABKAkSDQoFZXBvY2gYAiABKAQSFAoMa2V5X21hdGVyaWFsGAMgASgMOgIYASI/Cg9IaXN0b3J5S2V5c0JvZHkSKAoEa2V5cxgBIAMoCzIaLmJlYmViZXJsb2dhLnYxLkhpc3RvcnlLZXk6AhgBImEKCkhpc3RvcnlLZXkSEgoKZ2VuZXJhdGlvbhgBIAEoDRILCgNrZXkYAiABKAwSLgoKdmFsaWRfZnJvbRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXA6AhgBItoBChBEZXZpY2VOb3RpY2VCb2R5EjMKBGtpbmQYASABKA4yJS5iZWJlYmVybG9nYS52MS5EZXZpY2VOb3RpY2VCb2R5LktpbmQSDwoHdXNlcl9pZBgCIAEoCRITCgtkZXZpY2VfbmFtZRgDIAEoCSJrCgRLaW5kEhQKEEtJTkRfVU5TUEVDSUZJRUQQABIVChFLSU5EX0RFVklDRV9BRERFRBABEh0KGUtJTkRfSURFTlRJVFlfS0VZX0NIQU5HRUQQAhIXChNLSU5EX0RFVklDRV9SRU1PVkVEEAMivQEKEFBlcnNvbmFsU3luY0JvZHkSOAoMdmVyaWZpY2F0aW9uGAEgAygLMiIuYmViZWJlcmxvZ2EudjEuVmVyaWZpY2F0aW9uU3RhdHVzEjYKD3RydXN0ZWRfZG9tYWlucxgCIAMoCzIdLmJlYmViZXJsb2dhLnYxLlRydXN0ZWREb21haW4SNwoMcmVjb3Zlcnlfa2V5GAMgASgLMiEuYmViZWJlcmxvZ2EudjEuUmVjb3ZlcnlLZXlSZWNvcmQiVgoRUmVjb3ZlcnlLZXlSZWNvcmQSEQoJZGV2aWNlX2lkGAEgASgJEi4KCmNyZWF0ZWRfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wInUKElZlcmlmaWNhdGlvblN0YXR1cxIPCgd1c2VyX2lkGAEgASgJEhQKDGlkZW50aXR5X2tleRgCIAEoDBIQCgh2ZXJpZmllZBgDIAEoCBImCgJhdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiMAoNVHJ1c3RlZERvbWFpbhIOCgZkb21haW4YASABKAkSDwoHdHJ1c3RlZBgCIAEoCELGAQoSY29tLmJlYmViZXJsb2dhLnYxQg1FbnZlbG9wZVByb3RvUAFaSGdpdGh1Yi5jb20vbmloZXN0dmVyL2JlYmViZXJsb2dhL3NlcnZlci9nZW4vYmViZWJlcmxvZ2EvdjE7YmViZWJlcmxvZ2F2MaICA0JYWKoCDkJlYmViZXJsb2dhLlYxygIOQmViZWJlcmxvZ2FcVjHiAhpCZWJlYmVybG9nYVxWMVxHUEJNZXRhZGF0YeoCD0JlYmViZXJsb2dhOjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp]);
 
 /**
  * Конверт. Внутри повторяется `message_id`, чтобы связать шифртекст с открытым id:
@@ -205,21 +205,22 @@ export type FileRef = Message<"bebeberloga.v1.FileRef"> & {
   mimeType: string;
 
   /**
-   * Размер открытого файла в байтах.
+   * Истинный размер открытого файла в байтах — без добавки до выровненной длины. Получатель
+   * обрезает расшифрованное по нему и проверяет, что добавка нулевая (CRYPTO.md §7.2).
    *
    * @generated from field: uint64 size = 4;
    */
   size: bigint;
 
   /**
-   * Ключ XChaCha20-Poly1305 (32 байта). Схема чанков по 1 МиБ и nonce — CRYPTO.md (B2).
+   * Ключ XChaCha20-Poly1305 (32 байта). Схема чанков по 1 МиБ и nonce — CRYPTO.md §7.
    *
    * @generated from field: bytes key = 5;
    */
   key: Uint8Array;
 
   /**
-   * Хэш открытого файла (BLAKE3, 32 байта).
+   * Хэш открытого файла без добавки (BLAKE3, 32 байта).
    *
    * @generated from field: bytes content_hash = 6;
    */
@@ -264,6 +265,14 @@ export type FileRef = Message<"bebeberloga.v1.FileRef"> & {
    * @generated from field: string description = 12;
    */
   description: string;
+
+  /**
+   * Превью изображения или видео — второй зашифрованный blob (ARCHITECTURE.md §4.5); не задано,
+   * если превью нет.
+   *
+   * @generated from field: bebeberloga.v1.FilePreview preview = 13;
+   */
+  preview?: FilePreview;
 };
 
 /**
@@ -272,6 +281,50 @@ export type FileRef = Message<"bebeberloga.v1.FileRef"> & {
  */
 export const FileRefSchema: GenMessage<FileRef> = /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_envelope, 2);
+
+/**
+ * Второй blob вложения — превью. Шифруется подключом того же ключа файла (объект вида 2,
+ * CRYPTO.md §7.1) и выравнивается так же, как файл.
+ *
+ * @generated from message bebeberloga.v1.FilePreview
+ */
+export type FilePreview = Message<"bebeberloga.v1.FilePreview"> & {
+  /**
+   * Id blob-а превью на сервере (Attachment.id).
+   *
+   * @generated from field: string attachment_id = 1;
+   */
+  attachmentId: string;
+
+  /**
+   * Истинный размер открытого превью в байтах — без добавки (CRYPTO.md §7.2).
+   *
+   * @generated from field: uint64 size = 2;
+   */
+  size: bigint;
+
+  /**
+   * Хэш шифртекста, чтобы сверить с Attachment.ciphertext_hash.
+   *
+   * @generated from field: bytes ciphertext_hash = 3;
+   */
+  ciphertextHash: Uint8Array;
+
+  /**
+   * Хэш открытого превью без добавки (BLAKE3, 32 байта); сверяется после расшифровки
+   * (CRYPTO.md §7.3).
+   *
+   * @generated from field: bytes content_hash = 4;
+   */
+  contentHash: Uint8Array;
+};
+
+/**
+ * Describes the message bebeberloga.v1.FilePreview.
+ * Use `create(FilePreviewSchema)` to create a new message.
+ */
+export const FilePreviewSchema: GenMessage<FilePreview> = /*@__PURE__*/
+  messageDesc(file_bebeberloga_v1_envelope, 3);
 
 /**
  * Превью ссылки (S): генерирует клиент отправителя (ARCHITECTURE.md §8).
@@ -312,7 +365,7 @@ export type LinkPreview = Message<"bebeberloga.v1.LinkPreview"> & {
  * Use `create(LinkPreviewSchema)` to create a new message.
  */
 export const LinkPreviewSchema: GenMessage<LinkPreview> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 3);
+  messageDesc(file_bebeberloga_v1_envelope, 4);
 
 /**
  * Обычное сообщение.
@@ -364,7 +417,7 @@ export type TextBody = Message<"bebeberloga.v1.TextBody"> & {
  * Use `create(TextBodySchema)` to create a new message.
  */
 export const TextBodySchema: GenMessage<TextBody> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 4);
+  messageDesc(file_bebeberloga_v1_envelope, 5);
 
 /**
  * Правка своего сообщения. Клиент подменяет текст и ставит «(изменено)».
@@ -398,7 +451,7 @@ export type EditBody = Message<"bebeberloga.v1.EditBody"> & {
  * Use `create(EditBodySchema)` to create a new message.
  */
 export const EditBodySchema: GenMessage<EditBody> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 5);
+  messageDesc(file_bebeberloga_v1_envelope, 6);
 
 /**
  * Удаление: дублирует команду REST, чтобы участники с опозданием (офлайн) тоже
@@ -418,7 +471,7 @@ export type DeleteBody = Message<"bebeberloga.v1.DeleteBody"> & {
  * Use `create(DeleteBodySchema)` to create a new message.
  */
 export const DeleteBodySchema: GenMessage<DeleteBody> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 6);
+  messageDesc(file_bebeberloga_v1_envelope, 7);
 
 /**
  * Реакция; агрегация на клиенте.
@@ -451,7 +504,7 @@ export type ReactionBody = Message<"bebeberloga.v1.ReactionBody"> & {
  * Use `create(ReactionBodySchema)` to create a new message.
  */
 export const ReactionBodySchema: GenMessage<ReactionBody> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 7);
+  messageDesc(file_bebeberloga_v1_envelope, 8);
 
 /**
  * Закреп/откреп — сопровождает команду REST; нужен для локальной истории офлайн-участников.
@@ -475,7 +528,7 @@ export type PinBody = Message<"bebeberloga.v1.PinBody"> & {
  * Use `create(PinBodySchema)` to create a new message.
  */
 export const PinBodySchema: GenMessage<PinBody> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 8);
+  messageDesc(file_bebeberloga_v1_envelope, 9);
 
 /**
  * Ключ вложения отдельно от сообщения (повторная отправка ключа участнику, который не смог
@@ -500,7 +553,7 @@ export type FileKeyBody = Message<"bebeberloga.v1.FileKeyBody"> & {
  * Use `create(FileKeyBodySchema)` to create a new message.
  */
 export const FileKeyBodySchema: GenMessage<FileKeyBody> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 9);
+  messageDesc(file_bebeberloga_v1_envelope, 10);
 
 /**
  * Не используется в 1.0 (CRYPTO.md §5.5): ключи медиа выводятся только из MLS-Exporter группы звонка.
@@ -531,7 +584,7 @@ export type CallKeyBody = Message<"bebeberloga.v1.CallKeyBody"> & {
  * @deprecated
  */
 export const CallKeyBodySchema: GenMessage<CallKeyBody> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 10);
+  messageDesc(file_bebeberloga_v1_envelope, 11);
 
 /**
  * Не используется в 1.0 (CRYPTO.md §6.6): ключ поколения выводится из MLS-Exporter, через
@@ -553,7 +606,7 @@ export type HistoryKeysBody = Message<"bebeberloga.v1.HistoryKeysBody"> & {
  * @deprecated
  */
 export const HistoryKeysBodySchema: GenMessage<HistoryKeysBody> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 11);
+  messageDesc(file_bebeberloga_v1_envelope, 12);
 
 /**
  * @generated from message bebeberloga.v1.HistoryKey
@@ -586,7 +639,7 @@ export type HistoryKey = Message<"bebeberloga.v1.HistoryKey"> & {
  * @deprecated
  */
 export const HistoryKeySchema: GenMessage<HistoryKey> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 12);
+  messageDesc(file_bebeberloga_v1_envelope, 13);
 
 /**
  * Системная заметка, которую создаёт клиент как зашифрованное сообщение (SCREENS/08 §10,
@@ -617,7 +670,7 @@ export type DeviceNoticeBody = Message<"bebeberloga.v1.DeviceNoticeBody"> & {
  * Use `create(DeviceNoticeBodySchema)` to create a new message.
  */
 export const DeviceNoticeBodySchema: GenMessage<DeviceNoticeBody> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 13);
+  messageDesc(file_bebeberloga_v1_envelope, 14);
 
 /**
  * @generated from enum bebeberloga.v1.DeviceNoticeBody.Kind
@@ -648,7 +701,7 @@ export enum DeviceNoticeBody_Kind {
  * Describes the enum bebeberloga.v1.DeviceNoticeBody.Kind.
  */
 export const DeviceNoticeBody_KindSchema: GenEnum<DeviceNoticeBody_Kind> = /*@__PURE__*/
-  enumDesc(file_bebeberloga_v1_envelope, 13, 0);
+  enumDesc(file_bebeberloga_v1_envelope, 14, 0);
 
 /**
  * Синхронизация между устройствами пользователя через его личный канал (CRYPTO.md §6.5;
@@ -681,7 +734,7 @@ export type PersonalSyncBody = Message<"bebeberloga.v1.PersonalSyncBody"> & {
  * Use `create(PersonalSyncBodySchema)` to create a new message.
  */
 export const PersonalSyncBodySchema: GenMessage<PersonalSyncBody> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 14);
+  messageDesc(file_bebeberloga_v1_envelope, 15);
 
 /**
  * @generated from message bebeberloga.v1.RecoveryKeyRecord
@@ -703,7 +756,7 @@ export type RecoveryKeyRecord = Message<"bebeberloga.v1.RecoveryKeyRecord"> & {
  * Use `create(RecoveryKeyRecordSchema)` to create a new message.
  */
 export const RecoveryKeyRecordSchema: GenMessage<RecoveryKeyRecord> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 15);
+  messageDesc(file_bebeberloga_v1_envelope, 16);
 
 /**
  * Статус проверки собеседника — для конкретного ключа идентичности (CRYPTO.md §3.2).
@@ -737,7 +790,7 @@ export type VerificationStatus = Message<"bebeberloga.v1.VerificationStatus"> & 
  * Use `create(VerificationStatusSchema)` to create a new message.
  */
 export const VerificationStatusSchema: GenMessage<VerificationStatus> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 16);
+  messageDesc(file_bebeberloga_v1_envelope, 17);
 
 /**
  * «Доверять этому домену» при переходе по ссылкам (SCREENS/08 §3).
@@ -761,5 +814,5 @@ export type TrustedDomain = Message<"bebeberloga.v1.TrustedDomain"> & {
  * Use `create(TrustedDomainSchema)` to create a new message.
  */
 export const TrustedDomainSchema: GenMessage<TrustedDomain> = /*@__PURE__*/
-  messageDesc(file_bebeberloga_v1_envelope, 17);
+  messageDesc(file_bebeberloga_v1_envelope, 18);
 
