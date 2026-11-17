@@ -1569,8 +1569,8 @@ export const CategoryDeletedSchema: GenMessage<CategoryDeleted> = /*@__PURE__*/
   messageDesc(file_bebeberloga_v1_gateway, 35);
 
 /**
- * Канал создан. Записи с названием (`Channel.meta`) ещё нет: её приносит клиент создателя
- * вместе с группой чата канала, и тогда приходит ChannelUpdated (FLOWS/03).
+ * Канал создан — сразу с группой чата и первой записью с названием (`Channel.meta`): клиент
+ * создателя приносит их тем же запросом (FLOWS/03, CRYPTO.md §6.8.5).
  *
  * @generated from message bebeberloga.v1.ChannelCreated
  */

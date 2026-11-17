@@ -104,14 +104,14 @@
 |---|---|---|---|
 | 1000, 1001 | — | Штатное закрытие: остановка или перезапуск шлюза | Переподключение с `Resume` |
 | 4100 | `HANDSHAKE_TIMEOUT` | Не было `Identify`/`Resume` за 10 с | `Identify` |
-| 4101 | `IDENTIFY_REJECTED` | Токен недействителен или устройство не принадлежит сессии | Обновить токен, `Identify`; если не помогло — экран входа |
+| 4101 | `IDENTIFY_REJECTED` | Токен недействителен или устройство не принадлежит сессии | Обновить токен, `Identify`; если не помогло — экран входа. Так кончается и сессия, которой не пользовались 45 суток: ключи устройства и локальная база остаются, после входа — тот же `device_id` (CRYPTO.md §3.9). Если за это время устройство удалили, вход отвечает `DEVICE_REMOVED`, и клиент поступает как при 4109 |
 | 4102 | `RESUME_REJECTED` | Сессию нельзя возобновить (`SessionInvalid{REASON_RESUME_WINDOW_EXPIRED}`) | `Identify` |
 | 4103 | `PROTOCOL_MISMATCH` | Несовместимая версия протокола или субпротокол | Показать «Обнови клиент» |
 | 4104 | `FRAME_REJECTED` | Кадр не разобран или слишком большой | Записать в журнал, `Resume` |
 | 4105 | `HEARTBEAT_LOST` | Нет heartbeat два интервала | `Resume` |
 | 4106 | `COMMAND_FLOOD` | Превышена частота команд | Пауза 10 с, `Resume` |
 | 4107 | `CONNECTION_SUPERSEDED` | Другое соединение этого устройства прислало `Identify` | Не переподключаться автоматически |
-| 4108 | `SESSION_ENDED` | Сессия завершена без удаления устройства: смена или сброс пароля (`SessionInvalid{REASON_SESSION_ENDED}`) | Экран входа; **ключи устройства и локальная база остаются** (OPEN-QUESTIONS №2); после входа — тот же `device_id` |
+| 4108 | `SESSION_ENDED` | Сессия завершена без удаления устройства: смена или сброс пароля (`SessionInvalid{REASON_SESSION_ENDED}`) | Экран входа; **ключи устройства и локальная база остаются** (OPEN-QUESTIONS №2); после входа — тот же `device_id`: клиент доказывает владение ключом подписи устройства (CRYPTO.md §3.9) |
 | 4109 | `DEVICE_REMOVED` | Устройство удалено: выход на нём (`POST /auth/logout` — само выходящее устройство тоже получает 4109), «выйти на всех других устройствах», выход с другого устройства, «это не я», «начать заново» (`SessionInvalid{REASON_DEVICE_REMOVED}`) | Стереть локальные ключи и базу (FLOWS/02), экран входа с баннером «Это устройство отключено». Исключение — `SessionInvalid{REASON_DEVICE_REMOVED_BY_RESET}`: ничего не стирать молча, спросить «Это был ты?» (SCREENS/07 §8, CRYPTO.md §3.7) |
 | 4199 | `SERVER_FAULT` | Внутренняя ошибка шлюза | `Resume` с паузой |
 
@@ -140,7 +140,7 @@
 |---|---|---|
 | `MessageCreated{MessageMeta}` | Принят `POST /channels/{id}/messages`; системное сообщение сервера | Видящие канал |
 | `MessageUpdated{MessageMeta}` | Изменились серверные метаданные: закреп/откреп, вложение загружено | Видящие канал |
-| `MessageDeleted{channel_id, message_ids[]}` | `DELETE …/messages/{id}`; бан с удалением сообщений (пачками до 100 id). Шифртекст, обёрнутый ключ, хинты и вложения к этому моменту стёрты (ADR-0028 п. 3) | Видящие канал |
+| `MessageDeleted{channel_id, message_ids[]}` | `DELETE …/messages/{id}` — вместе с сообщением в списке его правки, которые сервер стёр по `edit_ids`; бан с удалением сообщений (пачками до 100 id). Шифртекст, обёрнутый ключ, хинты и вложения к этому моменту стёрты (ADR-0028 п. 3) | Видящие канал |
 | `TypingStarted{channel_id, user_id}` | Команда `TypingStart` | Видящие канал, кроме отправителя; клиент показывает 8 с |
 | `ReadStateUpdated{ReadState}` | `PUT …/read-state` с другого устройства; изменилось число кандидатов в упоминания | Свои устройства |
 | `MlsHandshake{Handshake}` | Принят handshake (`POST /mls/groups/{id}/handshakes`) или сервер как external sender создал proposal | Члены группы |
@@ -155,7 +155,7 @@
 | `CommunityUpdated{Community}` | `PATCH /communities/{id}`, передача владения | Участники |
 | `CommunityRemoved{CommunityRemoval}` | Удаление сообщества; выход; выгнан; забанен. Запись хранится и отдаётся в `Ready.community_removals`, пока устройство не подтвердит показ | Свои устройства |
 | `CategoryCreated/Updated/Deleted` | REST категорий | Участники |
-| `ChannelCreated/Updated/Deleted` | REST каналов; `ChannelDeleted` также тем, кто потерял `channel.see`; `ChannelCreated` — владельцу или администратору после `POST /channels/{id}/access/self`. `ChannelUpdated` приходит и когда меняется запись с названием и темой (`Channel.meta`): первая запись при создании группы чата, правка `PUT /channels/{id}/meta`, commit, начавший поколение ключа истории (CRYPTO.md §6.8). Название клиент расшифровывает сам; без ключа показывает заглушку | Видящие канал |
+| `ChannelCreated/Updated/Deleted` | REST каналов; `ChannelDeleted` также тем, кто потерял `channel.see`; `ChannelCreated` — владельцу или администратору после `POST /channels/{id}/access/self`. `ChannelCreated` несёт канал сразу с первой записью названия (`Channel.meta`): канал, группа чата и запись создаются одним запросом. `ChannelUpdated` приходит и когда запись меняется: правка `PUT /channels/{id}/meta`, commit, начавший поколение ключа истории (CRYPTO.md §6.8). Название клиент расшифровывает сам; без ключа показывает заглушку | Видящие канал |
 | `LockedChannelsUpdated{community_id, locked_channels[]}` | Создан или удалён приватный канал; владелец или администратор добавил себя; сменился состав администраторов. Названий каналов в списке нет (ADR-0026) | Владелец и администраторы |
 | `MemberJoined/Updated/Left` | Вступление; смена ролей; выход/кик/бан | Участники |
 | `RoleCreated/Updated/Deleted` | REST ролей | Участники |

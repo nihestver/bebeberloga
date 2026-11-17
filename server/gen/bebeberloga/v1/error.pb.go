@@ -74,7 +74,8 @@ const (
 	ErrorCode_ERROR_CODE_NO_KEY_PACKAGES ErrorCode = 202
 	// Запрос подтверждения устройства истёк (10 минут). HTTP 410.
 	ErrorCode_ERROR_CODE_VERIFICATION_EXPIRED ErrorCode = 203
-	// Подпись ключа устройства не проходит проверку ключом идентичности. HTTP 400.
+	// Подпись не проходит проверку: подпись ключа устройства ключом идентичности или подпись вызова
+	// сервера при повторном входе на том же устройстве (CRYPTO.md §3.9). HTTP 400.
 	ErrorCode_ERROR_CODE_SIGNATURE_INVALID ErrorCode = 204
 	// KeyPackage не прошёл проверки DS: подписи, capabilities, срок, расширения листа, уникальность
 	// HPKE-ключей, credential устройства (CRYPTO.md §1.4). HTTP 400.
@@ -84,6 +85,11 @@ const (
 	// Запрос сброса ключа идентичности сейчас ограничен: после отмены «Это не я» — не раньше чем через
 	// 24 ч и не больше 3 запросов за 7 сут (CRYPTO.md §6.3.9). Пауза — в `retry_after_ms`. HTTP 429.
 	ErrorCode_ERROR_CODE_IDENTITY_RESET_LIMITED ErrorCode = 207
+	// Повторный вход на удалённом устройстве: пароль верен, подпись вызова сходится с ключом
+	// подписи устройства, но само устройство удалено. Клиент стирает локальные ключи и базу, как
+	// при коде 4109 gateway; если устройство удалено сбросом ключа идентичности
+	// (`details.by_identity_reset`) — спрашивает «Это был ты?» (CRYPTO.md §3.9). HTTP 410.
+	ErrorCode_ERROR_CODE_DEVICE_REMOVED ErrorCode = 208
 	// --- сообщества и каналы -----------------------------------------------
 	// Достигнут лимит участников канала (ADR-0005). HTTP 409.
 	ErrorCode_ERROR_CODE_CHANNEL_MEMBER_LIMIT ErrorCode = 300
@@ -91,12 +97,6 @@ const (
 	ErrorCode_ERROR_CODE_COMMUNITY_LIMIT ErrorCode = 301
 	// Пользователь забанен в этом сообществе. HTTP 403.
 	ErrorCode_ERROR_CODE_BANNED ErrorCode = 302
-	// Приглашение истекло. HTTP 410.
-	ErrorCode_ERROR_CODE_INVITE_EXPIRED ErrorCode = 303
-	// Приглашение отозвано. HTTP 410.
-	ErrorCode_ERROR_CODE_INVITE_REVOKED ErrorCode = 304
-	// У приглашения исчерпан лимит использований. HTTP 410.
-	ErrorCode_ERROR_CODE_INVITE_USES_EXHAUSTED ErrorCode = 305
 	// Приглашения сообщества приостановлены. HTTP 403.
 	ErrorCode_ERROR_CODE_INVITES_PAUSED ErrorCode = 306
 	// Нельзя действовать против участника с равной или старшей ролью. HTTP 403.
@@ -198,12 +198,10 @@ var (
 		205: "ERROR_CODE_INVALID_KEY_PACKAGE",
 		206: "ERROR_CODE_IDENTITY_RESET_PENDING",
 		207: "ERROR_CODE_IDENTITY_RESET_LIMITED",
+		208: "ERROR_CODE_DEVICE_REMOVED",
 		300: "ERROR_CODE_CHANNEL_MEMBER_LIMIT",
 		301: "ERROR_CODE_COMMUNITY_LIMIT",
 		302: "ERROR_CODE_BANNED",
-		303: "ERROR_CODE_INVITE_EXPIRED",
-		304: "ERROR_CODE_INVITE_REVOKED",
-		305: "ERROR_CODE_INVITE_USES_EXHAUSTED",
 		306: "ERROR_CODE_INVITES_PAUSED",
 		307: "ERROR_CODE_ROLE_HIERARCHY",
 		308: "ERROR_CODE_OWNER_CANNOT_LEAVE",
@@ -259,12 +257,10 @@ var (
 		"ERROR_CODE_INVALID_KEY_PACKAGE":           205,
 		"ERROR_CODE_IDENTITY_RESET_PENDING":        206,
 		"ERROR_CODE_IDENTITY_RESET_LIMITED":        207,
+		"ERROR_CODE_DEVICE_REMOVED":                208,
 		"ERROR_CODE_CHANNEL_MEMBER_LIMIT":          300,
 		"ERROR_CODE_COMMUNITY_LIMIT":               301,
 		"ERROR_CODE_BANNED":                        302,
-		"ERROR_CODE_INVITE_EXPIRED":                303,
-		"ERROR_CODE_INVITE_REVOKED":                304,
-		"ERROR_CODE_INVITE_USES_EXHAUSTED":         305,
 		"ERROR_CODE_INVITES_PAUSED":                306,
 		"ERROR_CODE_ROLE_HIERARCHY":                307,
 		"ERROR_CODE_OWNER_CANNOT_LEAVE":            308,
@@ -537,7 +533,7 @@ const file_bebeberloga_v1_error_proto_rawDesc = "" +
 	"\x12successor_group_id\x18\t \x01(\tR\x10successorGroupId\x12-\n" +
 	"\x12current_generation\x18\n" +
 	" \x01(\rR\x11currentGeneration\x120\n" +
-	"\x14current_meta_version\x18\v \x01(\x04R\x12currentMetaVersion*\xa6\x10\n" +
+	"\x14current_meta_version\x18\v \x01(\x04R\x12currentMetaVersion*\xcf\x10\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cERROR_CODE_VALIDATION_FAILED\x10\x01\x12\x1e\n" +
@@ -562,13 +558,11 @@ const file_bebeberloga_v1_error_proto_rawDesc = "" +
 	"\x1cERROR_CODE_SIGNATURE_INVALID\x10\xcc\x01\x12#\n" +
 	"\x1eERROR_CODE_INVALID_KEY_PACKAGE\x10\xcd\x01\x12&\n" +
 	"!ERROR_CODE_IDENTITY_RESET_PENDING\x10\xce\x01\x12&\n" +
-	"!ERROR_CODE_IDENTITY_RESET_LIMITED\x10\xcf\x01\x12$\n" +
+	"!ERROR_CODE_IDENTITY_RESET_LIMITED\x10\xcf\x01\x12\x1e\n" +
+	"\x19ERROR_CODE_DEVICE_REMOVED\x10\xd0\x01\x12$\n" +
 	"\x1fERROR_CODE_CHANNEL_MEMBER_LIMIT\x10\xac\x02\x12\x1f\n" +
 	"\x1aERROR_CODE_COMMUNITY_LIMIT\x10\xad\x02\x12\x16\n" +
 	"\x11ERROR_CODE_BANNED\x10\xae\x02\x12\x1e\n" +
-	"\x19ERROR_CODE_INVITE_EXPIRED\x10\xaf\x02\x12\x1e\n" +
-	"\x19ERROR_CODE_INVITE_REVOKED\x10\xb0\x02\x12%\n" +
-	" ERROR_CODE_INVITE_USES_EXHAUSTED\x10\xb1\x02\x12\x1e\n" +
 	"\x19ERROR_CODE_INVITES_PAUSED\x10\xb2\x02\x12\x1e\n" +
 	"\x19ERROR_CODE_ROLE_HIERARCHY\x10\xb3\x02\x12\"\n" +
 	"\x1dERROR_CODE_OWNER_CANNOT_LEAVE\x10\xb4\x02\x12%\n" +
@@ -597,7 +591,7 @@ const file_bebeberloga_v1_error_proto_rawDesc = "" +
 	"(ERROR_CODE_CHANNEL_META_VERSION_CONFLICT\x10\x86\x04\x12,\n" +
 	"'ERROR_CODE_CHANNEL_META_VERSION_TOO_FAR\x10\x87\x04\x12\x1d\n" +
 	"\x18ERROR_CODE_SOUND_INVALID\x10\xd8\x04\x12 \n" +
-	"\x1bERROR_CODE_SOUND_SLOTS_FULL\x10\xd9\x04\"\x06\b\xc9\x01\x10\xc9\x01\"\x06\b\x82\x04\x10\x82\x04*\x1fERROR_CODE_RECOVERY_KEY_INVALID*\x1dERROR_CODE_GROUP_UNDER_REVIEWB\xc3\x01\n" +
+	"\x1bERROR_CODE_SOUND_SLOTS_FULL\x10\xd9\x04\"\x06\b\xc9\x01\x10\xc9\x01\"\x06\b\xaf\x02\x10\xaf\x02\"\x06\b\xb0\x02\x10\xb0\x02\"\x06\b\xb1\x02\x10\xb1\x02\"\x06\b\x82\x04\x10\x82\x04*\x1fERROR_CODE_RECOVERY_KEY_INVALID*\x19ERROR_CODE_INVITE_EXPIRED*\x19ERROR_CODE_INVITE_REVOKED* ERROR_CODE_INVITE_USES_EXHAUSTED*\x1dERROR_CODE_GROUP_UNDER_REVIEWB\xc3\x01\n" +
 	"\x12com.bebeberloga.v1B\n" +
 	"ErrorProtoP\x01ZHgithub.com/nihestver/bebeberloga/server/gen/bebeberloga/v1;bebeberlogav1\xa2\x02\x03BXX\xaa\x02\x0eBebeberloga.V1\xca\x02\x0eBebeberloga\\V1\xe2\x02\x1aBebeberloga\\V1\\GPBMetadata\xea\x02\x0fBebeberloga::V1b\x06proto3"
 

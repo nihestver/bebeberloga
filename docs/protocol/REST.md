@@ -5,7 +5,7 @@
 ## 1. Соглашения
 
 - База: `https://<инстанс>/api/v1`. Версия в пути; несовместимые изменения — новый префикс.
-- Аутентификация: `Authorization: Bearer <access_token>`. Токен выдаёт `POST /auth/login`, живёт `expires_in` секунд, обновляется `POST /auth/refresh`. Без входа доступны: `GET /instance`, `GET /health`, регистрация, статус и подтверждение email, вход, восстановление пароля, `GET /users/availability`, `GET /invites/{code}`.
+- Аутентификация: `Authorization: Bearer <access_token>`. Токен выдаёт `POST /auth/login`, живёт `expires_in` секунд, обновляется `POST /auth/refresh`. Сессия живёт 45 суток без использования; потом — снова вход. Вход на том же устройстве несёт его `device_id` и подпись вызова сервера (`POST /auth/device-challenge`) ключом подписи устройства: устройство остаётся тем же, без повторного подтверждения (CRYPTO.md §3.9). Без входа доступны: `GET /instance`, `GET /health`, регистрация, статус и подтверждение email, вход и вызов для повторного входа, восстановление пароля, `GET /users/availability`, `GET /invites/{code}`.
 - Неподтверждённое устройство (`DEVICE_VERIFICATION_UNVERIFIED`) может: читать свой аккаунт и устройства, публиковать свои ключи и KeyPackage, запрашивать подтверждение, получать зашифрованный ключ идентичности для восстановления, принимать приглашения в сообщества (без доступа к группам). Остальные запросы к содержимому каналов — `DEVICE_UNVERIFIED`.
 - JSON — форма protojson с именами полей как в `.proto` (`snake_case`): время — RFC 3339 в UTC, байты — base64, enum — строковые имена значений Protobuf (`CHANNEL_TYPE_TEXT`, `ERROR_CODE_PERMISSION_DENIED`), 64-битные целые в телах — строки (`"epoch": "17"`), в параметрах пути и запроса — числа. Неизвестные поля в запросах игнорируются; в ответах могут появляться новые поля — клиент их терпит.
 - Схемы с `x-proto-message`/`x-proto-enum` в коде заменяются типами, сгенерированными из Protobuf (`x-go-type` для Go; импорт `*_pb` для TS, ADR-0017 п. 2). Схемы без этой пометки — тела запросов и обёртки списков, они есть только в REST.
@@ -23,8 +23,8 @@
 |---|---|---|---|
 | `VALIDATION_FAILED` | 400 | Тело или параметры не прошли проверку. В том числе: число хинтов упоминаний не 0, 1, 2, 4, 8, 16, 32 или 50 (CRYPTO.md §6.4); размеру blob-а не соответствует выровненная длина (§7.2); длина записи канала не кратна 256 байтам (§6.8) | `field_errors[]{field, reason}` |
 | `MESSAGE_ID_OUT_OF_WINDOW` | 400 | Время в UUIDv7 сообщения старше 30 сут или опережает время приёма больше чем на 5 мин (CRYPTO.md §6.2.8) | клиент присваивает новый `id` |
-| `TOKEN_INVALID` | 400 | Ссылка из письма недействительна или истекла | |
-| `SIGNATURE_INVALID` | 400 | Подпись ключа устройства не проверяется ключом идентичности | |
+| `TOKEN_INVALID` | 400 | Ссылка из письма недействительна или истекла; ссылки сброса пароля и смены email живут 1 час | |
+| `SIGNATURE_INVALID` | 400 | Подпись не проверяется: подпись ключа устройства ключом идентичности или подпись вызова сервера при повторном входе на том же устройстве (CRYPTO.md §3.9) | При входе: взять новый вызов и повторить один раз |
 | `INVALID_KEY_PACKAGE` | 400 | KeyPackage не прошёл проверки DS (CRYPTO.md §1.4) | |
 | `EXTERNAL_COMMIT_UNSUPPORTED` | 400 | `HANDSHAKE_KIND_EXTERNAL_COMMIT`: external commit в 1.0 не используется (ADR-0019) | |
 | `BAD_DELTA` | 400 | `RosterDelta` commit-а не разбирается или не сходится с ожидаемым (CRYPTO.md §2.3–§2.4) | |
@@ -46,7 +46,7 @@
 | `NOT_GROUP_MEMBER` | 403 | Устройство не состоит в MLS-группе | |
 | `UNAUTHORIZED_CHANGE` | 403 | Изменение состава без предложения сервера; предложение от участника | |
 | `BLOCKED` | 403 | Собеседник заблокировал отправителя или заблокирован им | |
-| `NOT_FOUND` | 404 | Объект не существует или скрыт от запрашивающего (приватный канал выглядит как несуществующий) | |
+| `NOT_FOUND` | 404 | Объект не существует или скрыт от запрашивающего (приватный канал выглядит как несуществующий). Истёкшее, исчерпанное и отозванное приглашение удалено и тоже отвечает так. Устройства и ключи идентичности пользователя (`GET /users/{id}/devices`, `GET /users/{id}/identity-keys`) не скрываются ни от кого из вошедших: для них `404` — только «такого id нет» | Приглашение: «Приглашение больше не действует — попроси новое» |
 | `CONFLICT` | 409 | Общий конфликт состояния (повторное создание, удаление аккаунта владельца сообществ) | `details` |
 | `USERNAME_TAKEN` | 409 | Имя занято | |
 | `EMAIL_IN_USE` | 409 | На email уже есть аккаунт | |
@@ -65,15 +65,13 @@
 | `ALREADY_MEMBER` | 409 | Заявка на вход устройства, которое уже в группе | |
 | `GROUP_FROZEN` | 409 | MLS-группа заморожена или заменена новой при пересоздании (CRYPTO.md §2.10) | `successor_group_id`, если замена уже есть |
 | `IDENTITY_RESET_PENDING` | 409 | Сброс ключа идентичности ещё не применим — идёт задержка 24 ч (CRYPTO.md §6.3.9) | `retry_after_ms` |
+| `DEVICE_REMOVED` | 410 | Повторный вход на удалённом устройстве: пароль и подпись вызова верны, а устройство удалено (CRYPTO.md §3.9) | Как при коде 4109 gateway: стереть локальные ключи и базу, экран входа с баннером «Это устройство отключено»; при `details.by_identity_reset` — спросить «Это был ты?» |
 | `IDENTITY_RESET_LIMITED` | 429 | Запрос сброса сейчас ограничен: после «Это не я» — не раньше чем через 24 ч и не больше 3 за 7 сут (CRYPTO.md §6.3.9) | `retry_after_ms`; новое устройство показывает «Сброс ключей сейчас недоступен…» (SCREENS/07 §4); о запросах, отклонённых лимитом, — письмо на email аккаунта не чаще раза в сутки |
 | `HISTORY_GENERATION_MISMATCH` | 409 | Сообщение обёрнуто или запись канала зашифрована не текущим поколением ключа истории канала (CRYPTO.md §6.2.8, §6.8.5) | `current_generation`; клиент догоняет commit-ы и повторяет (до 3 раз) |
 | `CHANNEL_META_VERSION_CONFLICT` | 409 | Запись канала с названием и темой (CRYPTO.md §6.8). Правка `PUT /channels/{id}/meta`: версию занял другой участник. Commit, начинающий поколение: `seen_version` его записи отстал от правки | `current_meta_version`. Правка — клиент показывает новое название и предлагает повторить; commit — клиент забирает запись и повторяет тот же commit с новой записью (CRYPTO.md §2.13) |
 | `CHANNEL_META_VERSION_TOO_FAR` | 409 | Правка `PUT /channels/{id}/meta`: версия больше текущей сильнее, чем на 65 536, — устройство приняло версию, которой у сервера нет (CRYPTO.md §6.8.5) | `current_meta_version`. Клиент правку не повторяет; чинит пересоздание группы канала (CRYPTO.md §6.8.7). В журнал оператора отказ не пишется |
 | `NOT_DESIGNATED` | 409 | Commit не от устройства, назначенного DS на эту эпоху (CRYPTO.md §2.6), или `GET …/recreation`, `POST …/recreation/key-packages` и `POST /mls/groups` при пересоздании не от назначенного создателя (§2.10.5) | |
 | `SOUND_SLOTS_FULL` | 409 | Слоты звуков заняты | `limit` |
-| `INVITE_EXPIRED` | 410 | Срок приглашения истёк | |
-| `INVITE_REVOKED` | 410 | Приглашение отозвано | |
-| `INVITE_USES_EXHAUSTED` | 410 | Лимит использований исчерпан | |
 | `VERIFICATION_EXPIRED` | 410 | Запрос подтверждения устройства старше 10 минут | |
 | `PAYLOAD_TOO_LARGE` | 413 | Тело, файл или кадр больше лимита | `limit` |
 | `RATE_LIMITED` | 429 | Слишком много запросов | `retry_after_ms`, заголовок `Retry-After` |
@@ -111,7 +109,7 @@
 | Группа | Методы | Назначение |
 |---|---|---|
 | Инстанс | `GET /instance`, `GET /gateway`, `GET /health` | Политика регистрации, лимиты, адрес шлюза; адреса STUN и TURN инстанса без учётных данных, включая TURN по TLS на 443 (ADR-0029; откуда клиент берёт учётные данные TURN, определяет B07); показывает ли инстанс город последнего подключения устройства (ADR-0028 п. 2); версия клиента этого выпуска и ссылка на скачивание — только `https://` (ADR-0030 п. 4); состояние сервера и зависимостей для smoke-тестов и мониторинга (`200`, при недоступной зависимости `503`; тело — `HealthStatus`) |
-| Регистрация и вход | `POST /auth/register`, `GET /auth/register/status`, `POST /auth/email/verify`, `POST /auth/email/resend`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout` | FLOWS/01, FLOWS/02 |
+| Регистрация и вход | `POST /auth/register`, `GET /auth/register/status`, `POST /auth/email/verify`, `POST /auth/email/resend`, `POST /auth/login`, `POST /auth/device-challenge`, `POST /auth/refresh`, `POST /auth/logout` | FLOWS/01, FLOWS/02 |
 | Пароль и email | `POST /auth/password/forgot`, `POST /auth/password/reset`, `POST /auth/password/change`, `POST /auth/email/change`, `POST /auth/email/change/confirm` | Смена пароля завершает остальные сессии, устройства и ключи остаются; смена email — с подтверждением на новый адрес (OPEN-QUESTIONS №2) |
 | Профиль | `GET/PATCH/DELETE /users/me`, `GET /users/availability`, `GET /users/{id}`, `GET /users/{id}/devices` | Имя, аватар из набора, «о себе», цвет баннера; вкладка «Безопасность» чужого профиля (только открытые данные устройств) |
 | Ключи идентичности и восстановление | `PUT /users/me/identity-key`, `GET/PUT /users/me/recovery-key`, `GET /users/me/recovery-key/identity` | Публикация ключа; копия приватного ключа, зашифрованная ключом восстановления; «начать заново» |
@@ -122,12 +120,12 @@
 | ЛС | `GET/POST /users/me/dm-channels`, `DELETE /users/me/dm-channels/{id}` | ЛС — канал типа DM с `participant_ids`; название группового чата (S) — зашифрованная запись, как у канала |
 | Сообщества | `POST /communities`, `GET/PATCH/DELETE /communities/{id}`, `POST …/leave`, `POST …/transfer-ownership`, `GET …/groups`, `GET /users/me/community-removals`, `DELETE /users/me/community-removals/{community_id}` | FLOWS/03, SCREENS/06 §5, SCREENS/11 §9–10; записи «тебя выгнали» для офлайн-устройств |
 | Категории | `POST /communities/{id}/categories`, `PATCH/DELETE /categories/{id}` | |
-| Каналы | `POST /communities/{id}/channels`, `GET/PATCH/DELETE /channels/{id}`, `PUT /channels/{id}/meta`, `GET/PUT /channels/{id}/access`, `POST /channels/{id}/access/self`, `POST /channels/{id}/mls/rotate` | Канал создаётся без названия; название и тема — зашифрованная запись `ChannelMeta` (ADR-0026); «Кто видит канал», самодобавление владельца/администратора в приватный канал, «Обновить ключи канала» |
+| Каналы | `POST /communities/{id}/channels`, `GET/PATCH/DELETE /channels/{id}`, `PUT /channels/{id}/meta`, `GET/PUT /channels/{id}/access`, `POST /channels/{id}/access/self`, `POST /channels/{id}/mls/rotate` | Канал создаётся одним запросом вместе с группой чата и первой записью названия, id канала генерирует клиент; название и тема — зашифрованная запись `ChannelMeta` (ADR-0026); «Кто видит канал», самодобавление владельца/администратора в приватный канал, «Обновить ключи канала» |
 | Роли | `GET/POST /communities/{id}/roles`, `PATCH/DELETE /roles/{id}`, `PUT /communities/{id}/members/{uid}/roles` | |
 | Участники | `GET /communities/{id}/members`, `GET/DELETE /communities/{id}/members/{uid}` | Список с поиском; выгнать |
 | Баны | `GET /communities/{id}/bans`, `PUT/DELETE /communities/{id}/bans/{uid}` | Бан с удалением сообщений за период |
 | Приглашения | `GET/POST /communities/{id}/invites`, `GET /channels/{id}/invites`, `GET/DELETE /invites/{code}`, `POST /invites/{code}/accept` | FLOWS/04 |
-| Сообщения | `GET/POST /channels/{id}/messages`, `GET/DELETE /channels/{id}/messages/{mid}`, `GET /channels/{id}/pins`, `PUT/DELETE /channels/{id}/pins/{mid}`, `GET /users/me/mention-candidates`, `GET /channels/{id}/history-key-links`, `GET /channels/{id}/history-generations` | FLOWS/06; CRYPTO.md §6 |
+| Сообщения | `GET/POST /channels/{id}/messages`, `GET/DELETE /channels/{id}/messages/{mid}`, `GET /channels/{id}/pins`, `PUT/DELETE /channels/{id}/pins/{mid}`, `GET /users/me/mention-candidates`, `GET /users/me/message-deletions`, `GET /channels/{id}/history-key-links`, `GET /channels/{id}/history-generations` | FLOWS/06; CRYPTO.md §6 |
 | Состояние чтения | `PUT /channels/{id}/read-state`, `POST /communities/{id}/read-state`, `POST /users/me/read-state` | |
 | Уведомления | `GET /users/me/notification-settings`, `PUT/DELETE /communities/{id}/notification-settings`, `PUT/DELETE /channels/{id}/notification-settings` | OPEN-QUESTIONS №6 |
 | Файлы | `POST /files`, `GET/DELETE /files/{id}`, `POST /files/{id}/complete` | Presigned URL, вложения до лимита инстанса |
@@ -157,8 +155,8 @@
 
 Название и тема — содержимое: сервер получает их только зашифрованной записью (ADR-0026, CRYPTO.md §6.8).
 
-1. `POST /communities/{id}/channels {type, category_id, private, allowed_*}` — без названия → `ChannelCreated`.
-2. Клиент создателя создаёт группу чата канала: `POST /mls/groups {channel_id, kind: GROUP_KIND_CHAT, …, initial_channel_meta{generation: 1, version: 1, blob, record_hash}}` → `ChannelUpdated` с `Channel.meta`. Первую запись сервер принимает один раз: у канала, у которого уже была запись или группа чата, — `CONFLICT`; повтор того же запроса от того же устройства — тот же `group_id` и та же первая запись, пока её не заменила правка, — получает прежний ответ.
+1. Канал создаётся одним запросом вместе с группой чата и первой записью: `POST /communities/{id}/channels {id, type, category_id, private, allowed_*, group_id, ciphersuite, history_key_bundle, history_key_generation: 1, initial_channel_meta{generation: 1, version: 1, blob, record_hash}}` → `ChannelCreated` с `Channel.meta`. Id канала и `group_id` генерирует клиент (UUIDv7); id уже был на инстансе, в том числе у удалённого канала, или время в нём вне окна — `CONFLICT`. Создать канал может только подтверждённое устройство. Полусозданного канала не бывает.
+2. Повтор того же запроса от того же устройства — тот же id канала, тот же `group_id` и та же первая запись, пока её не заменила правка, — получает прежний ответ. Каналы по умолчанию при создании сообщества создаёт клиент создателя этим же запросом, по одному; `POST /communities` создаёт только категории.
 3. Правка: `PUT /channels/{id}/meta {generation, version, blob, record_hash}` → `ChannelUpdated`. Поколение устарело — `HISTORY_GENERATION_MISMATCH`, клиент шифрует ту же запись под текущим поколением (версия и хэш прежние) и повторяет сам, до 3 раз; версию занял другой — `CHANNEL_META_VERSION_CONFLICT`, клиент показывает новое название. Повтор принятой правки — та же версия и тот же хэш — получает `200` с текущей записью: сервер ничего не меняет и событий не рассылает. Правок — не больше одной в 10 секунд на канал, а у одного пользователя по всем каналам — до 5 подряд, дальше одна в 10 секунд: сверх — `RATE_LIMITED`, клиент повторяет сам через `retry_after_ms`, пользователь отказа не видит. Версия намного больше серверной — `CHANNEL_META_VERSION_TOO_FAR`, клиент не повторяет.
 4. Commit, начинающий поколение ключа истории, несёт запись под новым поколением в `channel_meta[]` того же запроса `POST /mls/groups/{id}/handshakes`. Сервер сохраняет её, только если её версия равна `latest_version`; иначе commit принят, а канал остаётся без записи.
 5. Сервер хранит только текущую версию записи: номер, хэш, время приёма и шифртекст. Когда запись на сервере негодна или её нет, клиент сам ничего не отправляет: название записывает обычная правка участника с правом `channel.edit` (CRYPTO.md §6.8.5, §8.2 п. 23).
@@ -172,7 +170,7 @@
 
 ### Вступление по приглашению
 
-`GET /invites/{code}` (превью без названия канала, ошибки приглашения) → `POST /invites/{code}/accept` → сервер добавляет участника с ролью «@все», рассылает `MemberJoined`, `CommunityCreated` новым устройствам и как external sender — Add-proposals (`MlsHandshake{from_external_sender}`) во все группы видимых каналов. Commit делает онлайн-участник, которого назначает DS (`MlsUpdateRequested.designated_device_id`, CRYPTO.md §2.6); если в группе никого нет в сети, вход ждёт его появления (ADR-0019). Новичок получает `MlsWelcome` (с мостом, если есть), забирает `GET /mls/groups/{id}/history-key-bundle?epoch=` и ссылки `GET /channels/{id}/history-key-links`, затем читает историю `GET /channels/{id}/messages?before=…` (ADR-0015, CRYPTO.md §6.3.8).
+`GET /invites/{code}` (превью без названия канала; истёкшее, исчерпанное и отозванное приглашение — `NOT_FOUND`) → `POST /invites/{code}/accept` → сервер добавляет участника с ролью «@все», рассылает `MemberJoined`, `CommunityCreated` новым устройствам и как external sender — Add-proposals (`MlsHandshake{from_external_sender}`) во все группы видимых каналов. Commit делает онлайн-участник, которого назначает DS (`MlsUpdateRequested.designated_device_id`, CRYPTO.md §2.6); если в группе никого нет в сети, вход ждёт его появления (ADR-0019). Новичок получает `MlsWelcome` (с мостом, если есть), забирает `GET /mls/groups/{id}/history-key-bundle?epoch=` и ссылки `GET /channels/{id}/history-key-links`, затем читает историю `GET /channels/{id}/messages?before=…` (ADR-0015, CRYPTO.md §6.3.8).
 
 ### Вход в голос
 
@@ -182,7 +180,7 @@
 
 Правила DS — CRYPTO.md §2; здесь — как они ложатся на REST.
 
-- `POST /mls/groups` регистрирует группу, привязывает к каналу и принимает начальную связку ключей истории; группа чата текстового или голосового канала несёт первую запись с названием и темой (`initial_channel_meta`). При пересоздании замороженной группы (`predecessor_group_id`) тем же запросом идут начальный commit и Welcome; DS принимает ровно одну новую группу на замороженную (CRYPTO.md §2.10.5).
+- `POST /mls/groups` регистрирует группу, привязывает к каналу и принимает начальную связку ключей истории. Группу чата текстового или голосового канала сообщества он не создаёт: она появляется вместе с каналом (`POST /communities/{id}/channels`). При пересоздании замороженной группы (`predecessor_group_id`) тем же запросом идут начальный commit и Welcome; DS принимает ровно одну новую группу на замороженную (CRYPTO.md §2.10.5).
 - `POST /mls/groups/{id}/handshakes` принимает только commit участника (`PrivateMessage`, ADR-0016 п. 2) и только для текущей эпохи; commit несёт Welcome новых устройств, связку для новой эпохи, ссылку цепочки ключей истории при ротации, мосты входящим устройствам, запись канала с названием и темой, если commit начинает поколение (`channel_meta[]`, CRYPTO.md §6.8.6), и (в личной группе) резервную копию поколения **одним запросом** — состояние группы на сервере меняется атомарно (CRYPTO.md §6.3). DS по `RosterDelta.history_change` ведёт текущее поколение ключа истории канала. Предложения публикует только сервер как external sender (`PublicMessage` с `ProposalAAD`, CRYPTO.md §2.3); предложение участника — `UNAUTHORIZED_CHANGE`.
 - **External commit в 1.0 не используется, GroupInfo сервер не хранит** (ADR-0019): на `HANDSHAKE_KIND_EXTERNAL_COMMIT` — `EXTERNAL_COMMIT_UNSUPPORTED`; `GET …/group-info`, `PUT …/history-key-bundle`, поля `encrypted_group_info` помечены `deprecated`.
 - Commit делает устройство, которое назначает DS (`MlsUpdateRequested.designated_device_id`); при подтверждении нового устройства — в первую очередь подтвердившее (CRYPTO.md §2.6).
