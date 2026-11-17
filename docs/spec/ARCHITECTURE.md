@@ -113,7 +113,7 @@ E2EE закрывает содержимое. Метаданные сокращ�
 │  Auth и права · Сигналинг · Push и файлы      │   │ кадры, ключей нет    │
 └───┬──────────────┬──────────────┬─────────┬───┘   │ TURN: coturn         │
     ▼              ▼              ▼         ▼       └──────────────────────┘
- PostgreSQL      Valkey         NATS      S3 (MinIO / Garage)
+ PostgreSQL      Valkey         NATS      S3 (Garage)
  метаданные,     кэш, presence, шина      зашифрованные blob-ы
  шифртекст       сессии         событий
 ```
@@ -126,7 +126,7 @@ E2EE закрывает содержимое. Метаданные сокращ�
 
 1. `identity` — пользователи, устройства, ключи идентичности, сессии, 2FA, passkeys, OIDC-вход.
 2. `community` — сообщества, каналы, категории, роли, права, инвайты, баны, аудит.
-3. `messaging` — приём и выдача шифртекста (пагинация по UUIDv7), tombstones, read-state, закрепы (id), реакции (как сообщения).
+3. `messaging` — приём и выдача шифртекста (пагинация по UUIDv7), отметки об удалении, read-state, закрепы (id), реакции (как сообщения).
 4. `mls` — Delivery Service: склад KeyPackages, сериализация Proposal/Commit по эпохам, external-sender-предложения на вход/выход, Welcome-доставка.
 5. `gateway` — WebSocket-шлюз: аутентификация, подписки, heartbeat, resume по последовательному номеру, сжатие (zstd), шардинг по пользователю.
 6. `media` — выдача токенов LiveKit с правами (publish/subscribe по ролям), Add в группу звонка сразу по `JoinVoice` (параллельно с подключением клиента к SFU), приём webhooks (участник вышел, обрыв) → Remove и сверка состава звонка.
@@ -157,9 +157,9 @@ E2EE закрывает содержимое. Метаданные сокращ�
 | attachments | id, message_id, s3_key, size, ciphertext_hash | ключ и истинный размер — в сообщении; `size` — выровненный (ADR-0028) |
 | roles, members, permission_overrides, invites, bans, audit_log, read_states, relationships, push_endpoints, history_key_bundles |  |  |
 
-**5.4 Хранилища**: PostgreSQL 16 (схема с миграциями `goose`; партиции `messages` по месяцу; при росте — вынос `messages` в ScyllaDB за интерфейсом репозитория); Valkey (сессии, присутствие, буфер resume, rate limits); NATS JetStream (события между репликами gateway и воркерами push); S3-совместимое хранилище (MinIO или Garage) для blob-ов; LiveKit + coturn. Что и сколько хранится — `docs/protocol/RETENTION.md` (ADR-0028); присутствие и состояние голоса — только в памяти и в Valkey со сроком жизни, адреса клиентов на диск не пишутся.
+**5.4 Хранилища**: PostgreSQL 16 (схема с миграциями `goose`; партиции `messages` по месяцу; при росте — вынос `messages` в ScyllaDB за интерфейсом репозитория); Valkey (сессии, присутствие, буфер resume, rate limits); NATS JetStream (события между репликами gateway и воркерами push); S3-совместимое хранилище Garage (ADR-0022) для blob-ов; LiveKit + coturn. Что и сколько хранится — `docs/protocol/RETENTION.md` (ADR-0028); присутствие и состояние голоса — только в памяти и в Valkey со сроком жизни, адреса клиентов на диск не пишутся.
 
-**5.5 Развёртывание**: `docker compose up` для малых инстансов (всё в одном); Helm-чарт с HPA для gateway и воркеров; единый бинарник `bebeberloga-server` с подкомандами `serve`, `migrate`, `admin`; конфигурация через YAML + env; автоматический TLS (Caddy или встроенный ACME); TURN по TLS на 443/tcp на отдельном имени — запасной путь медиа для сетей без UDP (ADR-0029). Инстанс самодостаточен (ADR-0030): клиент обращается только к своему инстансу, сервер — только к почтовому серверу оператора, за сертификатом и к шлюзам push, если их включили; стороннего прокси с завершением TLS перед инстансом нет; сервер ставится и обновляется без доступа к реестрам образов; о новой версии клиента сообщает инстанс.
+**5.5 Развёртывание**: `docker compose up` для малых инстансов (всё в одном); Helm-чарт с HPA для gateway и воркеров; единый бинарник `bebeberloga-server` с подкомандами `serve`, `migrate`, `admin`, `logs`; конфигурация через YAML + env; автоматический TLS (Caddy или встроенный ACME); TURN по TLS на 443/tcp на отдельном имени — запасной путь медиа для сетей без UDP (ADR-0029). Инстанс самодостаточен (ADR-0030): клиент обращается только к своему инстансу, сервер — только к почтовому серверу оператора, за сертификатом и к шлюзам push, если их включили; стороннего прокси с завершением TLS перед инстансом нет; сервер ставится и обновляется без доступа к реестрам образов; о новой версии клиента сообщает инстанс.
 
 **5.6 Масштабирование**: gateway горизонтально за NATS; API stateless; MLS-очередь — одна горячая точка на группу (сериализация по group_id в Postgres advisory lock или Valkey lock); LiveKit — multi-node через свой Redis-протокол.
 
@@ -177,7 +177,7 @@ E2EE закрывает содержимое. Метаданные сокращ�
 | Android (после 1.0) | Kotlin, Jetpack Compose, `livekit-android`, crypto-core через uniffi, Room/SQLCipher, WorkManager, UnifiedPush + FCM | Нативный UX, фоновые звонки, Notification channels; опыт Kotlin в команде |
 | iOS (после 1.0, опционально) | Swift, SwiftUI, `livekit-swift`, crypto-core через uniffi, CallKit/PushKit, Notification Service Extension | Единственный полноценный путь к фоновым звонкам и расшифровке пушей на iOS |
 | Медиа | LiveKit server (SFU) + coturn; RNNoise (`rnnoise-wasm` / `rnnoise-nu`) для шумоподавления | Apache-2.0, Go, встроенное E2EE кадров с собственным KeyProvider во всех SDK |
-| Хранилища | PostgreSQL 16, Valkey 8, NATS JetStream, MinIO или Garage | FOSS; Valkey вместо Redis из-за смены лицензии Redis |
+| Хранилища | PostgreSQL 16, Valkey 8, NATS JetStream, Garage (ADR-0022) | FOSS; Valkey вместо Redis из-за смены лицензии Redis |
 | Push | UnifiedPush (ntfy/NextPush), FCM, APNs через `go-fcm`/`apns2` | Свой сервер UnifiedPush рядом с инстансом — основной путь; FCM — запасной, по умолчанию выключен; APNs — для iOS (ADR-0030) |
 | Инфраструктура | Docker Compose, Helm, GitHub Actions/Woodpecker CI, `goreleaser`, `cargo-dist`, reproducible builds | Self-hosted CI тоже возможен |
 | Дизайн | Penpot (FOSS) для макетов; дизайн-токены в JSON (`design/tokens/`) → CSS/Compose/SwiftUI через Style Dictionary | Один источник правды для трёх платформ |
