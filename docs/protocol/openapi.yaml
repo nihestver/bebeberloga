@@ -262,7 +262,10 @@ paths:
         CRYPTO.md §3.9). `device_id` без подписи, с неверной подписью или с вызовом, который истёк
         или уже использован, — SIGNATURE_INVALID; клиент берёт новый вызов и повторяет один раз.
         Сессия живёт 45 суток без использования (RETENTION.md §2.1).
-        Ошибки: INVALID_CREDENTIALS, EMAIL_NOT_VERIFIED, SIGNATURE_INVALID, RATE_LIMITED.
+        Пароль и подпись верны, а устройство удалено — DEVICE_REMOVED: клиент стирает локальные
+        ключи и базу, как при коде 4109 gateway; при `details.by_identity_reset` — спрашивает
+        «Это был ты?». Ошибки: INVALID_CREDENTIALS, EMAIL_NOT_VERIFIED, SIGNATURE_INVALID,
+        DEVICE_REMOVED, RATE_LIMITED.
       operationId: login
       security: []
       requestBody:
@@ -752,12 +755,15 @@ paths:
         пользователя или по одному. Вернувшееся устройство убирает эти сообщения из локальной
         базы; всю ленту оно не сверяет (FLOWS/06 «Удаления после офлайна», ADR-0028 п. 3).
         `since` — время сервера, когда устройство в последний раз было синхронизировано
-        (`Ready.server_time` прошлого подключения); граница включена, повторная отметка безвредна.
+        (`Ready.server_time` прошлого подключения) минус 5 минут запаса: время удаления и время
+        `Ready` идут с разных часов. Граница включена, повторная отметка безвредна.
         Порядок — по времени удаления, затем по id сообщения. Следующая страница — `since` и
         `after` из последней отметки страницы; среди отметок со временем `since` отдаются те, чей
-        id больше `after`. В ответе только отметки сообщений, которые сервер отдал бы этому
-        устройству в ленте канала (CRYPTO.md §6.3.8 п. 3). Отметка хранится, пока существует
-        канал (RETENTION.md §2.3).
+        id больше `after`. В ответе только отметки из каналов, которые пользователь видит, и
+        только те, что он получил бы в ленте: если в канале выключено «Новые участники видят
+        историю», отметки сообщений старше его вступления не отдаются — сервер судит по времени
+        в id сообщения, как в `GET /channels/{channel_id}/messages`. Отметка хранится, пока
+        существует канал (RETENTION.md §2.3).
       operationId: listMessageDeletions
       parameters:
         - name: since
@@ -1592,8 +1598,9 @@ paths:
         версии 1 под поколением 1 и рассылает ChannelCreated с `Channel.meta`. Затем клиент
         создателя добавляет устройства всех, кто видит канал, обычными commit-ами.
 
-        Ошибки: PERMISSION_DENIED; CONFLICT — id канала или `group_id` уже заняты либо время в id
-        канала вне окна; VALIDATION_FAILED — версия записи не 1, поколение не 1, длина записи не
+        Ошибки: PERMISSION_DENIED; DEVICE_UNVERIFIED — устройство создателя не подтверждено;
+        CONFLICT — id канала или `group_id` уже были на инстансе, в том числе у удалённого канала,
+        либо время в них вне окна; VALIDATION_FAILED — версия записи не 1, поколение не 1, длина записи не
         кратна 256 байтам или хэш не в 32 байта; PAYLOAD_TOO_LARGE — запись больше 8 КиБ. Повтор
         того же запроса от того же устройства — тот же `id`, тот же `group_id` и та же первая
         запись, пока её не заменила правка, — получает прежний ответ.
@@ -1614,7 +1621,7 @@ paths:
                   enum: [CHANNEL_TYPE_TEXT, CHANNEL_TYPE_VOICE]
                 group_id:
                   allOf: [{ $ref: '#/components/schemas/Id' }]
-                  description: Id группы чата канала (MLS group_id), сгенерирован клиентом.
+                  description: Id группы чата канала (MLS group_id), UUIDv7, сгенерирован клиентом; окно времени то же, что у id канала.
                 ciphersuite: { type: integer, enum: [1] }
                 history_key_bundle:
                   allOf: [{ $ref: '#/components/schemas/Bytes' }]
@@ -1623,7 +1630,6 @@ paths:
                   type: integer
                   enum: [1]
                   description: Головное поколение связки; у нового канала — 1.
-                personal_backup: { $ref: '#/components/schemas/PersonalBackup' }
                 initial_channel_meta:
                   allOf: [{ $ref: '#/components/schemas/ChannelMetaWrite' }]
                   description: Первая запись с названием и темой — версия 1 под поколением 1 (CRYPTO.md §6.8.5).
@@ -2280,7 +2286,7 @@ paths:
         Вместе с сообщением удаляющий клиент — автора или модератора — передаёт id его правок в
         `edit_ids`. Сервер стирает те из них, которые лежат в том же канале и автор которых —
         автор удаляемого сообщения, оставляет от каждой отметку и включает их в MessageDeleted;
-        остальные id он игнорирует. Если правок больше 100, остальные клиент удаляет обычными
+        остальные id он игнорирует. Если правок больше 99, остальные клиент удаляет обычными
         запросами. Реакции остаются. Так сервер узнаёт, какие сообщения были правками удалённого
         (CRYPTO.md §8.2 п. 28).
       operationId: deleteMessage
@@ -2293,7 +2299,7 @@ paths:
               properties:
                 edit_ids:
                   type: array
-                  maxItems: 100
+                  maxItems: 99
                   description: Id правок удаляемого сообщения.
                   items: { $ref: '#/components/schemas/Id' }
       responses:
@@ -2576,8 +2582,9 @@ paths:
 
         Группу чата текстового и голосового канала сообщества этот запрос не создаёт: она
         появляется вместе с каналом, одним запросом `POST /communities/{community_id}/channels`
-        (CRYPTO.md §6.8.5). Здесь для такого канала принимается только пересоздание — запрос с
-        `predecessor_group_id`; без него — CONFLICT.
+        (CRYPTO.md §6.8.5). Здесь для группы чата такого канала принимается только пересоздание —
+        запрос с `predecessor_group_id`; без него — CONFLICT. Группу звонка голосового канала
+        создаёт первый вошедший этим запросом, как раньше.
 
         Пересоздание группы по команде оператора или восстановление личной группы (CRYPTO.md §2.10):
         `predecessor_group_id` задан, и тем же запросом идут начальный commit, добавляющий начальный
@@ -3562,6 +3569,7 @@ components:
         - ERROR_CODE_INVALID_KEY_PACKAGE
         - ERROR_CODE_IDENTITY_RESET_PENDING
         - ERROR_CODE_IDENTITY_RESET_LIMITED
+        - ERROR_CODE_DEVICE_REMOVED
         - ERROR_CODE_CHANNEL_MEMBER_LIMIT
         - ERROR_CODE_COMMUNITY_LIMIT
         - ERROR_CODE_BANNED
@@ -3699,7 +3707,7 @@ components:
       x-proto-message: bebeberloga.v1.User
       x-go-type: bebeberlogav1.User
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      description: Публичный профиль. У удалённого аккаунта заполнены только `id` и `deleted`; имя, аватар, «о себе», ключ идентичности и дата регистрации стёрты и не отдаются (RETENTION.md §2.1).
+      description: Публичный профиль. У удалённого аккаунта заполнены только `id` и `deleted`; имя, аватар, «о себе» и дата регистрации стёрты, ключ идентичности в профиле не отдаётся — он остаётся в истории ключей (RETENTION.md §2.1).
       required: [id]
       properties:
         id: { $ref: '#/components/schemas/Id' }

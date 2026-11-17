@@ -248,9 +248,9 @@ func (PushTransport) EnumDescriptor() ([]byte, []int) {
 
 // Публичный профиль пользователя. Аватар — id иконки из встроенного набора
 // (FEATURES 3.1); своя картинка — S, поле `avatar_url` зарезервировано.
-// У удалённого аккаунта заполнены только `id` и `deleted`: имя, аватар, «о себе», ключ
-// идентичности и дата регистрации стёрты и не отдаются (RETENTION.md §2.1). Ключи идентичности
-// для проверки подписей остаются в истории ключей (`GET /users/{id}/identity-keys`).
+// У удалённого аккаунта заполнены только `id` и `deleted`: имя, аватар, «о себе» и дата
+// регистрации стёрты, а ключ идентичности в профиле не отдаётся — для проверки подписей он
+// остаётся в истории ключей (`GET /users/{id}/identity-keys`; RETENTION.md §2.1).
 type User struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`

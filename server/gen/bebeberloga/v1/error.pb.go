@@ -85,6 +85,11 @@ const (
 	// Запрос сброса ключа идентичности сейчас ограничен: после отмены «Это не я» — не раньше чем через
 	// 24 ч и не больше 3 запросов за 7 сут (CRYPTO.md §6.3.9). Пауза — в `retry_after_ms`. HTTP 429.
 	ErrorCode_ERROR_CODE_IDENTITY_RESET_LIMITED ErrorCode = 207
+	// Повторный вход на удалённом устройстве: пароль верен, подпись вызова сходится с ключом
+	// подписи устройства, но само устройство удалено. Клиент стирает локальные ключи и базу, как
+	// при коде 4109 gateway; если устройство удалено сбросом ключа идентичности
+	// (`details.by_identity_reset`) — спрашивает «Это был ты?» (CRYPTO.md §3.9). HTTP 410.
+	ErrorCode_ERROR_CODE_DEVICE_REMOVED ErrorCode = 208
 	// --- сообщества и каналы -----------------------------------------------
 	// Достигнут лимит участников канала (ADR-0005). HTTP 409.
 	ErrorCode_ERROR_CODE_CHANNEL_MEMBER_LIMIT ErrorCode = 300
@@ -193,6 +198,7 @@ var (
 		205: "ERROR_CODE_INVALID_KEY_PACKAGE",
 		206: "ERROR_CODE_IDENTITY_RESET_PENDING",
 		207: "ERROR_CODE_IDENTITY_RESET_LIMITED",
+		208: "ERROR_CODE_DEVICE_REMOVED",
 		300: "ERROR_CODE_CHANNEL_MEMBER_LIMIT",
 		301: "ERROR_CODE_COMMUNITY_LIMIT",
 		302: "ERROR_CODE_BANNED",
@@ -251,6 +257,7 @@ var (
 		"ERROR_CODE_INVALID_KEY_PACKAGE":           205,
 		"ERROR_CODE_IDENTITY_RESET_PENDING":        206,
 		"ERROR_CODE_IDENTITY_RESET_LIMITED":        207,
+		"ERROR_CODE_DEVICE_REMOVED":                208,
 		"ERROR_CODE_CHANNEL_MEMBER_LIMIT":          300,
 		"ERROR_CODE_COMMUNITY_LIMIT":               301,
 		"ERROR_CODE_BANNED":                        302,
@@ -526,7 +533,7 @@ const file_bebeberloga_v1_error_proto_rawDesc = "" +
 	"\x12successor_group_id\x18\t \x01(\tR\x10successorGroupId\x12-\n" +
 	"\x12current_generation\x18\n" +
 	" \x01(\rR\x11currentGeneration\x120\n" +
-	"\x14current_meta_version\x18\v \x01(\x04R\x12currentMetaVersion*\xaf\x10\n" +
+	"\x14current_meta_version\x18\v \x01(\x04R\x12currentMetaVersion*\xcf\x10\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cERROR_CODE_VALIDATION_FAILED\x10\x01\x12\x1e\n" +
@@ -551,7 +558,8 @@ const file_bebeberloga_v1_error_proto_rawDesc = "" +
 	"\x1cERROR_CODE_SIGNATURE_INVALID\x10\xcc\x01\x12#\n" +
 	"\x1eERROR_CODE_INVALID_KEY_PACKAGE\x10\xcd\x01\x12&\n" +
 	"!ERROR_CODE_IDENTITY_RESET_PENDING\x10\xce\x01\x12&\n" +
-	"!ERROR_CODE_IDENTITY_RESET_LIMITED\x10\xcf\x01\x12$\n" +
+	"!ERROR_CODE_IDENTITY_RESET_LIMITED\x10\xcf\x01\x12\x1e\n" +
+	"\x19ERROR_CODE_DEVICE_REMOVED\x10\xd0\x01\x12$\n" +
 	"\x1fERROR_CODE_CHANNEL_MEMBER_LIMIT\x10\xac\x02\x12\x1f\n" +
 	"\x1aERROR_CODE_COMMUNITY_LIMIT\x10\xad\x02\x12\x16\n" +
 	"\x11ERROR_CODE_BANNED\x10\xae\x02\x12\x1e\n" +
