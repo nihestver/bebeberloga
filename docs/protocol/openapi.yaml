@@ -150,6 +150,7 @@ paths:
       summary: Регистрация
       description: |
         Создаёт аккаунт в состоянии «ждёт подтверждения email» и отправляет письмо (FLOWS/01 ш. 3).
+        Ссылка из письма действует 1 час; новую даёт `POST /auth/email/resend`.
         Ошибки: USERNAME_TAKEN, EMAIL_IN_USE, REGISTRATION_CLOSED, RATE_LIMITED, VALIDATION_FAILED.
       operationId: register
       security: []
@@ -214,6 +215,7 @@ paths:
     post:
       tags: [auth]
       summary: Подтвердить email по ссылке из письма
+      description: Токен из ссылки одноразовый и живёт 1 час; запись о нём удаляется при использовании и истечении (RETENTION.md §2.1).
       operationId: verifyEmail
       security: []
       requestBody:
