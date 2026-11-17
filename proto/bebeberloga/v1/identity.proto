@@ -102,13 +102,13 @@ message PublicDevice {
   google.protobuf.Timestamp created_at = 7;
   bytes history_hpke_key = 8;
   bytes history_hpke_key_signature = 9;
-  // Время удаления; запись удалённого устройства сервер хранит навсегда — по ней проверяются
-  // подписи его сообщений в истории (CRYPTO.md §6.2.8).
+  // Время удаления; запись удалённого устройства сервер хранит, пока существует аккаунт, — по
+  // ней проверяются подписи его сообщений в истории и записи канала (CRYPTO.md §6.2.8).
   google.protobuf.Timestamp removed_at = 10;
 }
 
 // Ключ идентичности пользователя с периодом действия: история ключей после «Начать заново»
-// (CRYPTO.md §6.2.6). Сервер хранит её навсегда.
+// (CRYPTO.md §6.2.6). Сервер хранит её, пока существует аккаунт (CRYPTO.md §6.2.8).
 message IdentityKeyRecord {
   bytes identity_pubkey = 1;
   google.protobuf.Timestamp valid_from = 2;
