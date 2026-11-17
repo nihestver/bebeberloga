@@ -112,7 +112,7 @@ message PublicDevice {
 message IdentityKeyRecord {
   bytes identity_pubkey = 1;
   google.protobuf.Timestamp valid_from = 2;
-  // Пусто у действующего ключа.
+  // Пусто у действующего ключа; у удалённого аккаунта закрыт временем удаления.
   google.protobuf.Timestamp valid_until = 3;
 }
 

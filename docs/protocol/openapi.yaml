@@ -488,6 +488,11 @@ paths:
       description: |
         Требует пароль и имя пользователя (SCREENS/07 §9). Отклоняется с CONFLICT, пока пользователь
         владеет сообществами: их нужно передать или удалить (список — в поле `details`).
+
+        Всем устройствам аккаунта сервер ставит `removed_at`, а действующему ключу идентичности —
+        `valid_until`, равные времени удаления: подписи, принятые сервером позже, не проходят
+        проверку. Id, отметка об удалении, ключи идентичности и открытые записи устройств не
+        стираются до ответа на OPEN-QUESTIONS №52 (CRYPTO.md §6.2.8).
       operationId: deleteMe
       requestBody:
         required: true
@@ -3643,7 +3648,8 @@ components:
       x-proto-message: bebeberloga.v1.PublicDevice
       x-go-type: bebeberlogav1.PublicDevice
       x-go-type-import: { path: github.com/nihestver/bebeberloga/server/gen/bebeberloga/v1, name: bebeberlogav1 }
-      required: [id, user_id, platform, verification, created_at]
+      description: 'Открытая запись устройства. У удалённого устройства и у устройств удалённого аккаунта `platform` и `verification` могут отсутствовать: что стирается при удалении — OPEN-QUESTIONS №52. Подпись проверяется по `signature_pubkey`, `identity_signature` и `removed_at`, а не по `verification` (CRYPTO.md §6.2.5).'
+      required: [id, user_id, created_at]
       properties:
         id: { $ref: '#/components/schemas/Id' }
         user_id: { $ref: '#/components/schemas/Id' }
@@ -3668,7 +3674,7 @@ components:
         valid_from: { $ref: '#/components/schemas/Timestamp' }
         valid_until:
           allOf: [{ $ref: '#/components/schemas/Timestamp' }]
-          description: Пусто у действующего ключа.
+          description: Пусто у действующего ключа; у удалённого аккаунта закрыт временем удаления.
     RecoveryPublicKey:
       type: object
       x-proto-message: bebeberloga.v1.RecoveryPublicKey
@@ -3870,7 +3876,7 @@ components:
       properties:
         channel_id: { $ref: '#/components/schemas/Id' }
         seen_version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: '`ChannelMeta.latest_version`, который видел коммитер.' }
-        version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Версия записи в `blob`. Не равна `latest_version` — сервер запись не сохраняет, и канал остаётся без записи. 0 — годной записи у коммитера нет.' }
+        version: { allOf: [{ $ref: '#/components/schemas/Int64' }], description: 'Версия записи в `blob`. Не равна `latest_version` — сервер запись не сохраняет, и канал остаётся без записи. 0 — записи текущей версии у коммитера нет или его устройство отвергло её по подписи или по порогу версий.' }
         blob:
           allOf: [{ $ref: '#/components/schemas/Bytes' }]
           description: SealedChannelMeta под поколением после commit-а; пусто при `version = 0`.

@@ -370,7 +370,7 @@ export type IdentityKeyRecord = Message<"bebeberloga.v1.IdentityKeyRecord"> & {
   validFrom?: Timestamp;
 
   /**
-   * Пусто у действующего ключа.
+   * Пусто у действующего ключа; у удалённого аккаунта закрыт временем удаления.
    *
    * @generated from field: google.protobuf.Timestamp valid_until = 3;
    */

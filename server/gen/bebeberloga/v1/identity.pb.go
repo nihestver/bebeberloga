@@ -808,7 +808,7 @@ type IdentityKeyRecord struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	IdentityPubkey []byte                 `protobuf:"bytes,1,opt,name=identity_pubkey,json=identityPubkey,proto3" json:"identity_pubkey,omitempty"`
 	ValidFrom      *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=valid_from,json=validFrom,proto3" json:"valid_from,omitempty"`
-	// Пусто у действующего ключа.
+	// Пусто у действующего ключа; у удалённого аккаунта закрыт временем удаления.
 	ValidUntil    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
