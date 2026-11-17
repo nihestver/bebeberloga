@@ -77,14 +77,14 @@
 | Шаг | Вызов или событие |
 |---|---|
 | 1 Мастер | клиент |
-| 2 Создать сообщество, пресеты ролей, каналы по умолчанию без названий, владелец | `POST /communities` → `CommunitySnapshot` (у каналов нет `meta`); `CommunityCreated` другим своим устройствам |
-| 3 Группа чата и запись с названием для каждого канала, и текстового, и голосового; группа звонка — первым вошедшим | `POST /mls/groups {channel_id, kind: GROUP_KIND_CHAT, initial_channel_meta{generation: 1, version: 1, blob, record_hash}}` → `ChannelUpdated` с `Channel.meta`; названия («общий», «Болталка») — из локализации клиента, сервер их не видит (CRYPTO.md §6.8.5); группа звонка — при `POST /channels/{id}/voice/join` с `call_group_exists: false` |
+| 2 Создать сообщество, пресеты ролей и категории, владелец; каналов сервер не создаёт | `POST /communities` → `CommunitySnapshot` без каналов; `CommunityCreated` другим своим устройствам |
+| 3 Каналы по умолчанию создаёт клиент создателя, по одному: канал, группа чата и запись с названием — одним запросом; группа звонка — первым вошедшим | `POST /communities/{id}/channels {id, type, …, group_id, history_key_bundle, initial_channel_meta{generation: 1, version: 1, blob, record_hash}}` → `ChannelCreated` с `Channel.meta`; названия («общий», «Болталка») — из локализации клиента, сервер их не видит (CRYPTO.md §6.8.5); группа звонка — при `POST /channels/{id}/voice/join` с `call_group_exists: false` |
 | 4 Открыть первый канал | клиент |
-| 5 Лимит; откат | `COMMUNITY_LIMIT`; `DELETE /communities/{id}` + серверная уборка (STATUS.md) |
+| 5 Лимит; сбой при создании канала по умолчанию | `COMMUNITY_LIMIT`; отката нет: у сообщества меньше каналов, недостающие создаются как обычные |
 | Канал 1 | клиент (права из `EffectivePermissions`) |
-| Канал 2 Создать канал — название в запрос не входит | `POST /communities/{id}/channels {type, category_id, private, allowed_role_ids, allowed_user_ids}` |
-| Канал 3 `ChannelCreated`; группа чата, запись с названием и темой, добавление устройств пакетами | событие `ChannelCreated` (без `meta`); `POST /mls/groups` с `initial_channel_meta` → `ChannelUpdated`; `POST /users/{id}/key-packages/claim` × участники; `POST /mls/groups/{id}/handshakes` (commit + welcomes) |
-| Канал 4 Появление у всех; заглушка вместо названия, пока устройство не в группе | `ChannelCreated` и `ChannelUpdated` видящим канал; название клиент расшифровывает после `MlsWelcome` и связки |
+| Канал 2 Создать канал одним запросом с группой чата и записью названия; открытого названия в запросе нет | `POST /communities/{id}/channels {id, type, category_id, private, allowed_role_ids, allowed_user_ids, group_id, ciphersuite, history_key_bundle, history_key_generation, initial_channel_meta}`; id канала — от клиента |
+| Канал 3 `ChannelCreated`; добавление устройств пакетами | событие `ChannelCreated` с `Channel.meta`; `POST /users/{id}/key-packages/claim` × участники; `POST /mls/groups/{id}/handshakes` (commit + welcomes) |
+| Канал 4 Появление у всех; заглушка вместо названия, пока устройство не в группе | `ChannelCreated` видящим канал; название клиент расшифровывает после `MlsWelcome` и связки |
 | Переименовать 1 Правка в настройках канала | клиент (право `channel.edit`, устройство в группе канала) |
 | Переименовать 2 Новая запись под текущим поколением, подпись устройства | `PUT /channels/{id}/meta {generation, version, blob, record_hash}` (CRYPTO.md §6.8.5) |
 | Переименовать 3 Проверки сервера; ошибки | право 3, членство в группе, поколение, версия → `ChannelUpdated`; `HISTORY_GENERATION_MISMATCH{current_generation}` — клиент догоняет commit-ы и повторяет сам; `CHANNEL_META_VERSION_CONFLICT{current_meta_version}` — клиент показывает новое название и предлагает повторить правку; `RATE_LIMITED{retry_after_ms}` (одна правка в 10 с на канал; у пользователя по всем каналам — 5 подряд, дальше одна в 10 с) — клиент повторяет сам; `CHANNEL_META_VERSION_TOO_FAR` — клиент не повторяет (CRYPTO.md §6.8.5) |
@@ -98,7 +98,7 @@
 | Создать 1 Действующая ссылка или новая | `GET /channels/{id}/invites?mine=true`; `POST /communities/{id}/invites {channel_id, ttl_seconds: 604800, max_uses: 0}` → `InviteCreated` |
 | Создать 2 Копировать; пригласить друга в ЛС | клиент; ЛС — обычное `text`-сообщение со ссылкой (OPEN-QUESTIONS №5); `InviteCreated` — создателю и участникам с `community.admin` |
 | Создать 3 Настроить ссылку | `POST /communities/{id}/invites` с параметрами; старая действует |
-| Вступить 1 Превью (канал не называет); ошибки | `GET /invites/{code}` → `InvitePreview` без названия канала; `INVITE_EXPIRED`, `INVITE_REVOKED`, `INVITE_USES_EXHAUSTED`, `BANNED`, `CHANNEL_MEMBER_LIMIT`, `INVITES_PAUSED` |
+| Вступить 1 Превью (канал не называет); ошибки | `GET /invites/{code}` → `InvitePreview` без названия канала; `NOT_FOUND` — приглашение истекло, исчерпано или отозвано и удалено; `BANNED`, `CHANNEL_MEMBER_LIMIT`, `INVITES_PAUSED` |
 | Вступить 2 Принять | `POST /invites/{code}/accept` → `MemberJoined` участникам, `CommunityCreated` своим устройствам |
 | Вступить 3 Add-предложения, Skeleton до commit, заглушка вместо названия канала; ожидание, если никого нет в сети | `MlsHandshake{from_external_sender}` членам групп; `MlsUpdateRequested{designated_device_id}`; commit назначенным онлайн-участником; без онлайн-участников заявка ждёт (ADR-0019) |
 | Вступить 4 Связка ключей истории; история | `MlsWelcome` → `GET /mls/groups/{id}/history-key-bundle` → `GET /channels/{id}/history-key-links` → `GET /channels/{id}/messages` (при выключенной истории вход — разрыв цепочки, сервер не отдаёт сообщения до вступления; повторное включение — тоже разрыв, CRYPTO.md §6.3.3) |
@@ -131,7 +131,7 @@
 | Упоминания после офлайна 3 Бейдж; подсчёт без ключа поколения откладывается | клиент |
 | Ответ | `TextBody.reply_to` |
 | Правка | `MessageCreated` с конвертом `EditBody` |
-| Удаление | `DELETE /channels/{id}/messages/{mid}` → сервер стирает шифртекст, обёрнутый ключ, хинты и blob-ы вложений, оставляет отметку → `MessageDeleted`; плюс конверт `DeleteBody` |
+| Удаление | `DELETE /channels/{id}/messages/{mid}` → сервер стирает шифртекст, обёрнутый ключ, хинты и blob-ы вложений, оставляет отметку → `MessageDeleted`; вместе с сообщением стираются его правки по `edit_ids`; плюс конверт `DeleteBody`. После офлайна — `GET /users/me/message-deletions` |
 | Реакция | `MessageCreated` с конвертом `ReactionBody` |
 | Вложения 1 Выбор файлов | клиент; лимиты из `InstanceLimits` |
 | Вложения 2 Ключ, выравнивание длины, шифрование, загрузка, метаданные в конверт | `POST /files {size — размер blob-а}` → `PUT upload_url` → `POST /files/{id}/complete`; `FileRef` с истинным размером в `TextBody.attachments` (CRYPTO.md §7.2) |
