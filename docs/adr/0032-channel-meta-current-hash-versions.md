@@ -4,7 +4,7 @@
 - Дата: 2026-11-16
 - Частично изменяет: [ADR-0026](0026-channel-names-encrypted.md) пп. 4–5 — чем подтверждается право автора записи, что отдаёт автор commit-а, начавшего поколение, как растёт версия и когда клиент принимает запись
 - Дополняет: [ADR-0026](0026-channel-names-encrypted.md) — лимит частоты правок (п. 6)
-- Связано: [ADR-0015](0015-history-visible-to-members.md), [ADR-0021](0021-b02-security-review-decisions.md) п. 17, [ADR-0028](0028-server-data-minimization.md); `docs/protocol/CRYPTO.md` §2.10, §6.8, §8.2 пп. 23–25; `docs/spec/OPEN-QUESTIONS.md` №47, №62–65; промпт B21
+- Связано: [ADR-0015](0015-history-visible-to-members.md), [ADR-0021](0021-b02-security-review-decisions.md) п. 17, [ADR-0028](0028-server-data-minimization.md); `docs/protocol/CRYPTO.md` §2.10, §6.8, §8.2 пп. 23–25; `docs/spec/OPEN-QUESTIONS.md` №47, №62–66; промпт B21
 
 ## Контекст
 
