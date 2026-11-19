@@ -6,7 +6,7 @@ tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
 
 require (
 	github.com/go-chi/chi/v5 v5.5.0
-	github.com/jackc/pgx/v5 v5.12.0
+	github.com/jackc/pgx/v5 v5.13.0
 	github.com/nats-io/nats.go v1.55.0
 	github.com/rs/zerolog v1.35.1
 	github.com/testcontainers/testcontainers-go v0.45.0
