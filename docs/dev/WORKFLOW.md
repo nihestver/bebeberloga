@@ -14,7 +14,7 @@
 
 ## Принципы
 
-1. **Одна команда на действие.** Всё, что запускает агент, — рецепты `just` (`just test`, `just lint`, `just remote-up`). CI и задачи VSCodium вызывают те же рецепты. Полный список с описаниями по разделам — `just help` (разделы — атрибут `[group]`, нужен just 1.27 или новее).
+1. **Одна команда на действие.** Всё, что запускает агент, — рецепты `just` (`just test`, `just lint`, `just remote-up`). CI и задачи VSCodium вызывают те же рецепты. Полный список с описаниями по разделам — `just help`. Нужен just 1.44.0 или новее: многострочные рецепты помечены атрибутом `[script]`, а он стабилен с этой версии (список изменений just, 1.44.0 от 2025-12-06); разделы — атрибут `[group]`.
 2. **Проверка за агентом автоматическая.** Форматирование и clean-room-фильтр — hooks Claude Code; линтеры, тесты, лицензии, ссылки — CI. `CLAUDE.md` советует, hooks и CI гарантируют.
 3. **Один промпт — одна сессия — одна ветка — один PR.** Между промптами `/clear`. Исследование и ревью — субагентами.
 4. **Тест-сервер — копия прода**: тот же Docker Compose, что получат администраторы; деплой — из CI после merge в `main`.
@@ -45,6 +45,23 @@ Docker на Mac — любой из двух вариантов:
 Серверная часть проверяется на тест-сервере (`just remote …`) и в CI: там обычный Docker на Linux.
 
 Добавь `eval "$(mise activate zsh)"` в `~/.zshrc`, чтобы версии из `mise.toml` подхватывались в терминале VSCodium. Claude Code CLI нужен для `claude` в терминале и для GitHub Action (`claude setup-token`); установка — по [официальной инструкции](https://code.claude.com/docs/en/setup).
+
+## Работа на Windows
+
+На Windows собирают и проверяют клиент; серверная часть проверяется на macOS, тест-сервере и в CI. Docker на Windows-машине для этого не нужен.
+
+Инструменты (winget, источник `winget`): `Git.Git`, `Casey.Just`, `jdx.mise`, `evilmartians.lefthook`, для Rust — Visual Studio Build Tools с нагрузкой C++; затем `mise install` в корне репозитория. В PATH должен быть `C:\Program Files\Git\bin`: рецепты выполняет `bash` из Git for Windows. На машине с установленным WSL рецепты не проверялись: там `bash` из PATH может оказаться запуском WSL (`C:\Windows\System32\bash.exe`), и тогда каталог Git нужно поставить в PATH раньше `System32`.
+
+Что учтено в `justfile`:
+
+- **Многострочные рецепты** помечены `[script("bash")]`, а не строкой `#!/usr/bin/env bash`: путь из такой строки just на Windows переводит программой `cygpath`, которой в PATH обычно нет.
+- **Порядок PATH.** Каталоги Windows могут стоять в PATH раньше утилит Git, и тогда `sort` и `find` — программы из `System32`. На Windows `justfile` задаёт `BASH_ENV`: файл `tools/dev/posix-path.sh` ставит `/usr/bin` в начало PATH каждого bash, который запускают рецепты.
+- **`just test-go` без cgo.** Детектору гонок нужен компилятор C. Если его нет (`go env CGO_ENABLED` — `0`), тесты идут без `-race`, о чём рецепт пишет первой строкой. Гонки проверяются на Linux и macOS.
+- **`just test-deploy`** не проверяет права созданного `.env`: bash в Windows не отражает `chmod`. На macOS и Linux проверка обязательна.
+
+Что на Windows не запускается: рецепты с Docker (`image`, `compose-smoke`, `dev-up`, `dev-down`, `dev-logs`, `dev-server`, содержательная часть `lint-deploy`) и интеграционные тесты сервера на testcontainers — без Docker они пропускаются, а при `CI=true` падают. Рецепты `remote*` и `deploy-test` рассчитаны на ssh-алиасы и `rsync` с Mac.
+
+В CI рецепты, которые проходят на Windows, запускает job `windows` (`windows-latest`).
 
 ## VSCodium
 
@@ -176,7 +193,7 @@ Postgres, Valkey и NATS наружу не публикуются ни в одн
 
 ## CI/CD (GitHub Actions)
 
-- [`ci.yml`](../../.github/workflows/ci.yml) — на каждый PR, push в `main` и вручную (`workflow_dispatch`): `cleanroom` (фильтр, `reuse lint`, реестр ассетов `ATTRIBUTION.md`, shellcheck), `docs` (внутренние ссылки в markdown), `go`, `rust` (три ОС), `web`, `proto`, `deploy` (образ сервера и Compose-стек: сборка, запуск, smoke-тесты) — по затронутым каталогам. Новый push в ветку PR отменяет её прошлый прогон; прогоны `main` не отменяются, чтобы `deploy-test.yml` получил результат каждого коммита.
+- [`ci.yml`](../../.github/workflows/ci.yml) — на каждый PR, push в `main` и вручную (`workflow_dispatch`): `cleanroom` (фильтр, `reuse lint`, реестр ассетов `ATTRIBUTION.md`, shellcheck), `docs` (внутренние ссылки в markdown), `go`, `rust` (три ОС), `web`, `proto`, `deploy` (образ сервера и Compose-стек: сборка, запуск, smoke-тесты), `windows` (рецепты `just`, которые проходят на Windows без Docker) — по затронутым каталогам. Новый push в ветку PR отменяет её прошлый прогон; прогоны `main` не отменяются, чтобы `deploy-test.yml` получил результат каждого коммита.
 - [`deploy-test.yml`](../../.github/workflows/deploy-test.yml) — после зелёного CI от push в `main` этого репозитория: образ сервера (amd64, arm64) в GHCR → выкатка на тест-сервер того коммита, который проверил CI, → smoke-тесты и сверка версии. Выкатывается только текущая вершина `main`; без секретов environment `test` прогон пропускается.
 - [`dependabot.yml`](../../.github/dependabot.yml) — раз в неделю одна сводная PR на экосистему с сообщением `ci(deps): …` / `chore(deps): …`. Сейчас GitHub Actions, образы в `deploy/compose/` (версии закреплены, мажорные обновления PostgreSQL и Valkey отключены), Go-модуль `server/` и npm в `clients/web/`; блок `cargo` раскомментируется вместе с B3. Уведомления об уязвимостях (Dependabot alerts) включены в настройках репозитория: Security → Dependabot. В Dependabot-коммитах нет `Signed-off-by`: DCO проверяет только локальный lefthook.
 - `release.yml` — на тег `v*` (B17 часть 2). Практики, которые туда закладываются: один источник версии; черновик GitHub Release с `SHA256SUMS`, SBOM и подписями cosign, который человек проверяет и публикует сам; секреты подписи — в environment `release`, доступном только тегам `v*`; без секретов сборка проходит неподписанной с предупреждением, чтобы собирались и форки.
