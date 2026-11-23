@@ -4,6 +4,13 @@
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
+# Windows: рецепты выполняет bash из Git for Windows. Если он запущен не через свою обёртку (Git\bin\bash.exe),
+# каталоги Windows стоят в PATH раньше утилит Git, и вместо sort и find запускаются одноимённые программы из
+# System32. Файл из BASH_ENV выполняется при старте каждого неинтерактивного bash и ставит /usr/bin в начало PATH.
+# На macOS и Linux рецепты получают прежнее значение BASH_ENV, а если оно не задано — пустую строку: для bash это
+# то же, что отсутствие переменной. Обратные косые черты в пути заменены: bash раскрывает значение BASH_ENV.
+export BASH_ENV := if os_family() == "windows" { replace(justfile_directory(), "\\", "/") / "tools/dev/posix-path.sh" } else { env("BASH_ENV", "") }
+
 # без аргументов — то же, что just check
 [group('проверки')]
 default: check
@@ -63,8 +70,8 @@ lint-proto:
 # Compose-файлы собираются во всех вариантах (основной, dev, стенд агента).
 # проверить конфигурацию Compose без запуска контейнеров
 [group('проверки')]
+[script("bash")]
 lint-deploy:
-    #!/usr/bin/env bash
     set -euo pipefail
     if ! docker compose version >/dev/null 2>&1; then echo "skip: docker compose не установлен; в CI проверяется"; exit 0; fi
     export POSTGRES_PASSWORD=lint VALKEY_PASSWORD=lint NATS_PASSWORD=lint BB_DOMAIN=lint.invalid
@@ -88,10 +95,13 @@ lint-licenses:
     # npm: лицензии всех зависимостей клиента по тому же списку (clients/web/scripts/check-licenses.mjs)
     @if [ -f clients/web/package.json ]; then cd clients/web && pnpm check-licenses; fi
 
+# Детектору гонок нужен cgo, а cgo — компилятор C. На машине с Windows без него (CGO_ENABLED=0) тесты идут без -race
+# с явным сообщением; гонки проверяются на Linux и macOS. В остальных случаях -race обязателен.
+# Windows определяется по GOHOSTOS — ОС машины, а не цели сборки: GOOS=windows на Linux -race не отключает.
 # тесты сервера: go test -race; интеграционным (testcontainers) нужен Docker
 [group('проверки')]
 test-go:
-    @if [ -f server/go.mod ]; then cd server && go test -race ./...; else echo "skip: server/go.mod ещё нет"; fi
+    @if [ -f server/go.mod ]; then cd server && if [ "$(go env GOHOSTOS)" = windows ] && [ "$(go env CGO_ENABLED)" != 1 ]; then echo "test-go: Windows без cgo — тесты без -race; гонки проверяются на Linux и macOS"; go test ./...; else go test -race ./...; fi; else echo "skip: server/go.mod ещё нет"; fi
 
 # сервер собирается под обе платформы образа (linux/amd64 и linux/arm64) — без Docker, для job go в CI
 [group('проверки')]
@@ -110,10 +120,11 @@ test-web:
 
 # init-env.sh: пароли вписаны и случайны, файл закрыт от чужих, существующий .env не перезаписывается,
 # а docker-compose.yml собирается с одним лишь созданным .env (в .env.example есть все обязательные переменные)
+# На Windows права файла не проверяются: bash из Git for Windows не отражает chmod; на macOS и Linux проверка обязательна.
 # тесты init-env.sh и сборки Compose с созданным .env
 [group('проверки')]
+[script("bash")]
 test-deploy:
-    #!/usr/bin/env bash
     set -euo pipefail
     tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
     fail() { echo "init-env: $*"; exit 1; }
@@ -121,7 +132,10 @@ test-deploy:
     "$tmp/init-env.sh" >/dev/null
     [ "$(grep -cE '^[A-Z_]+_PASSWORD=[0-9a-f]{48}$' "$tmp/.env")" = 3 ] || fail "ожидались три пароля по 48 шестнадцатеричных символов"
     [ "$(grep -E '_PASSWORD=' "$tmp/.env" | grep -v '^#' | cut -d= -f2 | sort -u | wc -l | tr -d ' ')" = 3 ] || fail "пароли должны различаться"
-    [ "$(ls -l "$tmp/.env" | cut -c1-10)" = "-rw-------" ] || fail ".env должен быть доступен только владельцу"
+    case "${OSTYPE:-}" in
+      msys* | cygwin*) echo "skip: права .env не проверяются — bash в Windows не отражает chmod; на macOS и Linux проверка обязательна" ;;
+      *) [ "$(ls -l "$tmp/.env" | cut -c1-10)" = "-rw-------" ] || fail ".env должен быть доступен только владельцу" ;;
+    esac
     before="$(cksum < "$tmp/.env")"
     if "$tmp/init-env.sh" >/dev/null 2>&1; then fail "повторный запуск должен завершиться ошибкой"; fi
     "$tmp/init-env.sh" --if-missing || fail "--if-missing при существующем .env должен завершиться успешно"
@@ -158,8 +172,8 @@ dev-logs svc="":
 
 # Go-сервер с hot reload против хранилищ из `just dev-up`: адреса и пароли — из deploy/compose/.env
 [group('локальная среда')]
+[script("bash")]
 dev-server:
-    #!/usr/bin/env bash
     set -euo pipefail
     # без `set -a`: переменные развёртывания (BB_DOMAIN, BB_MEM_*) тоже начинаются с BB_ и серверу не передаются
     . deploy/compose/.env
@@ -195,8 +209,8 @@ image tag="bebeberloga/server:dev" platform="":
 
 # собрать образ, поднять весь стек с оверлеем стенда агента, прогнать smoke-тесты через Caddy и убрать за собой
 [group('образ и стек')]
+[script("bash")]
 compose-smoke port="18089":
-    #!/usr/bin/env bash
     set -euo pipefail
     deploy/compose/init-env.sh --if-missing
     export BB_AGENT_HTTP_PUBLISH=127.0.0.1:{{port}} BB_AGENT_SERVER_IMAGE=bb-smoke/server:local BB_VERSION={{tree_version}}
