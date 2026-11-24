@@ -11,11 +11,12 @@
 //!   кадра в физических пикселях, яркость контрольной точки, метод захвата, масштаб
 //!   экрана (1.25 — это 125 %; 0 — ОС масштаб не сообщила).
 
+use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use crate::clock::now_ns;
 use crate::model::{Res, CHANNELS, SAMPLE_RATE};
@@ -98,6 +99,129 @@ impl AudioSink {
         }
         inner.chunks.flush()?;
         Ok(())
+    }
+}
+
+struct SpliceState {
+    /// Поколение потока, чьи буферы сейчас пишутся.
+    active: u32,
+    /// Поколение, на которое идёт переключение.
+    next: Option<u32>,
+    /// Метка конца последнего записанного кадра.
+    cursor_ns: Option<u64>,
+    /// Буферы нового потока, ожидающие стыка.
+    queue: VecDeque<(u64, Vec<f32>, u32)>,
+    /// Метка, на которой состоялся последний стык.
+    switched_at_ns: Option<u64>,
+    /// Кадров нового потока отброшено на стыке как уже записанные прежним потоком.
+    trimmed_frames: u64,
+}
+
+/// Склейка двух потоков звука по шкале времени.
+///
+/// Пока идёт переключение, пишутся буферы прежнего потока — до метки, с которой
+/// начинаются данные нового; буферы нового ждут в очереди и дописываются встык.
+/// Метки обоих потоков должны быть на одной монотонной шкале.
+pub struct AudioSplicer {
+    sink: Arc<AudioSink>,
+    state: Mutex<SpliceState>,
+}
+
+impl AudioSplicer {
+    pub fn new(sink: Arc<AudioSink>) -> Arc<Self> {
+        Arc::new(Self {
+            sink,
+            state: Mutex::new(SpliceState {
+                active: 0,
+                next: None,
+                cursor_ns: None,
+                queue: VecDeque::new(),
+                switched_at_ns: None,
+                trimmed_frames: 0,
+            }),
+        })
+    }
+
+    fn frame_ns() -> f64 {
+        1e9 / SAMPLE_RATE as f64
+    }
+
+    /// Начать переключение на поток поколения `to`.
+    pub fn begin_switch(&self, to: u32) {
+        if let Ok(mut st) = self.state.lock() {
+            st.next = Some(to);
+            st.queue.clear();
+        }
+    }
+
+    /// Переключение на поколение `to` завершено: возвращает метку стыка и число
+    /// кадров нового потока, отброшенных как уже записанные.
+    pub fn switched(&self, to: u32) -> Option<(u64, u64)> {
+        let st = self.state.lock().ok()?;
+        (st.active == to && st.next.is_none())
+            .then(|| (st.switched_at_ns.unwrap_or(0), st.trimmed_frames))
+    }
+
+    /// Принять буфер потока поколения `generation`.
+    pub fn push(&self, generation: u32, t_ns: u64, interleaved: &[f32], flags: u32) {
+        let Ok(mut st) = self.state.lock() else {
+            return;
+        };
+        let frames = interleaved.len() / CHANNELS;
+        if st.next == Some(generation) {
+            st.queue.push_back((t_ns, interleaved.to_vec(), flags));
+            // Прежний поток замолчал: переключаемся с разрывом, чтобы не копить очередь.
+            if st.queue.len() > 100 {
+                st.cursor_ns = None;
+            }
+            self.drain(&mut st);
+            return;
+        }
+        if generation != st.active {
+            // Хвост прежнего потока после стыка.
+            return;
+        }
+        // Активный поток пишется до начала первого буфера нового потока.
+        let limit = st.queue.front().map(|q| q.0);
+        let take = match limit {
+            Some(l) => {
+                let before = l.saturating_sub(t_ns) as f64 / Self::frame_ns();
+                (before.round() as usize).min(frames)
+            }
+            None => frames,
+        };
+        if take > 0 {
+            self.sink.push(t_ns, &interleaved[..take * CHANNELS], flags);
+            st.cursor_ns = Some(t_ns + (take as f64 * Self::frame_ns()) as u64);
+        }
+        self.drain(&mut st);
+    }
+
+    /// Дописать из очереди то, что уже стыкуется с записанным.
+    fn drain(&self, st: &mut SpliceState) {
+        while let Some((t_ns, _, _)) = st.queue.front() {
+            let t_ns = *t_ns;
+            let cursor = st.cursor_ns.unwrap_or(t_ns);
+            if t_ns as f64 > cursor as f64 + Self::frame_ns() / 2.0 {
+                // Между записанным и новым потоком ещё нет данных: ждём прежний поток.
+                break;
+            }
+            let Some((_, data, flags)) = st.queue.pop_front() else {
+                break;
+            };
+            let frames = data.len() / CHANNELS;
+            let skip = ((cursor.saturating_sub(t_ns)) as f64 / Self::frame_ns()).round() as usize;
+            if skip < frames {
+                let start = t_ns + (skip as f64 * Self::frame_ns()) as u64;
+                self.sink.push(start, &data[skip * CHANNELS..], flags);
+                st.cursor_ns = Some(t_ns + (frames as f64 * Self::frame_ns()) as u64);
+            }
+            if let Some(next) = st.next.take() {
+                st.active = next;
+                st.switched_at_ns = Some(cursor);
+                st.trimmed_frames = skip.min(frames) as u64;
+            }
+        }
     }
 }
 

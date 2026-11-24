@@ -217,12 +217,34 @@ pub struct SyncReport {
     pub capture_only_offset_ms: Option<Stats>,
 }
 
+/// Сравнение кадров, отрисованных источником, с кадрами, которые получил захват.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct FrameLossReport {
+    /// Кадров отрисовал источник за время записи.
+    pub source_frames: usize,
+    pub source_fps: f64,
+    /// Интервал между кадрами источника, мс.
+    pub source_interval_ms: Stats,
+    /// Интервалы источника длиннее полутора медианных: источник сам пропустил кадр.
+    pub source_long_intervals: usize,
+    /// Кадров получил захват.
+    pub captured_frames: usize,
+    /// Интервалы захвата длиннее полутора медианных интервалов источника.
+    pub captured_long_intervals: usize,
+    /// Из них совпали по времени с длинным интервалом источника.
+    pub long_explained_by_source: usize,
+    /// Из них без причины в источнике: источник кадр отрисовал, захват его не отдал.
+    pub long_only_in_capture: usize,
+}
+
 /// Полный разбор каталога прогона.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Analysis {
     pub audio: Option<AudioReport>,
     pub video: Option<VideoReport>,
     pub sync: Option<SyncReport>,
+    /// Кто теряет кадры — источник или захват (нужен журнал кадров источника).
+    pub frame_loss: Option<FrameLossReport>,
 }
 
 /// Прочитать WAV и свести каналы в моно.
@@ -608,6 +630,63 @@ pub fn analyze_video(marks: &[VideoMark]) -> (VideoReport, Vec<u64>) {
     (rep, flashes)
 }
 
+/// Моменты отрисовки кадров из `source-frames.tsv`.
+pub fn read_source_frames(path: &Path) -> Res<Vec<u64>> {
+    Ok(tsv_rows(path)?.iter().map(|r| field(r, 0)).collect())
+}
+
+/// Кто теряет кадры: длинные интервалы захвата сопоставляются с длинными интервалами
+/// источника. `source` — моменты отрисовки по той же монотонной шкале.
+pub fn analyze_frame_loss(marks: &[VideoMark], source: &[u64]) -> Option<FrameLossReport> {
+    let (first, last) = (marks.first()?.t_ns, marks.last()?.t_ns);
+    // Захват ставит кадру метку позже момента отрисовки; запас в 50 мс покрывает задержку.
+    const SLACK_NS: u64 = 50_000_000;
+    let src: Vec<u64> = source
+        .iter()
+        .copied()
+        .filter(|t| *t + SLACK_NS >= first && *t <= last)
+        .collect();
+    if src.len() < 10 {
+        return None;
+    }
+    let src_intervals: Vec<f64> = src.windows(2).map(|p| (p[1] - p[0]) as f64 / 1e6).collect();
+    let stats = Stats::of(&src_intervals);
+    let limit_ms = 1.5 * stats.median.max(1.0);
+    let src_long: Vec<(u64, u64)> = src
+        .windows(2)
+        .filter(|p| (p[1] - p[0]) as f64 / 1e6 > limit_ms)
+        .map(|p| (p[0], p[1]))
+        .collect();
+    let cap_long: Vec<(u64, u64)> = marks
+        .windows(2)
+        .filter(|p| p[1].t_ns > p[0].t_ns && (p[1].t_ns - p[0].t_ns) as f64 / 1e6 > limit_ms)
+        .map(|p| (p[0].t_ns, p[1].t_ns))
+        .collect();
+    let explained = cap_long
+        .iter()
+        .filter(|(a, b)| {
+            src_long
+                .iter()
+                .any(|(sa, sb)| *sa < *b && sb + SLACK_NS > *a)
+        })
+        .count();
+    let span = (src[src.len() - 1] - src[0]) as f64 / 1e9;
+    Some(FrameLossReport {
+        source_frames: src.len(),
+        source_fps: if span > 0.0 {
+            round3((src.len() - 1) as f64 / span)
+        } else {
+            0.0
+        },
+        source_interval_ms: stats,
+        source_long_intervals: src_long.len(),
+        captured_frames: marks.len(),
+        captured_long_intervals: cap_long.len(),
+        long_explained_by_source: explained,
+        long_only_in_capture: cap_long.len() - explained,
+    })
+}
+
 /// Ближайшая к `t` метка из отсортированного списка, не дальше `max_ns`.
 fn nearest(sorted: &[u64], t: u64, max_ns: u64) -> Option<u64> {
     let i = sorted.partition_point(|v| *v < t);
@@ -703,9 +782,14 @@ pub fn analyze_dir(dir: &Path) -> Res<Analysis> {
     }
     let marks = dir.join("video-marks.tsv");
     if marks.exists() {
-        let (rep, f) = analyze_video(&read_video_marks(&marks)?);
+        let video_marks = read_video_marks(&marks)?;
+        let (rep, f) = analyze_video(&video_marks);
         out.video = Some(rep);
         flashes = f;
+        let frames = dir.join("source-frames.tsv");
+        if frames.exists() {
+            out.frame_loss = analyze_frame_loss(&video_marks, &read_source_frames(&frames)?);
+        }
     }
     if out.audio.is_some() && out.video.is_some() {
         let src = dir.join("source-marks.tsv");
@@ -801,6 +885,35 @@ mod tests {
         let (rep, _) = analyze_audio(&mono, &chunks);
         assert_eq!(rep.timeline_gaps, 1);
         assert!((rep.timeline_gap_total_ms - 30.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn frame_loss_is_attributed() {
+        // Источник рисует 60 к/с и сам пропускает один кадр; захват теряет ещё один.
+        let frame = 1_000_000_000u64 / 60;
+        let source: Vec<u64> = (0..300u64)
+            .filter(|i| *i != 100)
+            .map(|i| i * frame)
+            .collect();
+        let marks: Vec<VideoMark> = source
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| *i != 200)
+            .map(|(_, t)| VideoMark {
+                t_ns: t + 10_000_000,
+                arrival_ns: t + 11_000_000,
+                width: 640,
+                height: 360,
+                luma: 30,
+                method: "test".into(),
+                scale: 1.0,
+            })
+            .collect();
+        let rep = analyze_frame_loss(&marks, &source).unwrap();
+        assert_eq!(rep.source_long_intervals, 1);
+        assert_eq!(rep.captured_long_intervals, 2);
+        assert_eq!(rep.long_explained_by_source, 1);
+        assert_eq!(rep.long_only_in_capture, 1);
     }
 
     #[test]

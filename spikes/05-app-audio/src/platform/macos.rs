@@ -48,7 +48,7 @@ use crate::model::{
     AudioMode, AudioNodeInfo, CaptureRequest, EnvInfo, Icon, OutputState, ProcInfo, Res, Running,
     StartInfo, VideoMode, WindowInfo, CHANNELS, SAMPLE_RATE,
 };
-use crate::rec::{luma_bgra, AudioSink, VideoSink, FLAG_TIMESTAMP_FALLBACK};
+use crate::rec::{luma_bgra, AudioSink, AudioSplicer, VideoSink, FLAG_TIMESTAMP_FALLBACK};
 
 /// Обёртка для передачи объектов Objective-C между потоками спайка.
 struct SendBox<T>(T);
@@ -333,8 +333,11 @@ pub fn audio_nodes() -> Res<Vec<AudioNodeInfo>> {
     Ok(out)
 }
 
+/// Куда поток отдаёт звук: склейщик и поколение потока.
+type AudioOut = (Arc<AudioSplicer>, u32);
+
 struct OutputIvars {
-    audio: Option<Arc<AudioSink>>,
+    audio: Option<AudioOut>,
     video: Option<Arc<VideoSink>>,
     idle_frames: AtomicU64,
     notes: Arc<Mutex<Vec<String>>>,
@@ -386,7 +389,7 @@ fn cmtime_ns(t: CMTime) -> Option<u64> {
 
 impl StreamOutput {
     fn new(
-        audio: Option<Arc<AudioSink>>,
+        audio: Option<AudioOut>,
         video: Option<Arc<VideoSink>>,
         notes: Arc<Mutex<Vec<String>>>,
     ) -> Retained<Self> {
@@ -442,7 +445,7 @@ impl StreamOutput {
     }
 
     fn on_audio(&self, sample: &CMSampleBuffer) {
-        let Some(sink) = self.ivars().audio.as_ref() else {
+        let Some((sink, generation)) = self.ivars().audio.as_ref() else {
             return;
         };
         // SAFETY: чтение свойств буфера, действительного на время обратного вызова.
@@ -556,8 +559,9 @@ impl StreamOutput {
             }
         }
         match pts {
-            Some(t) => sink.push(t, &interleaved, 0),
+            Some(t) => sink.push(*generation, t, &interleaved, 0),
             None => sink.push(
+                *generation,
                 crate::clock::now_ns(),
                 &interleaved,
                 FLAG_TIMESTAMP_FALLBACK,
@@ -623,6 +627,9 @@ struct ActiveStream {
     stream: Retained<SCStream>,
     output: Retained<StreamOutput>,
     kind: FilterKind,
+    has_audio: bool,
+    has_video: bool,
+    exclude_self_audio: bool,
     _queues: Vec<dispatch2::DispatchRetained<DispatchQueue>>,
 }
 
@@ -650,7 +657,7 @@ struct StreamPlan {
     height: usize,
     fps: u32,
     video: Option<Arc<VideoSink>>,
-    audio: Option<Arc<AudioSink>>,
+    audio: Option<AudioOut>,
     exclude_self_audio: bool,
 }
 
@@ -705,6 +712,7 @@ fn start_stream(
             config.setChannelCount(CHANNELS as isize);
             config.setExcludesCurrentProcessAudio(plan.exclude_self_audio);
         }
+        let has_video = plan.video.is_some();
         let output = StreamOutput::new(plan.audio, plan.video, notes.clone());
         let stream = SCStream::initWithFilter_configuration_delegate(
             SCStream::alloc(),
@@ -741,6 +749,9 @@ fn start_stream(
             stream,
             output,
             kind: plan.kind,
+            has_audio,
+            has_video,
+            exclude_self_audio: plan.exclude_self_audio,
             _queues: queues,
         })
     }
@@ -752,18 +763,29 @@ fn first_display(content: &SCShareableContent) -> Res<Retained<SCDisplay>> {
 }
 
 /// Запущенные потоки, общие для остановки и обновления.
-struct Streams(Vec<ActiveStream>);
-// SAFETY: объекты ScreenCaptureKit допускают вызовы с любого потока; спайк обращается
-// к ним последовательно (обновление и остановка не пересекаются).
+struct Streams(Mutex<Vec<ActiveStream>>);
+// SAFETY: объекты ScreenCaptureKit допускают вызовы с любого потока; список защищён
+// мьютексом, обновление и остановка не пересекаются.
 unsafe impl Send for Streams {}
 unsafe impl Sync for Streams {}
 
+fn stop_stream(stream: &ActiveStream, what: &str) -> Res<()> {
+    wait_block(what, |block| {
+        // SAFETY: остановка действительного потока.
+        unsafe { stream.stream.stopCaptureWithCompletionHandler(Some(block)) };
+    })
+}
+
 /// Запустить захват.
 ///
-/// Варианты (`req.variant`) для звука приложения:
-/// - `window` (по умолчанию) — один поток с фильтром по окну: видео окна и звук;
-/// - `app` — два потока: видео окна и отдельно звук приложения через фильтр
-///   «дисплей + приложение».
+/// Признаки варианта (`req.variant`, через запятую):
+/// - `app` — звук приложения отдельным потоком через фильтр «дисплей + приложение»
+///   (без признака — один поток с фильтром по окну: видео окна и звук);
+/// - что делать при обновлении состава захвата (`Running::refresh`):
+///   без признака — передать потоку заново собранный фильтр;
+///   `restart` — остановить поток и запустить его снова;
+///   `splice` — запустить второй поток звука, не останавливая первый, и склеить их
+///   по шкале времени.
 pub fn start_capture(
     req: &CaptureRequest,
     audio: Option<Arc<AudioSink>>,
@@ -777,14 +799,12 @@ pub fn start_capture(
     if want_video && !matches!(req.video, VideoMode::Auto | VideoMode::Sck) {
         return Err(format!("метод видео {} на macOS не существует", req.video.name()).into());
     }
-    // Размер кадра: окно в точках × 2 (экран Retina); для спайка этого достаточно.
+    // Размер кадра уточняется по данным системы в start_stream; это запасная оценка.
     let window_size = req
         .window
         .as_ref()
         .map(|w| (w.width as usize * 2, w.height as usize * 2))
         .unwrap_or((640, 360));
-    // Признаки варианта через запятую: `app` — звук через фильтр по приложению;
-    // `restart` — при обновлении не менять фильтр, а остановить и снова запустить поток.
     let flags: Vec<&str> = req.variant.split(',').filter(|f| !f.is_empty()).collect();
     let variant = if flags.contains(&"app") {
         "app"
@@ -792,13 +812,16 @@ pub fn start_capture(
         "window"
     };
     let restart = flags.contains(&"restart");
+    let splice = flags.contains(&"splice");
+    let splicer = audio.map(AudioSplicer::new);
+    let first_generation = |s: &Option<Arc<AudioSplicer>>| s.clone().map(|s| (s, 0u32));
     let audio_only = |kind: FilterKind, exclude_self: bool| StreamPlan {
         kind,
         width: 16,
         height: 16,
         fps: 1,
         video: None,
-        audio: audio.clone(),
+        audio: first_generation(&splicer),
         exclude_self_audio: exclude_self,
     };
 
@@ -816,7 +839,7 @@ pub fn start_capture(
                     height: window_size.1,
                     fps: req.fps,
                     video: if want_video { video.clone() } else { None },
-                    audio: audio.clone(),
+                    audio: first_generation(&splicer),
                     exclude_self_audio: true,
                 },
                 &notes,
@@ -877,15 +900,15 @@ pub fn start_capture(
         streams.len()
     ));
 
-    let shared = Arc::new(Streams(streams));
+    let shared = Arc::new(Streams(Mutex::new(streams)));
     let for_stop = shared.clone();
     let notes_out = notes.clone();
     let stopper = Box::new(move || {
-        for s in &for_stop.0 {
-            let _ = wait_block("остановка захвата", |block| {
-                // SAFETY: остановка действительного потока.
-                unsafe { s.stream.stopCaptureWithCompletionHandler(Some(block)) };
-            });
+        let Ok(list) = for_stop.0.lock() else {
+            return;
+        };
+        for s in list.iter() {
+            let _ = stop_stream(s, "остановка захвата");
             let idle = s.output.ivars().idle_frames.load(Ordering::Relaxed);
             if idle > 0 {
                 if let Ok(mut n) = notes_out.lock() {
@@ -894,19 +917,72 @@ pub fn start_capture(
             }
         }
     });
-    // Обновление: фильтр каждого потока собирается заново по свежему списку содержимого
-    // и передаётся потоку без его остановки.
+
     let for_refresh = shared;
+    let refresh_notes = notes.clone();
+    let generation = std::sync::atomic::AtomicU32::new(0);
     let refresher = Box::new(move || -> Res<String> {
+        let mut list = for_refresh
+            .0
+            .lock()
+            .map_err(|_| "список потоков недоступен")?;
+        if splice {
+            // Второй поток звука запускается, пока первый ещё работает; склейщик
+            // дописывает первый до метки, с которой начинаются данные второго.
+            let splicer = splicer
+                .clone()
+                .ok_or("склейка возможна только при записи звука")?;
+            let old = list
+                .iter()
+                .position(|s| s.has_audio)
+                .ok_or("нет потока со звуком")?;
+            let (kind, exclude_self) = (list[old].kind, list[old].exclude_self_audio);
+            let next = generation.fetch_add(1, Ordering::Relaxed) + 1;
+            let started = std::time::Instant::now();
+            splicer.begin_switch(next);
+            let content = shareable_content()?;
+            let fresh = start_stream(
+                &content,
+                StreamPlan {
+                    kind,
+                    width: 16,
+                    height: 16,
+                    fps: 1,
+                    video: None,
+                    audio: Some((splicer.clone(), next)),
+                    exclude_self_audio: exclude_self,
+                },
+                &refresh_notes,
+            )?;
+            let ready_ms = started.elapsed().as_millis();
+            let mut joined = None;
+            while started.elapsed() < Duration::from_secs(3) {
+                joined = splicer.switched(next);
+                if joined.is_some() {
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            let total_ms = started.elapsed().as_millis();
+            // Прежний поток: если он только звуковой — остановить; если несёт видео —
+            // оставить, его звук склейщик больше не принимает.
+            let old_kept = list[old].has_video;
+            if !old_kept {
+                let stale = list.remove(old);
+                let _ = stop_stream(&stale, "остановка прежнего потока звука");
+            }
+            list.push(fresh);
+            return match joined {
+                Some((_, trimmed)) => Ok(format!(
+                    "второй поток звука запущен за {ready_ms} мс, стык состоялся через {total_ms} мс от начала; на стыке отброшено {trimmed} кадров второго потока как уже записанных; прежний поток {}",
+                    if old_kept { "оставлен ради видео" } else { "остановлен" }
+                )),
+                None => Err("второй поток запущен, но стык не состоялся за 3 с".into()),
+            };
+        }
         if restart {
-            for s in &for_refresh.0 {
-                wait_block(
-                    "остановка перед перезапуском",
-                    |block| {
-                        // SAFETY: остановка действительного потока.
-                        unsafe { s.stream.stopCaptureWithCompletionHandler(Some(block)) };
-                    },
-                )?;
+            for s in list.iter() {
+                stop_stream(s, "остановка перед перезапуском")?;
                 wait_block("повторный запуск", |block| {
                     // SAFETY: запуск действительного потока с прежними выходами.
                     unsafe { s.stream.startCaptureWithCompletionHandler(Some(block)) };
@@ -914,11 +990,11 @@ pub fn start_capture(
             }
             return Ok(format!(
                 "остановлено и запущено заново потоков: {}",
-                for_refresh.0.len()
+                list.len()
             ));
         }
         let content = shareable_content()?;
-        for s in &for_refresh.0 {
+        for s in list.iter() {
             let filter = s.kind.build(&content)?;
             wait_block("обновление фильтра", |block| {
                 // SAFETY: обновление фильтра действительного потока.
@@ -930,7 +1006,7 @@ pub fn start_capture(
         }
         Ok(format!(
             "фильтр обновлён без остановки у {} потоков",
-            for_refresh.0.len()
+            list.len()
         ))
     });
     Ok(Running::with_notes(info, stopper, notes).with_refresher(refresher))

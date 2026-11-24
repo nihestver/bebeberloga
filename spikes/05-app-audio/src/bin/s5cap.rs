@@ -389,6 +389,8 @@ struct Scenario {
     tones_as: Option<AudioMode>,
     /// Состояние устройства вывода на время сценария; после сценария возвращается прежнее.
     output: Option<OutputTweak>,
+    /// Частота кадров, которую просим у захвата.
+    fps: u32,
 }
 
 impl Scenario {
@@ -406,6 +408,7 @@ impl Scenario {
             expect_audio: "",
             tones_as: None,
             output: None,
+            fps: 60,
         }
     }
 }
@@ -453,6 +456,31 @@ fn scenarios(main_s: u64, short_s: u64) -> Vec<Scenario> {
             spawn_child_at: Some(4),
             refresh_at: Some(8),
             ..Scenario::new("late-child-restart", App, VideoMode::None, 16)
+        });
+        // Кто теряет кадры: тот же захват окна, но с разрешённой частотой 120 к/с
+        // при источнике 60 к/с.
+        list.push(Scenario {
+            fps: 120,
+            ..Scenario::new("video-limit-120", NoAudio, VideoMode::Auto, short_s)
+        });
+        list.push(Scenario::new(
+            "video-limit-60",
+            NoAudio,
+            VideoMode::Auto,
+            short_s,
+        ));
+        // Второй поток звука до остановки первого и склейка по шкале времени.
+        list.push(Scenario {
+            variant: "splice",
+            spawn_child_at: Some(4),
+            refresh_at: Some(8),
+            ..Scenario::new("late-child-splice", App, VideoMode::Auto, 16)
+        });
+        list.push(Scenario {
+            variant: "app,splice",
+            spawn_child_at: Some(4),
+            refresh_at: Some(8),
+            ..Scenario::new("late-child-app-splice", App, VideoMode::None, 16)
         });
     }
     if cfg!(windows) {
@@ -616,13 +644,13 @@ fn evaluate(sc: &Scenario, start: &StartInfo, an: &Analysis) -> Vec<Check> {
                     format!("процесс запущен на {at}-й секунде; тон 880 Гц появился: {onset}"),
                 )),
                 Some(refresh) => out.push(check(
-                    "звук процесса, запущенного во время записи, после обновления фильтра",
+                    "звук процесса, запущенного во время записи, после обновления захвата",
                     Some(
                         a.child_onset_s
                             .is_some_and(|t| t >= at as f64 - 1.0 && t <= refresh as f64 + 4.0),
                     ),
                     format!(
-                        "процесс запущен на {at}-й секунде, фильтр обновлён на {refresh}-й; тон 880 Гц появился: {onset}"
+                        "процесс запущен на {at}-й секунде, захват обновлён на {refresh}-й; тон 880 Гц появился: {onset}"
                     ),
                 )),
             }
@@ -706,16 +734,38 @@ fn evaluate(sc: &Scenario, start: &StartInfo, an: &Analysis) -> Vec<Check> {
             "журнала нет".to_owned(),
         ));
     }
+    if let Some(f) = &an.frame_loss {
+        // Наблюдение: захват должен получить не меньше 99 % отрисованных кадров и не
+        // иметь пропусков, которых не было у источника.
+        let share = if f.source_frames > 0 {
+            f.captured_frames as f64 / f.source_frames as f64 * 100.0
+        } else {
+            0.0
+        };
+        out.push(observe(
+            "захват отдаёт все кадры, которые отрисовал источник",
+            share >= 99.0 && f.long_only_in_capture == 0,
+            format!(
+                "источник отрисовал {} кадров ({} к/с), захват получил {} ({share:.1} %); длинных интервалов у источника {}, у захвата {}, из них без причины в источнике {}",
+                f.source_frames,
+                f.source_fps,
+                f.captured_frames,
+                f.source_long_intervals,
+                f.captured_long_intervals,
+                f.long_only_in_capture
+            ),
+        ));
+    }
     if let Some(s) = &an.sync {
         out.push(check(
-            "рассинхрон звука и видео в допуске",
+            "рассинхрон звука и видео: p95 модуля не больше 40 мс",
             if s.pairs == 0 {
                 None
             } else {
                 Some(s.within_tolerance)
             },
             format!(
-                "пар {}, среднее {} мс, p95 модуля {} мс, максимум модуля {} мс, допуск {} мс",
+                "пар {}, среднее {} мс, p95 модуля {} мс, максимум модуля {} мс; критерий — p95 ≤ {} мс",
                 s.pairs,
                 s.offset_ms.mean,
                 s.offset_ms.p95_abs,
@@ -1023,7 +1073,7 @@ fn cmd_selftest(
                 audio: sc.audio,
                 video: sc.video,
                 fail: sc.fail.iter().map(|s| (*s).to_owned()).collect(),
-                fps: 60,
+                fps: sc.fps,
                 variant: sc.variant.to_owned(),
             };
             let spawn_at = sc.spawn_child_at;
@@ -1064,6 +1114,7 @@ fn cmd_selftest(
             };
             // Журнал источника общий для всех сценариев: копия нужна разбору.
             let _ = fs::copy(out.join("source-marks.tsv"), dir.join("source-marks.tsv"));
+            let _ = fs::copy(out.join("source-frames.tsv"), dir.join("source-frames.tsv"));
             let analysis = if error.is_none() {
                 analyze::analyze_dir(&dir).unwrap_or_default()
             } else {

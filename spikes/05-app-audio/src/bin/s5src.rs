@@ -8,8 +8,9 @@
 //! Роль `child`: тон 880 Гц без окна. Роль `foreign`: тон 1320 Гц без окна
 //! (посторонний процесс, в звук приложения попасть не должен).
 //!
-//! В каталог прогона пишутся `source-<роль>.json` (PID и формат вывода) и
-//! `source-marks.tsv` (моменты вспышек и щелчков по монотонной шкале). Работа
+//! В каталог прогона пишутся `source-<роль>.json` (PID и формат вывода),
+//! `source-marks.tsv` (моменты вспышек и щелчков по монотонной шкале) и
+//! `source-frames.tsv` (момент отрисовки каждого кадра окна). Работа
 //! завершается по времени или когда в каталоге появляется файл `stop`.
 
 use std::fs::{self, File};
@@ -99,6 +100,8 @@ struct App {
     window: Option<Rc<Window>>,
     surface: Option<softbuffer::Surface<Rc<Window>, Rc<Window>>>,
     marks: BufWriter<File>,
+    /// Журнал отрисованных кадров: по строке на кадр, время после передачи кадра системе.
+    frames: BufWriter<File>,
     click_requests: Arc<AtomicU64>,
     click_marks: Receiver<(u64, u64)>,
     deadline: Instant,
@@ -176,6 +179,7 @@ impl App {
             }
         }
         buffer.present().map_err(|e| e.to_string())?;
+        let _ = writeln!(self.frames, "{}\t{}", now_ns(), self.frame_no);
         self.frame_no += 1;
         if lit && !self.flash_logged {
             self.flash_logged = true;
@@ -252,6 +256,7 @@ impl ApplicationHandler for App {
             self.flash_logged = false;
             self.click_requests.fetch_add(1, Ordering::Relaxed);
             let _ = self.marks.flush();
+            let _ = self.frames.flush();
         }
         if now >= self.next_frame {
             self.next_frame += Duration::from_micros(16_667);
@@ -283,6 +288,8 @@ fn spawn_child(args: &Args) -> Res<Child> {
 fn run_parent(args: Args) -> Res<()> {
     let mut marks = BufWriter::new(File::create(args.out.join("source-marks.tsv"))?);
     writeln!(marks, "kind\tt_ns\taux_ns")?;
+    let mut frames = BufWriter::new(File::create(args.out.join("source-frames.tsv"))?);
+    writeln!(frames, "t_ns\tframe")?;
     let click_requests = Arc::new(AtomicU64::new(0));
     let (tx, rx) = channel();
     let player = tone::play(
@@ -307,6 +314,7 @@ fn run_parent(args: Args) -> Res<()> {
         window: None,
         surface: None,
         marks,
+        frames,
         click_requests,
         click_marks: rx,
         next_frame: Instant::now(),
@@ -322,6 +330,7 @@ fn run_parent(args: Args) -> Res<()> {
     let run = event_loop.run_app(&mut app);
     app.drain_click_marks();
     let _ = app.marks.flush();
+    let _ = app.frames.flush();
     if let Some(child) = app.child.as_mut() {
         let _ = child.kill();
         let _ = child.wait();

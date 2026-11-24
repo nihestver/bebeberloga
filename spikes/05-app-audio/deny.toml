@@ -25,13 +25,17 @@ allow = [
   "BSD-2-Clause",
   "BSD-3-Clause",
   "ISC",
-  "MPL-2.0",
   "Zlib",
   "Unlicense",
-  "CC0-1.0",
   "Unicode-3.0",
 ]
 confidence-threshold = 0.9
+# target-lexicon — зависимость времени сборки (скрипты сборки привязок PipeWire), в
+# программу не попадает. Лицензия разрешена решением владельца от 2026-11-24 только
+# для этого крейта (LICENSING.md, «Только инструменты разработки и сборки»).
+exceptions = [
+  { allow = ["Apache-2.0 WITH LLVM-exception"], crate = "target-lexicon" },
+]
 
 [bans]
 multiple-versions = "allow"
