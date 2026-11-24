@@ -100,18 +100,38 @@ fn open_portal(notes: &Arc<Mutex<Vec<String>>>) -> Res<(PortalStream, Box<dyn Fn
     let started = Instant::now();
     let outcome = block_on(async {
         let proxy = Screencast::new().await?;
+        // Портал отклоняет запрос с видом источника, которого его бэкенд не умеет:
+        // просим только то, что он сам объявил доступным.
+        let available = proxy
+            .available_source_types()
+            .await
+            .unwrap_or(SourceType::MONITOR);
+        let mut wanted = (SourceType::WINDOW | SourceType::MONITOR) & available;
+        if wanted.is_empty() {
+            wanted = SourceType::MONITOR;
+        }
+        let cursors = proxy
+            .available_cursor_modes()
+            .await
+            .unwrap_or(CursorMode::HIDDEN);
+        let cursor = if cursors.contains(CursorMode::HIDDEN) {
+            CursorMode::HIDDEN
+        } else {
+            CursorMode::EMBEDDED
+        };
+        let version = proxy.version();
         let session = proxy.create_session(Default::default()).await?;
-        proxy
-            .select_sources(
-                &session,
-                SelectSourcesOptions::default()
-                    .set_cursor_mode(CursorMode::HIDDEN)
-                    .set_sources(SourceType::WINDOW | SourceType::MONITOR)
-                    .set_multiple(false)
-                    .set_persist_mode(PersistMode::ExplicitlyRevoked)
-                    .set_restore_token(saved),
-            )
-            .await?;
+        let mut options = SelectSourcesOptions::default()
+            .set_cursor_mode(cursor)
+            .set_sources(wanted)
+            .set_multiple(false);
+        // Запоминание выбора появилось в четвёртой версии интерфейса портала.
+        if version >= 4 {
+            options = options
+                .set_persist_mode(PersistMode::ExplicitlyRevoked)
+                .set_restore_token(saved);
+        }
+        proxy.select_sources(&session, options).await?;
         let response = proxy
             .start(&session, None, Default::default())
             .await?
@@ -125,9 +145,14 @@ fn open_portal(notes: &Arc<Mutex<Vec<String>>>) -> Res<(PortalStream, Box<dyn Fn
         let fd = proxy
             .open_pipe_wire_remote(&session, Default::default())
             .await?;
-        Ok::<_, ashpd::Error>((proxy, session, stream, token, fd))
+        let offered = format!(
+            "версия интерфейса портала {version}; доступно: окно — {}, монитор — {}",
+            available.contains(SourceType::WINDOW),
+            available.contains(SourceType::MONITOR)
+        );
+        Ok::<_, ashpd::Error>((proxy, session, stream, token, fd, offered))
     });
-    let (proxy, session, stream, token, fd) =
+    let (proxy, session, stream, token, fd, offered) =
         outcome.map_err(|e| format!("портал ScreenCast: {e}"))?;
     let waited = started.elapsed();
     if let Some(token) = &token {
@@ -140,6 +165,7 @@ fn open_portal(notes: &Arc<Mutex<Vec<String>>>) -> Res<(PortalStream, Box<dyn Fn
         None => "портал не сообщил",
     };
     if let Ok(mut n) = notes.lock() {
+        n.push(format!("портал: {offered}"));
         n.push(format!(
             "портал: источник — {source}, размер {:?}, выбор занял {:.1} с, знак восстановления был: {}, получен: {}",
             stream.size(),
@@ -173,8 +199,10 @@ fn open_portal(notes: &Arc<Mutex<Vec<String>>>) -> Res<(PortalStream, Box<dyn Fn
 struct VideoFormat {
     width: u32,
     height: u32,
-    /// Порядок каналов: true — BGRx или BGRA, false — RGBx или RGBA.
+    /// Порядок каналов: true — синий первым (BGRx, BGRA, BGR), false — красный первым.
     bgr: bool,
+    /// Байт на пиксель: 4 или 3.
+    bytes_per_pixel: usize,
 }
 
 fn serialize(object: spa::pod::Object) -> Res<Vec<u8>> {
@@ -195,11 +223,48 @@ fn video_thread(
     ready: Sender<Result<(), String>>,
     notes: Arc<Mutex<Vec<String>>>,
 ) -> Res<()> {
-    let (portal, close_session) = open_portal(&notes)?;
     pw::init();
     let mainloop = pw::main_loop::MainLoopRc::new(None)?;
     let context = pw::context::ContextRc::new(&mainloop, None)?;
-    let core = context.connect_fd_rc(portal.fd, None)?;
+    // Источник кадров: узел, выданный порталом, либо (для отладки без портала) узел
+    // общего сервера PipeWire, номер которого задан переменной S5_PW_VIDEO_NODE.
+    let debug_node = std::env::var("S5_PW_VIDEO_NODE")
+        .ok()
+        .and_then(|v| v.parse::<u32>().ok());
+    type Closer = Option<Box<dyn FnOnce() + Send>>;
+    let (core, node_id, method, described, close_session): (_, u32, &'static str, String, Closer) =
+        match debug_node {
+            Some(node) => {
+                if let Ok(mut n) = notes.lock() {
+                    n.push(format!(
+                        "видео берётся из узла PipeWire {node} без портала (отладочный режим)"
+                    ));
+                }
+                (
+                    context.connect_rc(None)?,
+                    node,
+                    "pipewire-node",
+                    format!("узел {node}"),
+                    None,
+                )
+            }
+            None => {
+                let (portal, close) = open_portal(&notes)?;
+                let method = if portal.restored {
+                    "portal(restored)"
+                } else {
+                    "portal"
+                };
+                let described = format!("{} {:?}", portal.source, portal.size);
+                (
+                    context.connect_fd_rc(portal.fd, None)?,
+                    portal.node_id,
+                    method,
+                    described,
+                    Some(close),
+                )
+            }
+        };
     let stream = pw::stream::StreamRc::new(
         core,
         "s5cap-video",
@@ -215,14 +280,17 @@ fn video_thread(
     let (count, count_pts, count_blind) =
         (frames.clone(), with_pts.clone(), without_pixels.clone());
     let format_notes = notes.clone();
-    let method = if portal.restored {
-        "portal(restored)"
-    } else {
-        "portal"
-    };
+    let state_notes = notes.clone();
     let _listener = stream
         .add_local_listener_with_user_data(VideoFormat::default())
-        .param_changed(move |_, format, id, param| {
+        .state_changed(move |_, _, _old, new| {
+            if let pw::stream::StreamState::Error(text) = new {
+                if let Ok(mut n) = state_notes.lock() {
+                    n.push(format!("поток видео в состоянии ошибки: {text}"));
+                }
+            }
+        })
+        .param_changed(move |stream, format, id, param| {
             let Some(param) = param else {
                 return;
             };
@@ -237,8 +305,38 @@ fn video_thread(
             format.height = info.size().height;
             format.bgr = matches!(
                 info.format(),
-                spa::param::video::VideoFormat::BGRx | spa::param::video::VideoFormat::BGRA
+                spa::param::video::VideoFormat::BGRx
+                    | spa::param::video::VideoFormat::BGRA
+                    | spa::param::video::VideoFormat::BGR
             );
+            format.bytes_per_pixel = match info.format() {
+                spa::param::video::VideoFormat::RGB | spa::param::video::VideoFormat::BGR => 3,
+                _ => 4,
+            };
+            // Просим источник прикладывать к кадрам заголовок с меткой времени.
+            let meta = spa::pod::Object {
+                type_: spa::utils::SpaTypes::ObjectParamMeta.as_raw(),
+                id: spa::param::ParamType::Meta.as_raw(),
+                properties: vec![
+                    spa::pod::Property {
+                        key: spa::sys::SPA_PARAM_META_type,
+                        flags: spa::pod::PropertyFlags::empty(),
+                        value: spa::pod::Value::Id(spa::utils::Id(spa::sys::SPA_META_Header)),
+                    },
+                    spa::pod::Property {
+                        key: spa::sys::SPA_PARAM_META_size,
+                        flags: spa::pod::PropertyFlags::empty(),
+                        value: spa::pod::Value::Int(
+                            std::mem::size_of::<spa::sys::spa_meta_header>() as i32,
+                        ),
+                    },
+                ],
+            };
+            if let Ok(bytes) = serialize(meta) {
+                if let Some(pod) = spa::pod::Pod::from_bytes(&bytes) {
+                    let _ = stream.update_params(&mut [pod]);
+                }
+            }
             if let Ok(mut n) = format_notes.lock() {
                 n.push(format!(
                     "формат видео: {:?}, {}×{}, частота {}/{}",
@@ -271,10 +369,10 @@ fn video_thread(
             if let Some(data) = buffer.datas_mut().first_mut() {
                 let stride = data.chunk().stride().max(0) as usize;
                 let (w, h) = (format.width as usize, format.height as usize);
-                let bgr = format.bgr;
+                let (bgr, bpp) = (format.bgr, format.bytes_per_pixel.max(3));
                 if let Some(bytes) = data.data() {
-                    let at = (h / 2) * stride + (w / 2) * 4;
-                    if let Some(px) = bytes.get(at..at + 4) {
+                    let at = (h / 2) * stride + (w / 2) * bpp;
+                    if let Some(px) = bytes.get(at..at + bpp) {
                         luma = if bgr { luma_bgra(px) } else { luma_rgba(px) };
                     }
                 }
@@ -310,6 +408,8 @@ fn video_thread(
             spa::param::video::VideoFormat::BGRA,
             spa::param::video::VideoFormat::RGBx,
             spa::param::video::VideoFormat::RGBA,
+            spa::param::video::VideoFormat::RGB,
+            spa::param::video::VideoFormat::BGR,
         ),
         spa::pod::property!(
             spa::param::format::FormatProperties::VideoSize,
@@ -347,7 +447,7 @@ fn video_thread(
         spa::pod::Pod::from_bytes(&format_bytes).ok_or("параметр формата не разобран")?;
     stream.connect(
         spa::utils::Direction::Input,
-        Some(portal.node_id),
+        Some(node_id),
         pw::stream::StreamFlags::AUTOCONNECT | pw::stream::StreamFlags::MAP_BUFFERS,
         &mut [format_pod],
     )?;
@@ -386,15 +486,15 @@ fn video_thread(
     let _ = stream.disconnect();
     if let Ok(mut n) = notes.lock() {
         n.push(format!(
-            "портал: источник {} {:?}; кадров {}, из них с меткой времени от источника {}, без доступа к пикселям {}",
-            portal.source,
-            portal.size,
+            "источник видео — {described}; кадров {}, из них с меткой времени от источника {}, без доступа к пикселям {}",
             frames.load(Ordering::Relaxed),
             with_pts.load(Ordering::Relaxed),
             without_pixels.load(Ordering::Relaxed)
         ));
     }
-    close_session();
+    if let Some(close) = close_session {
+        close();
+    }
     Ok(())
 }
 

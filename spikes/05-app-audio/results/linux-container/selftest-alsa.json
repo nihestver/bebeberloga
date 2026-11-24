@@ -6,8 +6,8 @@
     "session": "",
     "details": [
       ["ядро", "7.0.14-linuxkit"],
-      ["PipeWire", "pipewire"],
-      ["WirePlumber", "wireplumber"],
+      ["PipeWire", "Compiled with libpipewire 1.4.2"],
+      ["WirePlumber", "Compiled with libwireplumber 0.5.8"],
       ["сервер PipeWire", "1.4.2"]
     ]
   },
@@ -19,33 +19,33 @@
     "audio_host": "ALSA",
     "channels": 2,
     "child_pid": null,
-    "pid": 37,
+    "pid": 41,
     "role": "parent",
     "sample_format": "f32",
     "sample_rate": 48000,
-    "title": "S5 Source 35"
+    "title": "S5 Source 39"
   },
   "window": {
-    "found": false,
-    "pid_matches_source": false,
-    "width": 0,
-    "height": 0,
+    "found": true,
+    "pid_matches_source": true,
+    "width": 640,
+    "height": 360,
     "scale": 0.0,
-    "icon": null,
+    "icon": [48, 48],
     "notes": [],
-    "windows_total": 0
+    "windows_total": 1
   },
   "mapping": {
     "tree": [
       {
-        "pid": 37,
-        "ppid": 35,
+        "pid": 41,
+        "ppid": 39,
         "name": "s5src",
         "depth": 0
       },
       {
-        "pid": 54,
-        "ppid": 37,
+        "pid": 58,
+        "ppid": 41,
         "name": "s5src",
         "depth": 1
       }
@@ -54,25 +54,25 @@
     "foreign_outside_tree": true,
     "nodes_in_tree": [
       {
-        "pid": 37,
-        "node_id": 50,
+        "pid": 41,
+        "node_id": 49,
         "kind": "Stream/Output/Audio",
         "active": true,
         "extra": [
           ["media.class", "Stream/Output/Audio"],
           ["application.process.id", "нет"],
-          ["pipewire.sec.pid клиента", "37"]
+          ["pipewire.sec.pid клиента", "41"]
         ]
       },
       {
-        "pid": 54,
+        "pid": 58,
         "node_id": 74,
         "kind": "Stream/Output/Audio",
         "active": true,
         "extra": [
           ["media.class", "Stream/Output/Audio"],
           ["application.process.id", "нет"],
-          ["pipewire.sec.pid клиента", "54"]
+          ["pipewire.sec.pid клиента", "58"]
         ]
       }
     ],
@@ -93,19 +93,19 @@
         "video_method": "",
         "attempts": ["pipewire: узел захвата создан"],
         "notes": [
-          "узел 50 процесса 37 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 1)",
+          "узел 49 процесса 41 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 1)",
           "формат узла захвата: 48000 Гц, каналов 2, AudioFormat::F32LE",
-          "первая метка: задержка по данным PipeWire 0 мкс, от начала цикла до обработки 284 мкс",
-          "узел 74 процесса 54 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 2)"
+          "первая метка: задержка по данным PipeWire 0 мкс, от начала цикла до обработки 727 мкс",
+          "узел 74 процесса 58 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 2)"
         ]
       },
       "analysis": {
         "audio": {
-          "frames": 673792,
-          "duration_s": 14.037,
-          "span_s": 14.037,
+          "frames": 673280,
+          "duration_s": 14.027,
+          "span_s": 14.027,
           "clock_diff_ppm": 0.0,
-          "buffers": 1316,
+          "buffers": 1315,
           "buffer_frames_min": 512,
           "buffer_frames_median": 512,
           "buffer_frames_max": 512,
@@ -113,7 +113,7 @@
           "timeline_gap_total_ms": 0.0,
           "timeline_overlaps": 0,
           "timestamp_jitter_ms": {
-            "n": 1315,
+            "n": 1314,
             "mean": -0.0,
             "median": -0.0,
             "min": -0.0,
@@ -127,15 +127,15 @@
           "os_silent_buffers": 0,
           "timestamp_fallbacks": 0,
           "delivery_ms": {
-            "n": 1316,
-            "mean": -8.814,
+            "n": 1315,
+            "mean": -8.862,
             "median": -8.542,
-            "min": -10.547,
-            "max": -6.931,
-            "std": 0.665,
-            "p95": -8.017,
-            "p95_abs": 10.133,
-            "max_abs": 10.547
+            "min": -10.517,
+            "max": -7.334,
+            "std": 0.713,
+            "p95": -8.023,
+            "p95_abs": 10.178,
+            "max_abs": 10.517
           },
           "tones": {
             "parent": 0.02,
@@ -145,11 +145,11 @@
           },
           "dropout_windows": 0,
           "phase_jumps": 0,
-          "phase_jump_max_deg": 0.249,
+          "phase_jump_max_deg": 0.157,
           "phase_drift_deg_per_window": 0.0,
           "windows_analyzed": 133,
           "clicks": 14,
-          "child_onset_s": 5.2
+          "child_onset_s": 5.1
         },
         "video": null,
         "sync": null,
@@ -177,7 +177,7 @@
         {
           "name": "звук процесса, запущенного во время записи",
           "pass": true,
-          "detail": "процесс запущен на 5-й секунде; тон 880 Гц появился: на 5.2 с",
+          "detail": "процесс запущен на 5-й секунде; тон 880 Гц появился: на 5.1 с",
           "observation": false
         },
         {
@@ -189,13 +189,13 @@
         {
           "name": "сэмплы без потерь (фаза тона 440 Гц)",
           "pass": true,
-          "detail": "скачков фазы 0, наибольший 0.249°, окон с провалом 0 из 133",
+          "detail": "скачков фазы 0, наибольший 0.157°, окон с провалом 0 из 133",
           "observation": false
         },
         {
           "name": "длительность записи",
           "pass": true,
-          "detail": "записано 14.037 с при запросе 14 с; по меткам ОС 14.037 с",
+          "detail": "записано 14.027 с при запросе 14 с; по меткам ОС 14.027 с",
           "observation": false
         }
       ]
@@ -214,27 +214,27 @@
           "portal: портал ScreenCast: Portal request failed: org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.portal.Desktop was not provided by any .service files"
         ],
         "notes": [
-          "узел 74 процесса 54 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 1)",
-          "узел 50 процесса 37 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 2)",
+          "узел 49 процесса 41 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 1)",
+          "узел 74 процесса 58 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 2)",
           "формат узла захвата: 48000 Гц, каналов 2, AudioFormat::F32LE",
-          "первая метка: задержка по данным PipeWire 0 мкс, от начала цикла до обработки 618 мкс"
+          "первая метка: задержка по данным PipeWire 0 мкс, от начала цикла до обработки 873 мкс"
         ]
       },
       "analysis": {
         "audio": {
-          "frames": 963584,
-          "duration_s": 20.075,
-          "span_s": 20.149,
-          "clock_diff_ppm": -3706.0,
-          "buffers": 1882,
+          "frames": 948224,
+          "duration_s": 19.755,
+          "span_s": 20.096,
+          "clock_diff_ppm": -16985.0,
+          "buffers": 1852,
           "buffer_frames_min": 512,
           "buffer_frames_median": 512,
           "buffer_frames_max": 512,
-          "timeline_gaps": 8,
-          "timeline_gap_total_ms": 96.0,
-          "timeline_overlaps": 2,
+          "timeline_gaps": 11,
+          "timeline_gap_total_ms": 352.0,
+          "timeline_overlaps": 1,
           "timestamp_jitter_ms": {
-            "n": 1871,
+            "n": 1839,
             "mean": -0.0,
             "median": -0.0,
             "min": -0.0,
@@ -248,15 +248,15 @@
           "os_silent_buffers": 0,
           "timestamp_fallbacks": 0,
           "delivery_ms": {
-            "n": 1882,
-            "mean": -8.734,
-            "median": -8.508,
-            "min": -10.474,
-            "max": 3.494,
-            "std": 0.979,
-            "p95": -7.98,
-            "p95_abs": 10.135,
-            "max_abs": 10.474
+            "n": 1852,
+            "mean": -8.826,
+            "median": -8.605,
+            "min": -10.438,
+            "max": 1.173,
+            "std": 0.987,
+            "p95": -7.982,
+            "p95_abs": 10.127,
+            "max_abs": 10.438
           },
           "tones": {
             "parent": 0.02,
@@ -264,11 +264,11 @@
             "foreign": 0.0,
             "own": 0.0
           },
-          "dropout_windows": 0,
-          "phase_jumps": 2,
-          "phase_jump_max_deg": 109.809,
+          "dropout_windows": 1,
+          "phase_jumps": 3,
+          "phase_jump_max_deg": 109.182,
           "phase_drift_deg_per_window": 0.0,
-          "windows_analyzed": 193,
+          "windows_analyzed": 190,
           "clicks": 20,
           "child_onset_s": 0.0
         },
@@ -345,25 +345,25 @@
           },
           "audio_latency_ms": {
             "n": 19,
-            "mean": 19.422,
-            "median": 19.586,
-            "min": 10.698,
-            "max": 21.352,
-            "std": 2.182,
-            "p95": 21.254,
-            "p95_abs": 21.254,
-            "max_abs": 21.352
+            "mean": 29.654,
+            "median": 20.272,
+            "min": 18.753,
+            "max": 200.684,
+            "std": 40.318,
+            "p95": 21.042,
+            "p95_abs": 21.042,
+            "max_abs": 200.684
           },
           "source_skew_ms": {
-            "n": 53,
-            "mean": 3.832,
-            "median": 4.002,
-            "min": -0.352,
-            "max": 10.282,
-            "std": 3.309,
-            "p95": 8.96,
-            "p95_abs": 8.96,
-            "max_abs": 10.282
+            "n": 33,
+            "mean": 5.18,
+            "median": 5.832,
+            "min": -1.023,
+            "max": 11.423,
+            "std": 3.595,
+            "p95": 10.071,
+            "p95_abs": 10.071,
+            "max_abs": 11.423
           },
           "capture_only_offset_ms": {
             "n": 0,
@@ -407,19 +407,19 @@
         {
           "name": "шкала времени звука без разрывов",
           "pass": false,
-          "detail": "разрывов вперёд 8, назад 2, флагов разрыва от ОС 0, суммарно 96 мс",
+          "detail": "разрывов вперёд 11, назад 1, флагов разрыва от ОС 0, суммарно 352 мс",
           "observation": false
         },
         {
           "name": "сэмплы без потерь (фаза тона 440 Гц)",
           "pass": false,
-          "detail": "скачков фазы 2, наибольший 109.809°, окон с провалом 0 из 193",
+          "detail": "скачков фазы 3, наибольший 109.182°, окон с провалом 1 из 190",
           "observation": false
         },
         {
           "name": "длительность записи",
           "pass": true,
-          "detail": "записано 20.075 с при запросе 20 с; по меткам ОС 20.149 с",
+          "detail": "записано 19.755 с при запросе 20 с; по меткам ОС 20.096 с",
           "observation": false
         },
         {
@@ -453,11 +453,11 @@
         "video_method": "",
         "attempts": ["pipewire: узел захвата создан"],
         "notes": [
-          "узел 74 процесса 54 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 1)",
-          "узел 49 процесса 39 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 2)",
-          "узел 50 процесса 37 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 3)",
+          "узел 74 процесса 58 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 1)",
+          "узел 49 процесса 41 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 2)",
+          "узел 50 процесса 43 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 3)",
           "формат узла захвата: 48000 Гц, каналов 2, AudioFormat::F32LE",
-          "первая метка: задержка по данным PipeWire 0 мкс, от начала цикла до обработки 755 мкс"
+          "первая метка: задержка по данным PipeWire 0 мкс, от начала цикла до обработки 310 мкс"
         ]
       },
       "analysis": {
@@ -489,14 +489,14 @@
           "timestamp_fallbacks": 0,
           "delivery_ms": {
             "n": 946,
-            "mean": -8.769,
-            "median": -8.499,
-            "min": -10.348,
-            "max": -4.775,
-            "std": 0.661,
-            "p95": -8.015,
-            "p95_abs": 10.125,
-            "max_abs": 10.348
+            "mean": -8.817,
+            "median": -8.52,
+            "min": -10.38,
+            "max": -7.049,
+            "std": 0.684,
+            "p95": -8.018,
+            "p95_abs": 10.111,
+            "max_abs": 10.38
           },
           "tones": {
             "parent": 0.02,
@@ -506,7 +506,7 @@
           },
           "dropout_windows": 0,
           "phase_jumps": 0,
-          "phase_jump_max_deg": 0.17,
+          "phase_jump_max_deg": 0.151,
           "phase_drift_deg_per_window": 0.0,
           "windows_analyzed": 93,
           "clicks": 10,
@@ -550,7 +550,7 @@
         {
           "name": "сэмплы без потерь (фаза тона 440 Гц)",
           "pass": true,
-          "detail": "скачков фазы 0, наибольший 0.17°, окон с провалом 0 из 93",
+          "detail": "скачков фазы 0, наибольший 0.151°, окон с провалом 0 из 93",
           "observation": false
         },
         {
@@ -573,7 +573,7 @@
         "attempts": ["pipewire: узел захвата создан"],
         "notes": [
           "формат узла захвата: 48000 Гц, каналов 2, AudioFormat::F32LE",
-          "первая метка: задержка по данным PipeWire 0 мкс, от начала цикла до обработки 581 мкс"
+          "первая метка: задержка по данным PipeWire 0 мкс, от начала цикла до обработки 683 мкс"
         ]
       },
       "analysis": {
@@ -605,14 +605,14 @@
           "timestamp_fallbacks": 0,
           "delivery_ms": {
             "n": 946,
-            "mean": -8.9,
-            "median": -8.59,
-            "min": -10.523,
-            "max": -6.95,
-            "std": 0.707,
-            "p95": -8.031,
-            "p95_abs": 10.226,
-            "max_abs": 10.523
+            "mean": -8.866,
+            "median": -8.572,
+            "min": -10.524,
+            "max": -7.414,
+            "std": 0.658,
+            "p95": -8.099,
+            "p95_abs": 10.149,
+            "max_abs": 10.524
           },
           "tones": {
             "parent": 0.02,
@@ -622,7 +622,7 @@
           },
           "dropout_windows": 0,
           "phase_jumps": 0,
-          "phase_jump_max_deg": 0.17,
+          "phase_jump_max_deg": 0.14,
           "phase_drift_deg_per_window": 0.0,
           "windows_analyzed": 93,
           "clicks": 10,
@@ -666,7 +666,7 @@
         {
           "name": "сэмплы без потерь (фаза тона 440 Гц)",
           "pass": true,
-          "detail": "скачков фазы 0, наибольший 0.17°, окон с провалом 0 из 93",
+          "detail": "скачков фазы 0, наибольший 0.14°, окон с провалом 0 из 93",
           "observation": false
         },
         {

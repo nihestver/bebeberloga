@@ -243,7 +243,11 @@ fn command_line(program: &str, args: &[&str]) -> Option<String> {
         .output()
         .ok()?;
     let text = String::from_utf8_lossy(&output.stdout);
-    text.lines().next().map(|l| l.trim().to_owned())
+    // Первая строка вывода `--version` — имя программы; версия — в строке с цифрами.
+    text.lines()
+        .map(str::trim)
+        .find(|l| l.chars().any(|c| c.is_ascii_digit()))
+        .map(str::to_owned)
 }
 
 /// Сведения о стенде.
