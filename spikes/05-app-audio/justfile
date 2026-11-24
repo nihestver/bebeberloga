@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Рецепты спайка S5. Из корня репозитория: `just -f spikes/05-app-audio/justfile <рецепт>`,
+# из каталога спайка — `just <рецепт>`. Спайк — отдельный пакет Cargo и в корневые
+# `just lint`/`just test` не входит. Как запускать на стенде и что вернуть — STAND.md.
+
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+# Windows: рецепты выполняет bash из Git for Windows; см. пояснение в корневом justfile.
+export BASH_ENV := if os_family() == "windows" { replace(justfile_directory(), "\\", "/") / "../../tools/dev/posix-path.sh" } else { env("BASH_ENV", "") }
+
+exe := if os_family() == "windows" { ".exe" } else { "" }
+cap := "target/release/s5cap" + exe
+
+default: check
+
+# проверки перед коммитом: форматирование, clippy, тесты анализатора
+check: lint test
+
+lint:
+    cargo fmt --check
+    cargo clippy --all-targets -- -D warnings
+
+# проверка типов и clippy для Windows с любой ОС, без линковки (rustup target add x86_64-pc-windows-msvc)
+lint-windows:
+    cargo clippy --all-targets --target x86_64-pc-windows-msvc -- -D warnings
+
+# тесты анализатора на синтетических записях; железо и звук не нужны
+test:
+    cargo test
+
+# лицензии и уязвимости зависимостей (cargo install --locked cargo-deny)
+deps:
+    cargo deny check
+
+# сборка s5cap и s5src; первая сборка качает зависимости
+build:
+    cargo build --release
+
+# сведения о стенде: ОС, видеоадаптеры, формат звука; меньше секунды
+env: build
+    {{ cap }} env
+
+# список окон с PID и размером иконки; заголовки окон видны только на экране, в файлы не пишутся
+list: build
+    {{ cap }} list
+
+# пробный прогон: все сценарии этой ОС, основной — 30 с; около 5 минут на Windows, 2–3 на Linux и macOS
+trial: build
+    {{ cap }} selftest --seconds 30 --out out/trial
+
+# полный прогон: основной сценарий 10 минут; около 15 минут на Windows, 14 на macOS, 12 на Linux
+selftest: build
+    {{ cap }} selftest --seconds 600 --out out/full
+
+# пробный прогон, в котором тестовый источник выводит звук через названный путь (Linux: alsa, pulseaudio, pipewire)
+trial-host host: build
+    {{ cap }} selftest --seconds 30 --audio-host {{ host }} --out out/trial-{{ host }}
+
+# только перечисленные сценарии: just only main,video-wgc 60
+only scenarios seconds="30": build
+    {{ cap }} selftest --seconds {{ seconds }} --only {{ scenarios }} --out out/only
+
+# сводка прогона (trial, full или only): без заголовков окон, имён и путей — её и нужно вернуть
+summary run="trial":
+    cat out/{{ run }}/selftest.json
+
+# уровни тонов по секундам записи одного сценария: just timeline trial late-child
+timeline run scenario: build
+    {{ cap }} analyze out/{{ run }}/{{ scenario }} --timeline
+
+# вернуть устройству вывода громкость и mute, если прогон прервали посреди сценария с выключенным звуком
+restore-output run="trial": build
+    {{ cap }} restore-output --out out/{{ run }}
+
+# удалить записи прогонов (WAV основного прогона — около 230 МБ)
+[confirm("Удалить каталог out/ с записями прогонов?")]
+clean-out:
+    rm -r out
