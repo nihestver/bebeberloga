@@ -36,6 +36,10 @@ pub fn env_info() -> EnvInfo {
             .details
             .push(("сервер PipeWire".to_owned(), format!("недоступен: {e}"))),
     }
+    // Есть ли в этом сеансе портал ScreenCast и что он объявляет: в сеансе X11 это
+    // зависит от рабочего стола.
+    info.details
+        .push(("портал ScreenCast".to_owned(), portal_video::probe()));
     info
 }
 

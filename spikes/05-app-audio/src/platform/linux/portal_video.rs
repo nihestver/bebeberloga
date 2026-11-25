@@ -85,6 +85,56 @@ pub fn inhibit_idle(stop: Arc<AtomicBool>) -> Option<JoinHandle<()>> {
         .ok()
 }
 
+/// Что портал ScreenCast объявляет о себе в этом сеансе: версия интерфейса, виды
+/// источников и режимы курсора. Сеанс захвата не создаётся и окно выбора не
+/// показывается — это ответ на вопрос «есть ли портал в сеансе», а не «отдаёт ли он кадры».
+pub fn probe() -> String {
+    let outcome = block_on(async {
+        let proxy = Screencast::new().await?;
+        let sources = proxy.available_source_types().await?;
+        let cursors = proxy.available_cursor_modes().await?;
+        Ok::<_, ashpd::Error>((proxy.version(), sources, cursors))
+    });
+    match outcome {
+        Ok((version, sources, cursors)) => {
+            let mut kinds = Vec::new();
+            if sources.contains(SourceType::MONITOR) {
+                kinds.push("монитор");
+            }
+            if sources.contains(SourceType::WINDOW) {
+                kinds.push("окно");
+            }
+            if sources.contains(SourceType::VIRTUAL) {
+                kinds.push("виртуальный");
+            }
+            let mut modes = Vec::new();
+            if cursors.contains(CursorMode::HIDDEN) {
+                modes.push("скрыт");
+            }
+            if cursors.contains(CursorMode::EMBEDDED) {
+                modes.push("в кадре");
+            }
+            if cursors.contains(CursorMode::METADATA) {
+                modes.push("отдельно");
+            }
+            format!(
+                "версия {version}; источники: {}; курсор: {}",
+                if kinds.is_empty() {
+                    "нет".to_owned()
+                } else {
+                    kinds.join(", ")
+                },
+                if modes.is_empty() {
+                    "нет".to_owned()
+                } else {
+                    modes.join(", ")
+                }
+            )
+        }
+        Err(e) => format!("недоступен: {e}"),
+    }
+}
+
 struct PortalStream {
     node_id: u32,
     fd: OwnedFd,

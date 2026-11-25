@@ -1,0 +1,426 @@
+{
+  "env": {
+    "os": "Windows",
+    "os_version": "10.0.26300.9974",
+    "arch": "x86_64",
+    "session": "",
+    "details": [
+      ["видеоадаптер 0", "NVIDIA Quadro RTX 3000; выходов: 1"],
+      ["видеоадаптер 1", "Microsoft Basic Render Driver; выходов: 0"],
+      ["основной экран", "1920×1080 физических пикселей, 60 Гц"],
+      ["формат смешивания устройства вывода", "48000 Гц, каналов 2, 32 бит"]
+    ]
+  },
+  "source_launch": [
+    "источник: отдельный процесс вне дерева программы захвата (Win32_Process.Create)",
+    "посторонний процесс: отдельный процесс вне дерева программы захвата (Win32_Process.Create)"
+  ],
+  "source_audio": {
+    "audio_host": "WASAPI",
+    "channels": 2,
+    "child_pid": null,
+    "pid": 1812,
+    "role": "parent",
+    "sample_format": "f32",
+    "sample_rate": 48000,
+    "title": "S5 Source 8856"
+  },
+  "window": {
+    "found": true,
+    "pid_matches_source": true,
+    "width": 1424,
+    "height": 777,
+    "scale": 1.25,
+    "icon": [40, 40],
+    "notes": ["иконка: исполняемый файл"],
+    "windows_total": 5
+  },
+  "mapping": {
+    "tree": [
+      {
+        "pid": 1812,
+        "ppid": 9020,
+        "name": "s5src.exe",
+        "depth": 0
+      },
+      {
+        "pid": 1868,
+        "ppid": 1812,
+        "name": "conhost.exe",
+        "depth": 1
+      },
+      {
+        "pid": 8504,
+        "ppid": 1812,
+        "name": "s5src.exe",
+        "depth": 1
+      }
+    ],
+    "child_in_tree": true,
+    "foreign_outside_tree": true,
+    "nodes_in_tree": [
+      {
+        "pid": 1812,
+        "node_id": 0,
+        "kind": "сессия WASAPI",
+        "active": true,
+        "extra": [
+          ["устройство", "0"],
+          ["системные звуки", "false"]
+        ]
+      },
+      {
+        "pid": 8504,
+        "node_id": 4,
+        "kind": "сессия WASAPI",
+        "active": true,
+        "extra": [
+          ["устройство", "0"],
+          ["системные звуки", "false"]
+        ]
+      }
+    ],
+    "foreign_has_node": true,
+    "nodes_total": 5,
+    "error": null
+  },
+  "own_tone": "играет: 48000 Гц, каналов 2, f32",
+  "scenarios": [
+    {
+      "name": "wgc-wait-none-1",
+      "audio": "none",
+      "video": "wgc",
+      "seconds": 120,
+      "error": null,
+      "start": {
+        "audio_method": "",
+        "video_method": "wgc",
+        "attempts": ["wgc: запущен"],
+        "notes": [
+          "wgc: адаптер: NVIDIA Quadro RTX 3000",
+          "wgc: размер источника: 802×489",
+          "wgc: рамка захвата отключена",
+          "wgc: наименьший интервал обновления по умолчанию: 16.00 мс",
+          "wgc: поток захвата ждёт остановки без пробуждений",
+          "wgc: масштаб экрана 125 %; размер кадра — в физических пикселях"
+        ]
+      },
+      "analysis": {
+        "audio": null,
+        "video": {
+          "frames": 6908,
+          "span_s": 120.085,
+          "fps": 57.518,
+          "interval_ms": {
+            "n": 6907,
+            "mean": 17.386,
+            "median": 16.665,
+            "min": 16.65,
+            "max": 33.348,
+            "std": 3.39,
+            "p95": 16.674,
+            "p95_abs": 16.674,
+            "max_abs": 33.348
+          },
+          "long_intervals": 62,
+          "non_monotonic": 0,
+          "width": 802,
+          "height": 489,
+          "scale": 1.25,
+          "methods": ["wgc"],
+          "delivery_ms": {
+            "n": 6908,
+            "mean": -12.652,
+            "median": -12.942,
+            "min": -14.935,
+            "max": -8.905,
+            "std": 0.888,
+            "p95": -10.286,
+            "p95_abs": 13.362,
+            "max_abs": 14.935
+          },
+          "frames_without_pixels": 0,
+          "flashes": 120
+        },
+        "sync": null,
+        "frame_loss": {
+          "source_frames": 7207,
+          "source_fps": 59.999,
+          "source_interval_ms": {
+            "n": 7206,
+            "mean": 16.667,
+            "median": 16.664,
+            "min": 6.428,
+            "max": 27.139,
+            "std": 0.596,
+            "p95": 17.452,
+            "p95_abs": 17.452,
+            "max_abs": 27.139
+          },
+          "source_long_intervals": 1,
+          "captured_frames": 6908,
+          "captured_long_intervals": 299,
+          "long_explained_by_source": 0,
+          "long_only_in_capture": 299
+        }
+      },
+      "checks": [
+        {
+          "name": "видео-метки есть",
+          "pass": true,
+          "detail": "кадров 6908, 57.518 к/с, интервал p95 16.674 мс, длинных интервалов 62, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны в кадрах",
+          "pass": true,
+          "detail": "вспышек 120 за 120 с",
+          "observation": false
+        },
+        {
+          "name": "сработал ожидаемый метод видео",
+          "pass": true,
+          "detail": "ожидался wgc, сработал wgc",
+          "observation": false
+        },
+        {
+          "name": "захват отдаёт все кадры, которые отрисовал источник",
+          "pass": false,
+          "detail": "источник отрисовал 7207 кадров (59.999 к/с), захват получил 6908 (95.9 %); длинных интервалов у источника 1, у захвата 299, из них без причины в источнике 299",
+          "observation": true
+        },
+        {
+          "name": "недобор кадров захвата",
+          "pass": null,
+          "detail": "299 кадров за 120.1 с — 2.49 в секунду",
+          "observation": true
+        }
+      ]
+    },
+    {
+      "name": "wgc-wait-poll-50",
+      "audio": "none",
+      "video": "wgc",
+      "seconds": 120,
+      "error": null,
+      "start": {
+        "audio_method": "",
+        "video_method": "wgc",
+        "attempts": ["wgc: запущен"],
+        "notes": [
+          "wgc: адаптер: NVIDIA Quadro RTX 3000",
+          "wgc: размер источника: 802×489",
+          "wgc: рамка захвата отключена",
+          "wgc: наименьший интервал обновления по умолчанию: 16.00 мс",
+          "wgc: поток захвата ждёт остановки, просыпаясь раз в 50 мс",
+          "wgc: масштаб экрана 125 %; размер кадра — в физических пикселях"
+        ]
+      },
+      "analysis": {
+        "audio": null,
+        "video": {
+          "frames": 6900,
+          "span_s": 120.102,
+          "fps": 57.443,
+          "interval_ms": {
+            "n": 6899,
+            "mean": 17.409,
+            "median": 16.666,
+            "min": 16.651,
+            "max": 33.34,
+            "std": 3.44,
+            "p95": 16.674,
+            "p95_abs": 16.674,
+            "max_abs": 33.34
+          },
+          "long_intervals": 20,
+          "non_monotonic": 0,
+          "width": 802,
+          "height": 489,
+          "scale": 1.25,
+          "methods": ["wgc"],
+          "delivery_ms": {
+            "n": 6900,
+            "mean": -12.76,
+            "median": -12.973,
+            "min": -14.926,
+            "max": -8.982,
+            "std": 0.737,
+            "p95": -10.801,
+            "p95_abs": 13.36,
+            "max_abs": 14.926
+          },
+          "frames_without_pixels": 0,
+          "flashes": 120
+        },
+        "sync": null,
+        "frame_loss": {
+          "source_frames": 7206,
+          "source_fps": 59.999,
+          "source_interval_ms": {
+            "n": 7205,
+            "mean": 16.667,
+            "median": 16.681,
+            "min": 10.327,
+            "max": 22.992,
+            "std": 0.595,
+            "p95": 17.51,
+            "p95_abs": 17.51,
+            "max_abs": 22.992
+          },
+          "source_long_intervals": 0,
+          "captured_frames": 6899,
+          "captured_long_intervals": 308,
+          "long_explained_by_source": 0,
+          "long_only_in_capture": 308
+        }
+      },
+      "checks": [
+        {
+          "name": "видео-метки есть",
+          "pass": true,
+          "detail": "кадров 6900, 57.443 к/с, интервал p95 16.674 мс, длинных интервалов 20, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны в кадрах",
+          "pass": true,
+          "detail": "вспышек 120 за 120 с",
+          "observation": false
+        },
+        {
+          "name": "сработал ожидаемый метод видео",
+          "pass": true,
+          "detail": "ожидался wgc, сработал wgc",
+          "observation": false
+        },
+        {
+          "name": "захват отдаёт все кадры, которые отрисовал источник",
+          "pass": false,
+          "detail": "источник отрисовал 7206 кадров (59.999 к/с), захват получил 6899 (95.7 %); длинных интервалов у источника 0, у захвата 308, из них без причины в источнике 308",
+          "observation": true
+        },
+        {
+          "name": "недобор кадров захвата",
+          "pass": null,
+          "detail": "307 кадров за 120.1 с — 2.56 в секунду",
+          "observation": true
+        }
+      ]
+    },
+    {
+      "name": "wgc-wait-none-2",
+      "audio": "none",
+      "video": "wgc",
+      "seconds": 120,
+      "error": null,
+      "start": {
+        "audio_method": "",
+        "video_method": "wgc",
+        "attempts": ["wgc: запущен"],
+        "notes": [
+          "wgc: адаптер: NVIDIA Quadro RTX 3000",
+          "wgc: размер источника: 802×489",
+          "wgc: рамка захвата отключена",
+          "wgc: наименьший интервал обновления по умолчанию: 16.00 мс",
+          "wgc: поток захвата ждёт остановки без пробуждений",
+          "wgc: масштаб экрана 125 %; размер кадра — в физических пикселях"
+        ]
+      },
+      "analysis": {
+        "audio": null,
+        "video": {
+          "frames": 6927,
+          "span_s": 120.068,
+          "fps": 57.684,
+          "interval_ms": {
+            "n": 6926,
+            "mean": 17.336,
+            "median": 16.665,
+            "min": 16.651,
+            "max": 33.34,
+            "std": 3.276,
+            "p95": 16.672,
+            "p95_abs": 16.672,
+            "max_abs": 33.34
+          },
+          "long_intervals": 38,
+          "non_monotonic": 0,
+          "width": 802,
+          "height": 489,
+          "scale": 1.25,
+          "methods": ["wgc"],
+          "delivery_ms": {
+            "n": 6927,
+            "mean": -12.771,
+            "median": -12.955,
+            "min": -14.906,
+            "max": -8.599,
+            "std": 0.716,
+            "p95": -11.079,
+            "p95_abs": 13.362,
+            "max_abs": 14.906
+          },
+          "frames_without_pixels": 0,
+          "flashes": 120
+        },
+        "sync": null,
+        "frame_loss": {
+          "source_frames": 7207,
+          "source_fps": 59.999,
+          "source_interval_ms": {
+            "n": 7206,
+            "mean": 16.667,
+            "median": 16.652,
+            "min": 6.144,
+            "max": 27.408,
+            "std": 0.694,
+            "p95": 17.658,
+            "p95_abs": 17.658,
+            "max_abs": 27.408
+          },
+          "source_long_intervals": 3,
+          "captured_frames": 6927,
+          "captured_long_intervals": 279,
+          "long_explained_by_source": 3,
+          "long_only_in_capture": 276
+        }
+      },
+      "checks": [
+        {
+          "name": "видео-метки есть",
+          "pass": true,
+          "detail": "кадров 6927, 57.684 к/с, интервал p95 16.672 мс, длинных интервалов 38, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны в кадрах",
+          "pass": true,
+          "detail": "вспышек 120 за 120 с",
+          "observation": false
+        },
+        {
+          "name": "сработал ожидаемый метод видео",
+          "pass": true,
+          "detail": "ожидался wgc, сработал wgc",
+          "observation": false
+        },
+        {
+          "name": "захват отдаёт все кадры, которые отрисовал источник",
+          "pass": false,
+          "detail": "источник отрисовал 7207 кадров (59.999 к/с), захват получил 6927 (96.1 %); длинных интервалов у источника 3, у захвата 279, из них без причины в источнике 276",
+          "observation": true
+        },
+        {
+          "name": "недобор кадров захвата",
+          "pass": null,
+          "detail": "280 кадров за 120.1 с — 2.33 в секунду",
+          "observation": true
+        }
+      ]
+    }
+  ],
+  "passed": 9,
+  "failed": 0,
+  "unclear": 0
+}
