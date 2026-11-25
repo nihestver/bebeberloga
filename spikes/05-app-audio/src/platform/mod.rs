@@ -25,6 +25,19 @@ mod linux;
 #[cfg(target_os = "linux")]
 pub use linux::*;
 
+/// Сеанс X11: только на Linux.
+#[cfg(not(target_os = "linux"))]
+pub fn x11_session() -> bool {
+    false
+}
+
+/// Действие над окном источника (закрыть другим окном, свернуть, изменить размер):
+/// в спайке — только в сеансе X11.
+#[cfg(not(target_os = "linux"))]
+pub fn window_action(_window: &WindowInfo, kind: &str, _on: bool) -> Res<String> {
+    Err(format!("действие «{kind}» над окном на этой ОС не реализовано").into())
+}
+
 /// Запущенный процесс тестового источника.
 pub struct Launched {
     /// Дескриптор процесса, если он запущен прямым потомком программы захвата.

@@ -101,6 +101,16 @@ pub fn session_type() -> String {
     std::env::var("XDG_SESSION_TYPE").unwrap_or_default()
 }
 
+/// Идёт ли сеанс X11. Если вид сеанса не объявлен (виртуальный X-сервер в
+/// контейнере), сеансом X11 считается «есть DISPLAY и нет WAYLAND_DISPLAY».
+pub fn x11_session() -> bool {
+    match session_type().as_str() {
+        "x11" => true,
+        "wayland" => false,
+        _ => std::env::var_os("DISPLAY").is_some() && std::env::var_os("WAYLAND_DISPLAY").is_none(),
+    }
+}
+
 fn text_property(
     conn: &impl Connection,
     window: Window,

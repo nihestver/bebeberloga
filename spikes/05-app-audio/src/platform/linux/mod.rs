@@ -1,18 +1,23 @@
 // SPDX-FileCopyrightText: 2026 Bebeberloga contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Linux: PipeWire для звука, портал ScreenCast для видео, X11 для списка окон.
+//! Linux: PipeWire для звука; видео — портал ScreenCast в сеансе Wayland, Composite и
+//! чтение экрана в сеансе X11; X11 — и для списка окон.
 
 mod list;
 mod portal_video;
 mod pw_audio;
+mod x11_video;
 
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-pub use list::{list_windows, process_tree};
+pub use list::{list_windows, process_tree, x11_session};
+pub use x11_video::window_action;
+
+use self::x11_video::X11Method;
 
 use self::pw_audio::AudioMethod;
 use super::Launched;
@@ -47,8 +52,9 @@ pub fn env_info() -> EnvInfo {
 ///
 /// Звук: дерево процессов → линковка узлов этих процессов; система без собственного
 /// процесса → линковка всех узлов, кроме своих; вся система → monitor устройства вывода.
-/// Видео: портал ScreenCast. Если видео запрошено как `auto` и портал не дал источник,
-/// запись звука продолжается без видео.
+/// Видео: в сеансе Wayland — портал ScreenCast; в сеансе X11 — окно через Composite,
+/// затем весь экран, и только потом портал. Если видео запрошено как `auto` и ни один
+/// метод не сработал, запись звука продолжается без видео.
 pub fn start_capture(
     req: &CaptureRequest,
     audio: Option<Arc<AudioSink>>,
@@ -57,7 +63,7 @@ pub fn start_capture(
     let mut info = StartInfo::default();
     let notes = Arc::new(Mutex::new(Vec::new()));
     let mut audio_capture = None;
-    let mut video_capture = None;
+    let mut video_stop: Option<Box<dyn FnOnce() + Send>> = None;
 
     if let Some(sink) = audio {
         let method = match req.audio {
@@ -79,37 +85,79 @@ pub fn start_capture(
     }
 
     if let Some(sink) = video {
-        match req.video {
-            VideoMode::None => {}
-            VideoMode::Auto | VideoMode::Portal => {
-                match portal_video::start(req.fps, sink, notes.clone()) {
-                    Ok(capture) => {
-                        info.video_method = "portal".to_owned();
-                        info.attempts.push("portal: запущен".to_owned());
-                        video_capture = Some(capture);
-                    }
-                    Err(e) => {
-                        info.attempts.push(format!("portal: {e}"));
-                        if req.video == VideoMode::Portal || audio_capture.is_none() {
-                            if let Some(mut a) = audio_capture.take() {
-                                a.stop();
-                            }
-                            return Err(format!("видео не захвачено: {e}").into());
-                        }
-                    }
-                }
+        let chain: Vec<VideoMode> = match req.video {
+            VideoMode::None => Vec::new(),
+            VideoMode::Auto if x11_session() => vec![
+                VideoMode::X11Composite,
+                VideoMode::X11Screen,
+                VideoMode::Portal,
+            ],
+            VideoMode::Auto => vec![VideoMode::Portal],
+            mode @ (VideoMode::Portal | VideoMode::X11Composite | VideoMode::X11Screen) => {
+                vec![mode]
             }
             other => {
                 return Err(format!("метод видео {} на Linux не существует", other.name()).into())
             }
+        };
+        for method in chain {
+            let name = method.name();
+            if req.video == VideoMode::Auto && req.fails(name) {
+                info.attempts.push(format!("{name}: отказ сымитирован"));
+                continue;
+            }
+            let started: Result<Box<dyn FnOnce() + Send>, String> =
+                match method {
+                    VideoMode::Portal => portal_video::start(req.fps, sink.clone(), notes.clone())
+                        .map(|mut capture| {
+                            Box::new(move || capture.stop()) as Box<dyn FnOnce() + Send>
+                        }),
+                    _ => {
+                        let x11 = if method == VideoMode::X11Composite {
+                            X11Method::Composite
+                        } else {
+                            X11Method::Screen
+                        };
+                        match req.window.as_ref() {
+                            None => Err("для захвата X11 нужно окно".to_owned()),
+                            Some(window) => {
+                                x11_video::start(x11, window, req.fps, sink.clone(), notes.clone())
+                                    .map(|(stop, start_notes)| {
+                                        info.notes.extend(
+                                            start_notes.into_iter().map(|n| format!("{name}: {n}")),
+                                        );
+                                        stop
+                                    })
+                            }
+                        }
+                    }
+                };
+            match started {
+                Ok(stop) => {
+                    info.video_method = name.to_owned();
+                    info.attempts.push(format!("{name}: запущен"));
+                    video_stop = Some(stop);
+                    break;
+                }
+                Err(e) => info.attempts.push(format!("{name}: {e}")),
+            }
+        }
+        if video_stop.is_none()
+            && req.video != VideoMode::None
+            && (req.video != VideoMode::Auto || audio_capture.is_none())
+        {
+            if let Some(mut a) = audio_capture.take() {
+                a.stop();
+            }
+            return Err(format!("видео не захвачено: {}", info.attempts.join("; ")).into());
         }
     }
 
     Ok(Running::with_notes(
         info,
         Box::new(move || {
-            if let Some(mut v) = video_capture.take() {
-                v.stop();
+            if let Some(stop) = video_stop.take() {
+                stop();
             }
             if let Some(mut a) = audio_capture.take() {
                 a.stop();

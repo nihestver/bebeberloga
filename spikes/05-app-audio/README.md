@@ -13,7 +13,7 @@
 |---|---|---|---|
 | Windows | WASAPI: process loopback с деревом процессов → система без собственного процесса → loopback устройства вывода | Windows Graphics Capture → DXGI Desktop Duplication → GDI BitBlt | `EnumWindows`, Toolhelp, аудиосессии |
 | macOS | ScreenCaptureKit: фильтр по окну или по приложению, исключение собственного процесса | ScreenCaptureKit | ScreenCaptureKit, AppKit, libproc, CoreAudio |
-| Linux | PipeWire: узел захвата и линковка узлов нужных процессов; monitor устройства вывода | портал ScreenCast и PipeWire | X11, `/proc`, реестр PipeWire |
+| Linux | PipeWire: узел захвата и линковка узлов нужных процессов; monitor устройства вывода | сеанс Wayland — портал ScreenCast и PipeWire; сеанс X11 — окно через Composite, экран чтением корневого окна, портал запасной | X11, `/proc`, реестр PipeWire |
 
 ## Как устроена проверка
 

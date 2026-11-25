@@ -100,7 +100,8 @@ cpal = { version = "=0.18.2", features = ["pipewire", "pulseaudio"] }
 pipewire = "=0.10.1"
 # исполнитель zbus встроенный (async-io): спайку не нужен tokio
 ashpd = { version = "=0.14.3", default-features = false, features = ["async-io", "screencast", "inhibit"] }
-x11rb = "=0.14.0"
+# composite и shm — захват окна и экрана в сеансе X11 без портала
+x11rb = { version = "=0.14.0", features = ["composite", "shm"] }
 
 [profile.release]
 debug = 1

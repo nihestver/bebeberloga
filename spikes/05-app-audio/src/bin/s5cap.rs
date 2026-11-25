@@ -142,6 +142,8 @@ fn parse_video(s: &str) -> Res<VideoMode> {
         "gdi" => VideoMode::Gdi,
         "sck" => VideoMode::Sck,
         "portal" => VideoMode::Portal,
+        "x11-composite" => VideoMode::X11Composite,
+        "x11-screen" => VideoMode::X11Screen,
         "none" => VideoMode::None,
         other => return Err(format!("неизвестный метод видео: {other}").into()),
     })
@@ -241,12 +243,22 @@ fn cmd_nodes() -> Res<()> {
     Ok(())
 }
 
+/// Действие над окном источника на время сценария: что сделать и на каких секундах
+/// записи включить и вернуть.
+#[derive(Clone, Copy, Debug)]
+struct WindowAction {
+    kind: &'static str,
+    from_s: u64,
+    to_s: u64,
+}
+
 /// Один прогон захвата в каталог `dir`.
 fn run_capture(
     req: &CaptureRequest,
     dir: &Path,
     seconds: u64,
     refresh_at: Option<u64>,
+    action: Option<WindowAction>,
 ) -> Res<StartInfo> {
     fs::create_dir_all(dir)?;
     let audio = match req.audio {
@@ -262,8 +274,31 @@ fn run_capture(
     let deadline = started + Duration::from_secs(seconds);
     let mut next_report = started + Duration::from_secs(60);
     let mut refresh_note = None;
+    // Действие над окном: 0 — не начато, 1 — включено, 2 — возвращено.
+    let mut action_stage = 0u8;
+    let mut action_notes = Vec::new();
+    let mut frames_at = [0u64; 2];
+    let frames_now =
+        |video: &Option<Arc<VideoSink>>| video.as_ref().map(|v| v.frames()).unwrap_or(0);
     while Instant::now() < deadline {
         std::thread::sleep(Duration::from_millis(100));
+        if let (Some(a), Some(window)) = (action, req.window.as_ref()) {
+            let elapsed = started.elapsed();
+            let due = match action_stage {
+                0 if elapsed >= Duration::from_secs(a.from_s) => Some(true),
+                1 if elapsed >= Duration::from_secs(a.to_s) => Some(false),
+                _ => None,
+            };
+            if let Some(on) = due {
+                frames_at[action_stage as usize] = frames_now(&video);
+                let at = if on { a.from_s } else { a.to_s };
+                action_notes.push(match platform::window_action(window, a.kind, on) {
+                    Ok(what) => format!("на {at}-й секунде: {what}"),
+                    Err(e) => format!("на {at}-й секунде действие «{}» не удалось: {e}", a.kind),
+                });
+                action_stage += 1;
+            }
+        }
         if let Some(at) = refresh_at {
             if refresh_note.is_none() && started.elapsed() >= Duration::from_secs(at) {
                 refresh_note = Some(match running.refresh() {
@@ -283,8 +318,24 @@ fn run_capture(
             );
         }
     }
+    if action_stage == 1 {
+        // Запись кончилась раньше возврата: окно источника нужно следующим сценариям.
+        if let (Some(a), Some(window)) = (action, req.window.as_ref()) {
+            let _ = platform::window_action(window, a.kind, false);
+        }
+    }
+    if action_stage == 2 {
+        let total = frames_now(&video);
+        action_notes.push(format!(
+            "кадров до действия {}, во время {}, после {}",
+            frames_at[0],
+            frames_at[1].saturating_sub(frames_at[0]),
+            total.saturating_sub(frames_at[1])
+        ));
+    }
     let mut info = running.stop();
     info.notes.extend(refresh_note);
+    info.notes.extend(action_notes);
     if let Some(a) = &audio {
         a.finish()?;
     }
@@ -433,6 +484,8 @@ struct Scenario {
     compensate: bool,
     /// Дополнительный сценарий: в общий прогон не входит, запускается только по имени.
     optional: bool,
+    /// Действие над окном источника во время записи (сеанс X11).
+    action: Option<WindowAction>,
 }
 
 impl Scenario {
@@ -454,6 +507,7 @@ impl Scenario {
             source_fps: 60,
             compensate: false,
             optional: false,
+            action: None,
         }
     }
 }
@@ -539,6 +593,57 @@ fn scenarios(main_s: u64, short_s: u64, rate_s: u64) -> Vec<Scenario> {
             spawn_child_at: Some(4),
             refresh_at: Some(8),
             ..Scenario::new("late-child-app-splice", App, VideoMode::None, 16)
+        });
+    }
+    if platform::x11_session() {
+        // Сеанс X11: источник выбирается своей сеткой окон, захват — без портала.
+        // В цепочке `auto` здесь сначала Composite, затем весь экран, портал — последним.
+        for (name, mode) in [
+            ("video-x11-composite", VideoMode::X11Composite),
+            ("video-x11-screen", VideoMode::X11Screen),
+        ] {
+            list.push(Scenario {
+                expect_video: mode.name(),
+                ..Scenario::new(name, NoAudio, mode, short_s)
+            });
+        }
+        list.push(Scenario {
+            fail: &["x11-composite"],
+            expect_video: "x11-screen",
+            ..Scenario::new("auto-without-composite", NoAudio, VideoMode::Auto, short_s)
+        });
+        // Что видит захват, когда окно источника закрыто другим окном, свёрнуто или
+        // меняет размер. Действие длится среднюю треть записи.
+        let third = (short_s / 3).max(2);
+        let during = |kind: &'static str| {
+            Some(WindowAction {
+                kind,
+                from_s: third,
+                to_s: third * 2,
+            })
+        };
+        for (name, mode, kind) in [
+            ("x11-occluded-composite", VideoMode::X11Composite, "cover"),
+            ("x11-occluded-screen", VideoMode::X11Screen, "cover"),
+            (
+                "x11-minimized-composite",
+                VideoMode::X11Composite,
+                "minimize",
+            ),
+            ("x11-resize-composite", VideoMode::X11Composite, "resize"),
+        ] {
+            list.push(Scenario {
+                expect_video: mode.name(),
+                action: during(kind),
+                ..Scenario::new(name, NoAudio, mode, third * 3)
+            });
+        }
+        // Портал ScreenCast в сеансе X11 — запасной путь; показывает системное окно
+        // выбора, поэтому идёт только по имени.
+        list.push(Scenario {
+            expect_video: "portal",
+            optional: true,
+            ..Scenario::new("x11-portal", NoAudio, VideoMode::Portal, short_s)
         });
     }
     if cfg!(windows) {
@@ -845,11 +950,29 @@ fn evaluate(sc: &Scenario, start: &StartInfo, an: &Analysis) -> Vec<Check> {
                 v.frames, v.fps, v.interval_ms.p95, v.long_intervals, v.non_monotonic
             ),
         ));
-        out.push(check(
-            "вспышки видны в кадрах",
-            Some(v.flashes as u64 + 2 >= sc.seconds),
-            format!("вспышек {} за {} с", v.flashes, sc.seconds),
-        ));
+        let flashes_seen = v.flashes as u64 + 2 >= sc.seconds;
+        let flashes_detail = format!("вспышек {} за {} с", v.flashes, sc.seconds);
+        match sc.action {
+            // С действием над окном это наблюдение: вопрос — что видит захват. Допуск
+            // здесь строже: пропала хотя бы пара вспышек — значит, окно не было видно.
+            Some(a) => out.push(observe(
+                match a.kind {
+                    "cover" => "вспышки видны, пока окно закрыто другим окном",
+                    "minimize" => "вспышки видны, пока окно свёрнуто",
+                    _ => "вспышки видны, пока окно меняет размер",
+                },
+                v.flashes as u64 + 1 >= sc.seconds,
+                format!(
+                    "{flashes_detail}; действие — с {}-й по {}-ю секунду",
+                    a.from_s, a.to_s
+                ),
+            )),
+            None => out.push(check(
+                "вспышки видны в кадрах",
+                Some(flashes_seen),
+                flashes_detail,
+            )),
+        }
         if !sc.expect_video.is_empty() {
             out.push(check(
                 "сработал ожидаемый метод видео",
@@ -1336,9 +1459,9 @@ fn cmd_selftest(
                 })
             });
             let run = match sc.output {
-                None => run_capture(&req, &dir, sc.seconds, sc.refresh_at),
+                None => run_capture(&req, &dir, sc.seconds, sc.refresh_at, sc.action),
                 Some(tweak) => with_output_tweak(&out, tweak, || {
-                    run_capture(&req, &dir, sc.seconds, sc.refresh_at)
+                    run_capture(&req, &dir, sc.seconds, sc.refresh_at, sc.action)
                 }),
             };
             if let Some(h) = spawner {
@@ -1523,7 +1646,7 @@ fn main() {
             } else {
                 None
             };
-            let info = run_capture(&req, &out, seconds, None)?;
+            let info = run_capture(&req, &out, seconds, None, None)?;
             write_json(&out.join("run.json"), &info)?;
             let analysis = analyze::analyze_dir(&out)?;
             write_json(&out.join("summary.json"), &analysis)?;

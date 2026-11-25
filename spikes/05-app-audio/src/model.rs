@@ -103,6 +103,10 @@ pub enum VideoMode {
     Sck,
     /// Портал ScreenCast и PipeWire.
     Portal,
+    /// X11: содержимое окна через расширение Composite.
+    X11Composite,
+    /// X11: весь экран, чтение корневого окна.
+    X11Screen,
 }
 
 impl VideoMode {
@@ -115,6 +119,8 @@ impl VideoMode {
             VideoMode::Gdi => "gdi",
             VideoMode::Sck => "sck",
             VideoMode::Portal => "portal",
+            VideoMode::X11Composite => "x11-composite",
+            VideoMode::X11Screen => "x11-screen",
         }
     }
 }
