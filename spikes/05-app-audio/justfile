@@ -46,11 +46,11 @@ env: build
 list: build
     {{ cap }} list
 
-# пробный прогон: все сценарии этой ОС, основной — 30 с; около 5 минут на Windows, 2–3 на Linux и macOS
+# пробный прогон: все сценарии этой ОС, основной — 30 с; около 3,5 минуты на Windows, 2 на Linux, 4 на macOS
 trial: build
     {{ cap }} selftest --seconds 30 --out out/trial
 
-# полный прогон: основной сценарий 10 минут; около 15 минут на Windows, 14 на macOS, 12 на Linux
+# полный прогон: основной сценарий 10 минут; около 13 минут на Windows, 13,5 на macOS, 11,5 на Linux
 selftest: build
     {{ cap }} selftest --seconds 600 --out out/full
 
@@ -66,7 +66,7 @@ only scenarios seconds="30": build
 summary run="trial":
     cat out/{{ run }}/selftest.json
 
-# уровни тонов по секундам записи одного сценария: just timeline trial late-child
+# заново разобрать уже сделанную запись сценария и показать уровни тонов по секундам: just timeline trial late-child
 timeline run scenario: build
     {{ cap }} analyze out/{{ run }}/{{ scenario }} --timeline
 

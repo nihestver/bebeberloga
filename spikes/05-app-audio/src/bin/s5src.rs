@@ -102,6 +102,8 @@ struct App {
     marks: BufWriter<File>,
     /// Журнал отрисованных кадров: по строке на кадр, время после передачи кадра системе.
     frames: BufWriter<File>,
+    /// Интервал между кадрами; меняется файлом-командой `set-fps`.
+    frame_period: Duration,
     click_requests: Arc<AtomicU64>,
     click_marks: Receiver<(u64, u64)>,
     deadline: Instant,
@@ -119,6 +121,20 @@ struct App {
 impl App {
     /// Управление дочерним процессом файлами в каталоге прогона: `spawn-child` —
     /// запустить, `kill-child` — завершить. Файл-команда удаляется после выполнения.
+    /// Сменить частоту перерисовки окна: файл `set-fps` с числом кадров в секунду.
+    fn handle_fps_command(&mut self) {
+        let file = self.args.out.join("set-fps");
+        let Ok(text) = fs::read_to_string(&file) else {
+            return;
+        };
+        if let Ok(fps) = text.trim().parse::<u64>() {
+            if (1..=240).contains(&fps) {
+                self.frame_period = Duration::from_micros(1_000_000 / fps);
+            }
+        }
+        let _ = fs::remove_file(file);
+    }
+
     fn handle_child_commands(&mut self) {
         if !self.args.child_on_file {
             return;
@@ -246,6 +262,7 @@ impl ApplicationHandler for App {
                 return;
             }
             self.handle_child_commands();
+            self.handle_fps_command();
         }
         self.drain_click_marks();
         let now_mono = now_ns();
@@ -259,9 +276,9 @@ impl ApplicationHandler for App {
             let _ = self.frames.flush();
         }
         if now >= self.next_frame {
-            self.next_frame += Duration::from_micros(16_667);
+            self.next_frame += self.frame_period;
             if self.next_frame < now {
-                self.next_frame = now + Duration::from_micros(16_667);
+                self.next_frame = now + self.frame_period;
             }
             if let Some(window) = &self.window {
                 window.request_redraw();
@@ -315,6 +332,7 @@ fn run_parent(args: Args) -> Res<()> {
         surface: None,
         marks,
         frames,
+        frame_period: Duration::from_micros(16_667),
         click_requests,
         click_marks: rx,
         next_frame: Instant::now(),

@@ -56,6 +56,9 @@ pub struct SourceMark {
     pub kind: String,
     /// Момент события по монотонной шкале источника (та же шкала, что у захвата).
     pub t_ns: u64,
+    /// Для щелчка — оценка библиотеки вывода звука: через сколько наносекунд после
+    /// выдачи буфера он прозвучит. Для вспышки — 0.
+    pub aux_ns: u64,
 }
 
 /// Сводная статистика ряда.
@@ -124,6 +127,22 @@ pub struct ToneLevels {
     pub own: f64,
 }
 
+/// Разрыв шкалы времени звука и то, что в этот момент случилось с сэмплами.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct GapInfo {
+    /// Место в записи, с.
+    pub at_s: f64,
+    /// На сколько метка буфера ушла от ожидаемой, мс (минус — назад).
+    pub gap_ms: f64,
+    /// Сдвиг фазы тона 440 Гц через разрыв, градусы; нет — тон рядом с разрывом не найден.
+    pub phase_shift_deg: Option<f64>,
+    /// Какой сдвиг фазы дала бы потеря сэмплов на всю длину разрыва, градусы.
+    pub phase_shift_if_lost_deg: f64,
+    /// Вывод: `метки сдвинулись, сэмплы непрерывны`, `сэмплы потеряны на длину разрыва`,
+    /// `сэмплы потеряны или вставлены, длине разрыва не соответствует` или `не определено`.
+    pub verdict: String,
+}
+
 /// Отчёт по звуку.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct AudioReport {
@@ -146,8 +165,13 @@ pub struct AudioReport {
     pub timeline_overlaps: usize,
     /// Отклонение метки буфера от ожидаемой, мс (без учёта разрывов).
     pub timestamp_jitter_ms: Stats,
-    /// Буферы с флагом разрыва от ОС.
+    /// Буферы с флагом разрыва от ОС, кроме первого буфера записи.
     pub os_discontinuities: usize,
+    /// Флаг разрыва стоял на первом буфере записи: так ОС отмечает начало потока,
+    /// пропуском это не считается.
+    pub os_discontinuity_at_start: bool,
+    /// Разбор каждого разрыва шкалы времени (первые 20): потеряны ли сэмплы.
+    pub gaps: Vec<GapInfo>,
     /// Буферы, помеченные ОС как тишина.
     pub os_silent_buffers: usize,
     /// Буферы без достоверной метки ОС (взято время прихода).
@@ -215,6 +239,14 @@ pub struct SyncReport {
     pub source_skew_ms: Option<Stats>,
     /// Рассинхрон захвата без разноса источника: (задержка звука) − (задержка видео), мс.
     pub capture_only_offset_ms: Option<Stats>,
+    /// Через сколько после выдачи буфера звук прозвучит — по оценке библиотеки вывода
+    /// звука в источнике, мс. Это задержка самого источника, а не захвата.
+    pub source_playback_delay_ms: Option<Stats>,
+    /// Метка захвата щелчка минус ожидаемый момент его воспроизведения, мс.
+    pub audio_stamp_vs_playback_ms: Option<Stats>,
+    /// Рассинхрон захвата, если звук отсчитывать от ожидаемого момента воспроизведения:
+    /// (метка звука − момент воспроизведения) − (метка видео − момент отрисовки), мс.
+    pub offset_vs_playback_ms: Option<Stats>,
 }
 
 /// Сравнение кадров, отрисованных источником, с кадрами, которые получил захват.
@@ -314,6 +346,7 @@ pub fn read_source_marks(path: &Path) -> Res<Vec<SourceMark>> {
         .map(|r| SourceMark {
             kind: r.first().cloned().unwrap_or_default(),
             t_ns: field(r, 1),
+            aux_ns: field(r, 2),
         })
         .collect())
 }
@@ -449,9 +482,16 @@ pub fn analyze_audio(mono: &[f32], chunks: &[Chunk]) -> (AudioReport, Vec<u64>) 
     let mut expected: Option<f64> = None;
     let mut jitter = Vec::new();
     let mut delivery = Vec::new();
-    for c in chunks {
+    // Разрывы шкалы: (номер первого сэмпла буфера, величина разрыва в мс).
+    let mut gap_places: Vec<(u64, f64)> = Vec::new();
+    let mut frames_before = 0u64;
+    for (index, c) in chunks.iter().enumerate() {
         if c.flags & FLAG_DISCONTINUITY != 0 {
-            rep.os_discontinuities += 1;
+            if index == 0 {
+                rep.os_discontinuity_at_start = true;
+            } else {
+                rep.os_discontinuities += 1;
+            }
         }
         if c.flags & FLAG_SILENT != 0 {
             rep.os_silent_buffers += 1;
@@ -465,14 +505,17 @@ pub fn analyze_audio(mono: &[f32], chunks: &[Chunk]) -> (AudioReport, Vec<u64>) 
             if d > TIMELINE_GAP_NS {
                 rep.timeline_gaps += 1;
                 rep.timeline_gap_total_ms += d / 1e6;
+                gap_places.push((frames_before, d / 1e6));
             } else if d < -TIMELINE_GAP_NS {
                 rep.timeline_overlaps += 1;
+                gap_places.push((frames_before, d / 1e6));
             } else {
                 jitter.push(d / 1e6);
             }
         }
         expected = Some(end);
         delivery.push((c.arrival_ns as f64 - end) / 1e6);
+        frames_before += c.frames;
     }
     rep.timeline_gap_total_ms = round3(rep.timeline_gap_total_ms);
     rep.timestamp_jitter_ms = Stats::of(&jitter);
@@ -526,11 +569,24 @@ pub fn analyze_audio(mono: &[f32], chunks: &[Chunk]) -> (AudioReport, Vec<u64>) 
         rep.windows_analyzed = range.len();
         let ok = |k: usize| amps[0][k] >= 0.5 * rep.tones.parent;
         rep.dropout_windows = range.clone().filter(|k| !ok(*k)).count();
+        // Фаза сравнивается между соседними исправными окнами; через окно с провалом —
+        // между окнами по обе стороны от него, чтобы потеря сэмплов не пряталась в провале.
         let mut diffs = Vec::new();
-        for k in range.clone().skip(1) {
-            if ok(k) && ok(k - 1) {
-                diffs.push(wrap_deg(phase440[k] - phase440[k - 1]));
+        let mut across: Vec<(f64, usize)> = Vec::new();
+        let mut last_ok: Option<usize> = None;
+        for k in range.clone() {
+            if !ok(k) {
+                continue;
             }
+            if let Some(prev) = last_ok {
+                let raw = wrap_deg(phase440[k] - phase440[prev]);
+                if k - prev == 1 {
+                    diffs.push(raw);
+                } else {
+                    across.push((raw, k - prev));
+                }
+            }
+            last_ok = Some(k);
         }
         if !diffs.is_empty() {
             let drift = median_f64(&diffs);
@@ -546,6 +602,47 @@ pub fn analyze_audio(mono: &[f32], chunks: &[Chunk]) -> (AudioReport, Vec<u64>) 
                 if dev > rep.phase_jump_max_deg {
                     rep.phase_jump_max_deg = round3(dev);
                 }
+            }
+            for (raw, steps) in &across {
+                let dev = wrap_deg(raw - drift * *steps as f64).abs();
+                if dev > PHASE_JUMP_DEG {
+                    rep.phase_jumps += 1;
+                }
+                if dev > rep.phase_jump_max_deg {
+                    rep.phase_jump_max_deg = round3(dev);
+                }
+            }
+
+            // Что случилось с сэмплами на каждом разрыве шкалы времени: фаза тона в окне
+            // до разрыва сравнивается с фазой в окне после него.
+            let deg_per_ms = 360.0 * TONE_PARENT_HZ / 1000.0;
+            for (start_frame, gap_ms) in gap_places.iter().take(20) {
+                let k = (*start_frame as usize) / WIN;
+                let before = (skip_head..k).rev().find(|w| ok(*w));
+                let after = (k + 1..windows - skip_tail).find(|w| ok(*w));
+                // Потеря сэмплов приближает следующий звук, и измеряемая фаза (она
+                // отсчитывается с обратным знаком) уменьшается на длину потери.
+                let if_lost = wrap_deg(-gap_ms * deg_per_ms);
+                let mut info = GapInfo {
+                    at_s: round3(*start_frame as f64 / SAMPLE_RATE as f64),
+                    gap_ms: round3(*gap_ms),
+                    phase_shift_deg: None,
+                    phase_shift_if_lost_deg: round3(if_lost),
+                    verdict: "не определено".to_owned(),
+                };
+                if let (Some(b), Some(a)) = (before, after) {
+                    let shift = wrap_deg(phase440[a] - phase440[b] - drift * (a - b) as f64);
+                    info.phase_shift_deg = Some(round3(shift));
+                    info.verdict = if shift.abs() <= PHASE_JUMP_DEG {
+                        "метки сдвинулись, сэмплы непрерывны"
+                    } else if wrap_deg(shift - if_lost).abs() <= PHASE_JUMP_DEG {
+                        "сэмплы потеряны на длину разрыва"
+                    } else {
+                        "сэмплы потеряны или вставлены, длине разрыва не соответствует"
+                    }
+                    .to_owned();
+                }
+                rep.gaps.push(info);
             }
         }
     }
@@ -738,15 +835,27 @@ pub fn analyze_sync(clicks: &[u64], flashes: &[u64], source: &[SourceMark]) -> S
     if src_flash.is_empty() || src_click.is_empty() {
         return rep;
     }
+    let playback_delay_ns = |click: u64| -> u64 {
+        source
+            .iter()
+            .find(|m| m.kind == "click" && m.t_ns == click)
+            .map(|m| m.aux_ns)
+            .unwrap_or(0)
+    };
     let mut v_lat = Vec::new();
     let mut a_lat = Vec::new();
     let mut skew = Vec::new();
     let mut only = Vec::new();
+    let mut delays = Vec::new();
+    let mut a_vs_play = Vec::new();
+    let mut only_vs_play = Vec::new();
     for sf in &src_flash {
         let Some(sc) = nearest(&src_click, *sf, PAIR_NS) else {
             continue;
         };
         skew.push(diff_ms(sc, *sf));
+        let delay_ms = playback_delay_ns(sc) as f64 / 1e6;
+        delays.push(delay_ms);
         let v = nearest(flashes, *sf + PAIR_NS / 2, PAIR_NS / 2 + 20_000_000);
         let a = nearest(clicks, sc + PAIR_NS / 2, PAIR_NS / 2 + 20_000_000);
         if let Some(v) = v {
@@ -754,15 +863,20 @@ pub fn analyze_sync(clicks: &[u64], flashes: &[u64], source: &[SourceMark]) -> S
         }
         if let Some(a) = a {
             a_lat.push(diff_ms(a, sc));
+            a_vs_play.push(diff_ms(a, sc) - delay_ms);
         }
         if let (Some(v), Some(a)) = (v, a) {
             only.push(diff_ms(a, sc) - diff_ms(v, *sf));
+            only_vs_play.push(diff_ms(a, sc) - delay_ms - diff_ms(v, *sf));
         }
     }
     rep.video_latency_ms = Some(Stats::of(&v_lat));
     rep.audio_latency_ms = Some(Stats::of(&a_lat));
     rep.source_skew_ms = Some(Stats::of(&skew));
     rep.capture_only_offset_ms = Some(Stats::of(&only));
+    rep.source_playback_delay_ms = Some(Stats::of(&delays));
+    rep.audio_stamp_vs_playback_ms = Some(Stats::of(&a_vs_play));
+    rep.offset_vs_playback_ms = Some(Stats::of(&only_vs_play));
     rep
 }
 
@@ -874,6 +988,56 @@ mod tests {
         }
         let (rep, _) = analyze_audio(&mono, &chunks);
         assert!(rep.dropout_windows >= 2);
+    }
+
+    #[test]
+    fn first_buffer_flag_is_not_a_gap() {
+        let (mono, mut chunks, _) = synth(5);
+        chunks[0].flags = FLAG_DISCONTINUITY;
+        let (rep, _) = analyze_audio(&mono, &chunks);
+        assert!(rep.os_discontinuity_at_start);
+        assert_eq!(rep.os_discontinuities, 0);
+        chunks[100].flags = FLAG_DISCONTINUITY;
+        let (rep, _) = analyze_audio(&mono, &chunks);
+        assert_eq!(rep.os_discontinuities, 1);
+    }
+
+    #[test]
+    fn gap_with_continuous_samples_is_told_from_lost_samples() {
+        // Метки ушли вперёд на 15 мс, а сэмплы идут подряд.
+        let (mono, mut chunks, _) = synth(5);
+        for c in chunks.iter_mut().skip(250) {
+            c.t_ns += 15_000_000;
+        }
+        let (rep, _) = analyze_audio(&mono, &chunks);
+        assert_eq!(rep.timeline_gaps, 1);
+        assert_eq!(rep.phase_jumps, 0);
+        assert_eq!(rep.gaps[0].verdict, "метки сдвинулись, сэмплы непрерывны");
+
+        // Те же метки, но 15 мс сэмплов действительно выброшены.
+        let (mut mono, mut chunks, _) = synth(5);
+        mono.drain(120_000..120_720);
+        for c in chunks.iter_mut().skip(250) {
+            c.t_ns += 15_000_000;
+        }
+        chunks.truncate(mono.len() / CHUNK);
+        let (rep, _) = analyze_audio(&mono, &chunks);
+        assert_eq!(rep.timeline_gaps, 1);
+        assert_eq!(rep.gaps[0].verdict, "сэмплы потеряны на длину разрыва");
+    }
+
+    #[test]
+    fn loss_inside_a_dropout_window_is_still_seen() {
+        // Пол-окна тишины и рядом выброшенные сэмплы: окно с провалом не должно
+        // скрывать сдвиг фазы.
+        let (mut mono, chunks, _) = synth(5);
+        for s in &mut mono[120_000..123_000] {
+            *s = 0.0;
+        }
+        mono.drain(123_000..123_050);
+        let (rep, _) = analyze_audio(&mono, &chunks);
+        assert!(rep.dropout_windows >= 1);
+        assert!(rep.phase_jumps >= 1);
     }
 
     #[test]

@@ -13,8 +13,8 @@ use windows::Win32::Graphics::Dwm::{
 };
 use windows::Win32::Graphics::Dxgi::{CreateDXGIFactory1, IDXGIFactory1};
 use windows::Win32::Graphics::Gdi::{
-    DeleteObject, GetDC, GetDIBits, GetObjectW, ReleaseDC, BITMAP, BITMAPINFO, BITMAPINFOHEADER,
-    BI_RGB, DIB_RGB_COLORS, HGDIOBJ,
+    DeleteObject, EnumDisplaySettingsW, GetDC, GetDIBits, GetObjectW, ReleaseDC, BITMAP,
+    BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DEVMODEW, DIB_RGB_COLORS, ENUM_CURRENT_SETTINGS, HGDIOBJ,
 };
 use windows::Win32::Media::Audio::{
     eConsole, eRender, AudioSessionStateActive, IAudioClient, IAudioSessionControl2,
@@ -489,6 +489,19 @@ pub fn env_info() -> EnvInfo {
                 i += 1;
             }
         }
+        let mut mode = DEVMODEW {
+            dmSize: std::mem::size_of::<DEVMODEW>() as u16,
+            ..Default::default()
+        };
+        if EnumDisplaySettingsW(PCWSTR::null(), ENUM_CURRENT_SETTINGS, &mut mode).as_bool() {
+            details.push((
+                "основной экран".to_owned(),
+                format!(
+                    "{}×{} физических пикселей, {} Гц",
+                    mode.dmPelsWidth, mode.dmPelsHeight, mode.dmDisplayFrequency
+                ),
+            ));
+        }
         let mix = (|| -> windows::core::Result<String> {
             let enumerator: IMMDeviceEnumerator =
                 CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)?;
@@ -508,7 +521,6 @@ pub fn env_info() -> EnvInfo {
             mix.unwrap_or_else(|e| format!("недоступен: {e}")),
         ));
     }
-    let _ = PCWSTR::null();
     EnvInfo {
         os: "Windows".to_owned(),
         os_version: os_version(),

@@ -19,7 +19,7 @@ use dispatch2::DispatchQueue;
 use objc2::rc::Retained;
 use objc2::runtime::ProtocolObject;
 use objc2::{define_class, msg_send, AnyThread, DefinedClass};
-use objc2_app_kit::{NSBitmapImageFileType, NSBitmapImageRep, NSRunningApplication};
+use objc2_app_kit::{NSBitmapImageFileType, NSBitmapImageRep, NSRunningApplication, NSScreen};
 use objc2_core_audio::{
     kAudioHardwarePropertyProcessObjectList, kAudioObjectPropertyElementMain,
     kAudioObjectPropertyScopeGlobal, kAudioObjectSystemObject,
@@ -1134,6 +1134,17 @@ pub fn env_info() -> EnvInfo {
     }
     if let Some(build) = sysctl_string("kern.osversion") {
         details.push(("сборка".to_owned(), build));
+    }
+    // Сведения об экране доступны только из главного потока.
+    if let Some(screen) = objc2::MainThreadMarker::new().and_then(NSScreen::mainScreen) {
+        details.push((
+            "основной экран".to_owned(),
+            format!(
+                "до {} Гц, масштаб {:.0} %",
+                screen.maximumFramesPerSecond(),
+                screen.backingScaleFactor() * 100.0
+            ),
+        ));
     }
     EnvInfo {
         os: "macOS".to_owned(),

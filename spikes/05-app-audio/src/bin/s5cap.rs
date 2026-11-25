@@ -328,6 +328,16 @@ fn observe(name: &str, value: bool, detail: String) -> Check {
     }
 }
 
+/// Сведения без оценки «да / нет»: в итог не входят.
+fn inform(name: &str, detail: String) -> Check {
+    Check {
+        name: name.to_owned(),
+        pass: None,
+        detail,
+        observation: true,
+    }
+}
+
 /// Что сделать с устройством вывода на время сценария.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum OutputTweak {
@@ -338,10 +348,19 @@ enum OutputTweak {
 }
 
 /// Ожидание по тону: должен быть в записи или не должен.
-fn tone_check(name: &str, level: f64, expect_present: bool) -> Check {
+///
+/// `after_volume` — звук снят после регулятора громкости устройства (loopback устройства
+/// вывода): уровень зависит от громкости, поэтому «есть» — это хотя бы 1 % номинала.
+/// В остальных режимах звук снимается до регулятора, и «есть» — не меньше 25 %.
+fn tone_check(name: &str, level: f64, expect_present: bool, after_volume: bool) -> Check {
     let nominal = TONE_AMP as f64;
-    let present = level >= 0.25 * nominal;
-    let absent = level <= 0.02 * nominal;
+    let (present_from, absent_to) = if after_volume {
+        (0.01, 0.002)
+    } else {
+        (0.25, 0.02)
+    };
+    let present = level >= present_from * nominal;
+    let absent = level <= absent_to * nominal;
     let pass = if expect_present {
         if present {
             Some(true)
@@ -365,7 +384,15 @@ fn tone_check(name: &str, level: f64, expect_present: bool) -> Check {
     check(
         name,
         pass,
-        format!("уровень {level:.5} при номинале {nominal:.3}; {want}"),
+        format!(
+            "уровень {level:.5} — {:.1} % номинала {nominal:.3}; {want}{}",
+            level / nominal * 100.0,
+            if after_volume {
+                "; звук снят после регулятора громкости, порог «есть» — 1 % номинала"
+            } else {
+                ""
+            }
+        ),
     )
 }
 
@@ -391,6 +418,8 @@ struct Scenario {
     output: Option<OutputTweak>,
     /// Частота кадров, которую просим у захвата.
     fps: u32,
+    /// Частота перерисовки окна тестового источника.
+    source_fps: u32,
 }
 
 impl Scenario {
@@ -409,6 +438,7 @@ impl Scenario {
             tones_as: None,
             output: None,
             fps: 60,
+            source_fps: 60,
         }
     }
 }
@@ -429,6 +459,13 @@ fn scenarios(main_s: u64, short_s: u64) -> Vec<Scenario> {
         ),
         Scenario::new("system-all", SystemAll, VideoMode::None, short_s),
     ];
+    // Источник рисует вдвое реже частоты экрана 60 Гц: каждый кадр гарантированно
+    // попадает на экран, и недобор кадров показывает потери самого захвата, а не
+    // несовпадение таймера источника с развёрткой.
+    list.push(Scenario {
+        source_fps: 30,
+        ..Scenario::new("video-source-30", NoAudio, VideoMode::Auto, short_s)
+    });
     if cfg!(target_os = "macos") {
         list.push(Scenario {
             variant: "app",
@@ -568,13 +605,24 @@ fn evaluate(sc: &Scenario, start: &StartInfo, an: &Analysis) -> Vec<Check> {
         let nominal = TONE_AMP as f64;
         match &an.audio {
             Some(a) => {
+                // Звук приложения снимается до регулятора громкости: ждём номинал.
+                // Loopback устройства — после регулятора: «пишется», если хоть один тон
+                // не ниже 1 % номинала.
+                let levels = [a.tones.parent, a.tones.child, a.tones.foreign, a.tones.own];
+                let strongest = levels.iter().cloned().fold(0.0f64, f64::max);
+                let written = match sc.audio {
+                    AudioMode::App => a.tones.parent >= 0.25 * nominal,
+                    _ => strongest >= 0.01 * nominal,
+                };
                 out.push(observe(
                     &format!("{what} пишется, когда {state}"),
-                    a.tones.parent >= 0.25 * nominal,
+                    written,
                     format!(
-                        "уровень тона 440 Гц {:.5} при номинале {nominal:.3} ({:.0} % номинала); буферов {}, из них помечено тишиной {}; записано {} с из {}",
-                        a.tones.parent,
-                        a.tones.parent / nominal * 100.0,
+                        "уровни тонов 440 / 880 / 1320 / 2000 Гц — {:.1} / {:.1} / {:.1} / {:.1} % номинала {nominal:.3}; буферов {}, из них помечено тишиной {}; записано {} с из {}",
+                        levels[0] / nominal * 100.0,
+                        levels[1] / nominal * 100.0,
+                        levels[2] / nominal * 100.0,
+                        levels[3] / nominal * 100.0,
                         a.buffers,
                         a.os_silent_buffers,
                         a.duration_s,
@@ -607,27 +655,34 @@ fn evaluate(sc: &Scenario, start: &StartInfo, an: &Analysis) -> Vec<Check> {
             AudioMode::SystemAll => (true, true, true, true),
             AudioMode::None => (false, false, false, false),
         };
+        // Loopback устройства вывода снимает звук после регулятора громкости.
+        let after_volume = sc.tones_as.unwrap_or(sc.audio) == AudioMode::SystemAll
+            && start.audio_method.contains("loopback устройства");
         out.push(tone_check(
             "тон главного процесса (440 Гц)",
             a.tones.parent,
             parent,
+            after_volume,
         ));
         if sc.spawn_child_at.is_none() {
             out.push(tone_check(
                 "тон дочернего процесса (880 Гц)",
                 a.tones.child,
                 child,
+                after_volume,
             ));
         }
         out.push(tone_check(
             "тон постороннего процесса (1320 Гц)",
             a.tones.foreign,
             foreign,
+            after_volume,
         ));
         out.push(tone_check(
             "тон программы захвата (2000 Гц)",
             a.tones.own,
             own,
+            after_volume,
         ));
         if let Some(at) = sc.spawn_child_at {
             let onset = a
@@ -670,11 +725,19 @@ fn evaluate(sc: &Scenario, start: &StartInfo, an: &Analysis) -> Vec<Check> {
                 "шкала времени звука без разрывов",
                 Some(a.timeline_gaps == 0 && a.timeline_overlaps == 0 && a.os_discontinuities == 0),
                 format!(
-                    "разрывов вперёд {}, назад {}, флагов разрыва от ОС {}, суммарно {} мс",
+                    "разрывов вперёд {}, назад {}, флагов разрыва от ОС {} (флаг на первом буфере записи: {}), суммарно {} мс{}",
                     a.timeline_gaps,
                     a.timeline_overlaps,
                     a.os_discontinuities,
-                    a.timeline_gap_total_ms
+                    if a.os_discontinuity_at_start { "есть" } else { "нет" },
+                    a.timeline_gap_total_ms,
+                    a.gaps
+                        .iter()
+                        .map(|g| format!(
+                            "; разрыв {} мс на {} с: {}",
+                            g.gap_ms, g.at_s, g.verdict
+                        ))
+                        .collect::<String>()
                 ),
             ));
             if a.windows_analyzed > 0 {
@@ -734,7 +797,11 @@ fn evaluate(sc: &Scenario, start: &StartInfo, an: &Analysis) -> Vec<Check> {
             "журнала нет".to_owned(),
         ));
     }
-    if let Some(f) = &an.frame_loss {
+    // Сравнение с кадрами источника имеет смысл, когда захват отдаёт кадр окна по
+    // событию. DXGI снимает весь монитор (кадр приходит и от чужих окон), GDI сам
+    // опрашивает экран с заданной частотой — для них доля не показательна.
+    let by_event = matches!(start.video_method.as_str(), "wgc" | "sck" | "portal");
+    if let Some(f) = an.frame_loss.as_ref().filter(|_| by_event) {
         // Наблюдение: захват должен получить не меньше 99 % отрисованных кадров и не
         // иметь пропусков, которых не было у источника.
         let share = if f.source_frames > 0 {
@@ -773,6 +840,39 @@ fn evaluate(sc: &Scenario, start: &StartInfo, an: &Analysis) -> Vec<Check> {
                 SYNC_TOLERANCE_MS
             ),
         ));
+        out.push(observe(
+            "рассинхрон постоянен: после вычитания среднего p95 модуля не больше 40 мс",
+            s.pairs > 0 && s.offset_jitter_ms.p95_abs <= SYNC_TOLERANCE_MS,
+            format!(
+                "после вычитания среднего: разброс {} мс, p95 модуля {} мс, максимум модуля {} мс",
+                s.offset_jitter_ms.std, s.offset_jitter_ms.p95_abs, s.offset_jitter_ms.max_abs
+            ),
+        ));
+        if let (Some(delay), Some(vs), Some(audio), Some(video)) = (
+            &s.source_playback_delay_ms,
+            &s.offset_vs_playback_ms,
+            &s.audio_latency_ms,
+            &s.video_latency_ms,
+        ) {
+            // Источник не подгоняет щелчок под задержку своего вывода звука, поэтому часть
+            // рассинхрона — его собственная. Сколько именно, зависит от ОС и устройства:
+            // это сведения для отчёта, а не оценка захвата.
+            out.push(inform(
+                "из чего складывается рассинхрон",
+                format!(
+                    "метка звука позже выдачи буфера источником на {} мс (разброс {}), метка видео позже отрисовки кадра на {} мс (разброс {}); по оценке библиотеки вывода источник отдаёт буфер за {} мс до воспроизведения (от {} до {}); рассинхрон от ожидаемого момента воспроизведения: среднее {} мс, p95 модуля {} мс",
+                    audio.mean,
+                    audio.std,
+                    video.mean,
+                    video.std,
+                    delay.mean,
+                    delay.min,
+                    delay.max,
+                    vs.mean,
+                    vs.p95_abs
+                ),
+            ));
+        }
     }
     out
 }
@@ -932,6 +1032,7 @@ fn cmd_selftest(
     for stale in [
         "stop",
         "spawn-child",
+        "set-fps",
         "source-parent.json",
         "source-child.json",
         "source-foreign.json",
@@ -943,11 +1044,14 @@ fn cmd_selftest(
         .into_iter()
         .filter(|s| only.is_empty() || only.contains(&s.name))
         .collect();
+    // Запас для времени жизни источника — щедрый; оценка для человека — по замеру на
+    // стенде: около секунды сверх длительности на сценарий и десять секунд на запуск.
     let total: u64 = plan.iter().map(|s| s.seconds + 3).sum::<u64>() + 30;
+    let estimate: u64 = plan.iter().map(|s| s.seconds + 1).sum::<u64>() + 10;
     eprintln!(
         "s5cap: сценариев {}, ожидаемая длительность около {} с",
         plan.len(),
-        total
+        estimate
     );
 
     let exe = std::env::current_exe()?;
@@ -1064,6 +1168,7 @@ fn cmd_selftest(
 
         let mut results = Vec::new();
         let mut mapping: Option<Mapping> = None;
+        let mut source_fps = 60u32;
         for sc in &plan {
             eprintln!("s5cap: сценарий {} ({} с)", sc.name, sc.seconds);
             let dir = out.join(sc.name);
@@ -1076,6 +1181,12 @@ fn cmd_selftest(
                 fps: sc.fps,
                 variant: sc.variant.to_owned(),
             };
+            if sc.source_fps != source_fps {
+                // Источник читает файл-команду раз в 0,2 с и меняет частоту перерисовки.
+                let _ = fs::write(out.join("set-fps"), sc.source_fps.to_string());
+                source_fps = sc.source_fps;
+                std::thread::sleep(Duration::from_millis(700));
+            }
             let spawn_at = sc.spawn_child_at;
             let trigger = out.join("spawn-child");
             if spawn_at.is_none() && !out.join("source-child.json").exists() {
@@ -1198,7 +1309,8 @@ fn cmd_selftest(
                 (Some(false), false) => "НЕТ",
                 (Some(true), true) => "да (наблюдение)",
                 (Some(false), true) => "нет (наблюдение)",
-                (None, _) => "неясно",
+                (None, true) => "сведения",
+                (None, false) => "неясно",
             };
             println!("{}\t{}\t{}\t{}", r.name, c.name, verdict, c.detail);
         }
