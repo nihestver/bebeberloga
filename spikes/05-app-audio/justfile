@@ -63,6 +63,10 @@ trial-host host: build
 only scenarios seconds="30": build
     {{ cap }} selftest --seconds {{ seconds }} --only {{ scenarios }} --out out/only
 
+# то же без звука: источник и программа захвата отдают нули; только для сценариев без записи звука
+only-silent scenarios seconds="30": build
+    {{ cap }} selftest --silent --seconds {{ seconds }} --only {{ scenarios }} --out out/only
+
 # Windows: недобор кадров WGC при частоте источника 60 и 59 к/с и при пределе захвата 59 к/с;
 # три сценария по 2 минуты, весь запуск — около 6,5 минуты
 wgc-rate seconds="120": build

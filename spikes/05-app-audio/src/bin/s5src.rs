@@ -408,6 +408,21 @@ fn main() {
     // Источник запускается без консоли: причина отказа остаётся в файле каталога прогона.
     let error_file = args.out.join(format!("source-{}.err", args.role));
     let _ = fs::remove_file(&error_file);
+    // Паника (например, оконная библиотека не нашла системную библиотеку) тоже должна
+    // оставить причину в файле: программа захвата по нему останавливает прогон. Место
+    // паники в файл не идёт — в нём путь с домашним каталогом.
+    let panic_file = error_file.clone();
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let payload = info.payload();
+        let text = payload
+            .downcast_ref::<&str>()
+            .map(|s| (*s).to_owned())
+            .or_else(|| payload.downcast_ref::<String>().cloned())
+            .unwrap_or_else(|| "причина не текстовая".to_owned());
+        let _ = fs::write(&panic_file, format!("паника: {text}"));
+        default_hook(info);
+    }));
     tone::set_silent(args.silent);
     let result = match args.role.as_str() {
         "parent" => run_parent(args),

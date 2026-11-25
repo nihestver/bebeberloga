@@ -1171,6 +1171,30 @@ fn wait_for_file(path: &Path, timeout: Duration) -> bool {
     path.exists()
 }
 
+/// Почему тестовый источник больше не работает — если это так.
+///
+/// Источник пишет причину отказа (в том числе панику) в `source-<роль>.err`; у прямого
+/// потомка, кроме того, виден код завершения. `launched` — в порядке запуска: главный
+/// процесс источника, затем посторонний.
+fn source_failure(out: &Path, launched: &mut [Launched]) -> Option<String> {
+    for role in ["parent", "foreign", "child"] {
+        if let Ok(reason) = fs::read_to_string(out.join(format!("source-{role}.err"))) {
+            return Some(format!(
+                "тестовый источник ({role}) завершился с ошибкой: {}",
+                reason.trim()
+            ));
+        }
+    }
+    for (role, l) in ["parent", "foreign"].iter().zip(launched.iter_mut()) {
+        if let Some(Ok(Some(status))) = l.child.as_mut().map(|c| c.try_wait()) {
+            return Some(format!(
+                "тестовый источник ({role}) завершился раньше времени ({status}), причину не записал — она в строках `s5src:` и в выводе об ошибке выше"
+            ));
+        }
+    }
+    None
+}
+
 fn read_pid(path: &Path, key: &str) -> Option<u32> {
     let value: serde_json::Value = serde_json::from_slice(&fs::read(path).ok()?).ok()?;
     value.get(key)?.as_u64().map(|v| v as u32)
@@ -1248,6 +1272,9 @@ fn cmd_selftest(
         "source-parent.json",
         "source-child.json",
         "source-foreign.json",
+        "source-parent.err",
+        "source-child.err",
+        "source-foreign.err",
     ] {
         let _ = fs::remove_file(out.join(stale));
     }
@@ -1359,6 +1386,9 @@ fn cmd_selftest(
         let no_window_list = cfg!(target_os = "linux") && !platform::x11_session();
         let deadline = Instant::now() + Duration::from_secs(if no_window_list { 2 } else { 20 });
         while window.is_none() && Instant::now() < deadline {
+            if let Some(reason) = source_failure(&out, &mut launched) {
+                return Err(reason.into());
+            }
             match platform::list_windows(true) {
                 Ok(all) => {
                     windows_total = all.len();
@@ -1369,6 +1399,21 @@ fn cmd_selftest(
             if window.is_none() {
                 std::thread::sleep(Duration::from_millis(500));
             }
+        }
+        // Источник записывает сведения о себе до создания окна: он мог упасть сразу после.
+        std::thread::sleep(Duration::from_millis(300));
+        if let Some(reason) = source_failure(&out, &mut launched) {
+            return Err(reason.into());
+        }
+        if window.is_none() && platform::x11_session() {
+            return Err(format!(
+                "окно тестового источника не появилось в списке окон за 20 с (окон в списке: {windows_total}){}; в сеансе X11 без окна не работает ни один сценарий с видео",
+                list_error
+                    .as_ref()
+                    .map(|e| format!(", ошибка списка: {e}"))
+                    .unwrap_or_default()
+            )
+            .into());
         }
         let window_check = Some(match &window {
             Some(w) => {
@@ -1412,6 +1457,24 @@ fn cmd_selftest(
         let mut source_fps = 60u32;
         let mut compensate = false;
         for sc in &plan {
+            if let Some(reason) = source_failure(&out, &mut launched) {
+                // Дальше записывать нечего: прогон останавливается, уже сделанное остаётся в сводке.
+                eprintln!(
+                    "s5cap: прогон остановлен перед сценарием {}: {reason}",
+                    sc.name
+                );
+                results.push(ScenarioResult {
+                    name: sc.name.to_owned(),
+                    audio: sc.audio,
+                    video: sc.video,
+                    seconds: sc.seconds,
+                    error: Some(reason.clone()),
+                    start: StartInfo::default(),
+                    analysis: Analysis::default(),
+                    checks: vec![check("тестовый источник работает", Some(false), reason)],
+                });
+                break;
+            }
             eprintln!("s5cap: сценарий {} ({} с)", sc.name, sc.seconds);
             let dir = out.join(sc.name);
             let req = CaptureRequest {
