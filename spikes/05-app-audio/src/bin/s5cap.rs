@@ -253,6 +253,26 @@ struct WindowAction {
 }
 
 /// Один прогон захвата в каталог `dir`.
+/// Процессорное время этого процесса (пользовательское и системное), секунды.
+#[cfg(unix)]
+fn cpu_seconds() -> Option<f64> {
+    // SAFETY: getrusage заполняет переданную структуру и других эффектов не имеет.
+    let usage = unsafe {
+        let mut usage = std::mem::zeroed::<libc::rusage>();
+        if libc::getrusage(libc::RUSAGE_SELF, &mut usage) != 0 {
+            return None;
+        }
+        usage
+    };
+    let seconds = |t: libc::timeval| t.tv_sec as f64 + t.tv_usec as f64 / 1e6;
+    Some(seconds(usage.ru_utime) + seconds(usage.ru_stime))
+}
+
+#[cfg(not(unix))]
+fn cpu_seconds() -> Option<f64> {
+    None
+}
+
 fn run_capture(
     req: &CaptureRequest,
     dir: &Path,
@@ -271,6 +291,7 @@ fn run_capture(
     };
     let running = platform::start_capture(req, audio.clone(), video.clone())?;
     let started = Instant::now();
+    let cpu_before = cpu_seconds();
     let deadline = started + Duration::from_secs(seconds);
     let mut next_report = started + Duration::from_secs(60);
     let mut refresh_note = None;
@@ -333,7 +354,17 @@ fn run_capture(
             total.saturating_sub(frames_at[1])
         ));
     }
+    // Нагрузка самой программы захвата за сценарий; X-сервер, PipeWire и композитор
+    // сюда не входят. В неё попадает и собственный тон программы (поток вывода звука).
+    let cpu_note = cpu_before.zip(cpu_seconds()).map(|(before, after)| {
+        format!(
+            "программа захвата заняла {:.1} % одного ядра за {:.0} с записи",
+            (after - before) / started.elapsed().as_secs_f64().max(0.001) * 100.0,
+            started.elapsed().as_secs_f64()
+        )
+    });
     let mut info = running.stop();
+    info.notes.extend(cpu_note);
     info.notes.extend(refresh_note);
     info.notes.extend(action_notes);
     if let Some(a) = &audio {
@@ -1212,6 +1243,10 @@ struct WindowCheck {
     icon: Option<(u32, u32)>,
     notes: Vec<String>,
     windows_total: usize,
+    /// Сколько окон списка сообщают иконку и PID: показывает, что чтение работает на
+    /// окнах настоящих программ, а не только на окне тестового источника.
+    windows_with_icon: usize,
+    windows_with_pid: usize,
 }
 
 #[derive(Debug, Serialize)]
@@ -1380,6 +1415,7 @@ fn cmd_selftest(
         // Окно источника: ждём, пока оно появится в списке ОС.
         let mut window: Option<WindowInfo> = None;
         let mut windows_total = 0;
+        let (mut windows_with_icon, mut windows_with_pid) = (0, 0);
         let mut list_error = None;
         // В сеансе Wayland списка окон у программы нет (источник — не клиент X-сервера):
         // ждать окно там незачем, хватит одной попытки с запасом на запуск источника.
@@ -1392,6 +1428,8 @@ fn cmd_selftest(
             match platform::list_windows(true) {
                 Ok(all) => {
                     windows_total = all.len();
+                    windows_with_icon = all.iter().filter(|w| w.icon.is_some()).count();
+                    windows_with_pid = all.iter().filter(|w| w.pid != 0).count();
                     window = all.into_iter().find(|w| w.title == title);
                 }
                 Err(e) => list_error = Some(e.to_string()),
@@ -1429,6 +1467,8 @@ fn cmd_selftest(
                     icon: w.icon.as_ref().map(|i| (i.width, i.height)),
                     notes: w.notes.clone(),
                     windows_total,
+                    windows_with_icon,
+                    windows_with_pid,
                 }
             }
             None => WindowCheck {
@@ -1440,6 +1480,8 @@ fn cmd_selftest(
                 icon: None,
                 notes: list_error.into_iter().collect(),
                 windows_total,
+                windows_with_icon,
+                windows_with_pid,
             },
         });
 

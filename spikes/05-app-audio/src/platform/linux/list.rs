@@ -260,6 +260,25 @@ fn command_line(program: &str, args: &[&str]) -> Option<String> {
         .map(str::to_owned)
 }
 
+/// Есть ли в сеансе X11 программа, которая сама составляет картинку экрана из окон.
+/// По соглашению оконных менеджеров она владеет выделением `_NET_WM_CM_S<экран>`.
+fn compositing_manager() -> String {
+    let answer = || -> Res<bool> {
+        let (conn, screen_num) = x11rb::connect(None)?;
+        let atom = conn
+            .intern_atom(false, format!("_NET_WM_CM_S{screen_num}").as_bytes())?
+            .reply()?
+            .atom;
+        let owner = conn.get_selection_owner(atom)?.reply()?.owner;
+        Ok(owner != x11rb::NONE)
+    };
+    match answer() {
+        Ok(true) => "есть".to_owned(),
+        Ok(false) => "нет".to_owned(),
+        Err(e) => format!("не определено: {e}"),
+    }
+}
+
 /// Сведения о стенде.
 pub fn env_info() -> EnvInfo {
     let mut details = Vec::new();
@@ -296,6 +315,12 @@ pub fn env_info() -> EnvInfo {
         if !drivers.is_empty() {
             details.push(("драйверы видеоадаптеров".to_owned(), drivers.join(", ")));
         }
+    }
+    if x11_session() {
+        details.push((
+            "составление картинки оконным менеджером".to_owned(),
+            compositing_manager(),
+        ));
     }
     EnvInfo {
         os: "Linux".to_owned(),

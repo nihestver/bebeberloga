@@ -235,6 +235,17 @@ impl ApplicationHandler for App {
             .with_inner_size(LogicalSize::new(640.0, 360.0))
             // Поверх других окон: методы, читающие экран, а не окно, должны видеть вспышку.
             .with_window_level(WindowLevel::AlwaysOnTop);
+        // Linux: своя иконка окна 32×32 (одноцветный квадрат, рисуется здесь же). Оконный
+        // менеджер стенда иконку по умолчанию не подставляет, и без своей проверять чтение
+        // иконки из списка окон было бы не на чем. На Windows источник остаётся без
+        // иконки: там проверяется иконка исполняемого файла.
+        #[cfg(target_os = "linux")]
+        let attrs = {
+            let rgba: Vec<u8> = std::iter::repeat_n([0x40, 0xA0, 0xFF, 0xFF], 32 * 32)
+                .flatten()
+                .collect();
+            attrs.with_window_icon(winit::window::Icon::from_rgba(rgba, 32, 32).ok())
+        };
         let window = match event_loop.create_window(attrs) {
             Ok(w) => Rc::new(w),
             Err(e) => {

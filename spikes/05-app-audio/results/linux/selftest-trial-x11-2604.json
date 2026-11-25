@@ -1,0 +1,1848 @@
+{
+  "env": {
+    "os": "Linux",
+    "os_version": "Ubuntu 26.04.1 LTS",
+    "arch": "x86_64",
+    "session": "x11",
+    "details": [
+      ["ядро", "7.0.0-44-generic"],
+      ["рабочий стол", "XFCE"],
+      ["PipeWire", "Compiled with libpipewire 1.6.2"],
+      ["WirePlumber", "Compiled with libwireplumber 0.5.13"],
+      ["драйверы видеоадаптеров", "nvidia"],
+      ["сервер PipeWire", "1.6.2"],
+      [
+        "портал ScreenCast",
+        "недоступен: ZBus Error: org.freedesktop.DBus.Error.InvalidArgs: No such interface “org.freedesktop.portal.ScreenCast”"
+      ]
+    ]
+  },
+  "source_launch": [
+    "источник: потомок программы захвата",
+    "посторонний процесс: потомок программы захвата"
+  ],
+  "source_audio": {
+    "audio_host": "PipeWire",
+    "channels": 2,
+    "child_pid": null,
+    "pid": 62970,
+    "role": "parent",
+    "sample_format": "f32",
+    "sample_rate": 48000,
+    "title": "S5 Source 62968"
+  },
+  "window": {
+    "found": true,
+    "pid_matches_source": true,
+    "width": 640,
+    "height": 360,
+    "scale": 0.0,
+    "icon": null,
+    "notes": [],
+    "windows_total": 5
+  },
+  "mapping": {
+    "tree": [
+      {
+        "pid": 62970,
+        "ppid": 62968,
+        "name": "s5src",
+        "depth": 0
+      },
+      {
+        "pid": 63042,
+        "ppid": 62970,
+        "name": "s5src",
+        "depth": 1
+      }
+    ],
+    "child_in_tree": true,
+    "foreign_outside_tree": true,
+    "nodes_in_tree": [
+      {
+        "pid": 62970,
+        "node_id": 79,
+        "kind": "Stream/Output/Audio",
+        "active": true,
+        "extra": [
+          ["media.class", "Stream/Output/Audio"],
+          ["application.process.id", "нет"],
+          ["pipewire.sec.pid клиента", "62970"]
+        ]
+      },
+      {
+        "pid": 63042,
+        "node_id": 111,
+        "kind": "Stream/Output/Audio",
+        "active": true,
+        "extra": [
+          ["media.class", "Stream/Output/Audio"],
+          ["application.process.id", "нет"],
+          ["pipewire.sec.pid клиента", "63042"]
+        ]
+      }
+    ],
+    "foreign_has_node": true,
+    "nodes_total": 8,
+    "error": null
+  },
+  "own_tone": "играет: 48000 Гц, каналов 2, f32",
+  "scenarios": [
+    {
+      "name": "late-child",
+      "audio": "app",
+      "video": "none",
+      "seconds": 16,
+      "error": null,
+      "start": {
+        "audio_method": "pipewire: линковка узлов дерева процессов",
+        "video_method": "",
+        "attempts": ["pipewire: узел захвата создан"],
+        "notes": [
+          "узел 79 процесса 62970 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 1)",
+          "формат узла захвата: 48000 Гц, каналов 2, AudioFormat::F32LE",
+          "первая метка: задержка по данным PipeWire 21333 мкс, от начала цикла до обработки 131 мкс",
+          "узел 111 процесса 63042 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 2)"
+        ]
+      },
+      "analysis": {
+        "audio": {
+          "frames": 770048,
+          "duration_s": 16.043,
+          "span_s": 16.042,
+          "clock_diff_ppm": 67.0,
+          "buffers": 752,
+          "buffer_frames_min": 1024,
+          "buffer_frames_median": 1024,
+          "buffer_frames_max": 1024,
+          "timeline_gaps": 0,
+          "timeline_gap_total_ms": 0.0,
+          "timeline_overlaps": 0,
+          "timestamp_jitter_ms": {
+            "n": 751,
+            "mean": -0.001,
+            "median": 0.001,
+            "min": -0.02,
+            "max": 0.004,
+            "std": 0.004,
+            "p95": 0.001,
+            "p95_abs": 0.012,
+            "max_abs": 0.02
+          },
+          "os_discontinuities": 0,
+          "os_discontinuity_at_start": false,
+          "gaps": [],
+          "os_silent_buffers": 0,
+          "timestamp_fallbacks": 0,
+          "delivery_ms": {
+            "n": 752,
+            "mean": 0.366,
+            "median": 0.345,
+            "min": 0.025,
+            "max": 1.055,
+            "std": 0.248,
+            "p95": 0.819,
+            "p95_abs": 0.819,
+            "max_abs": 1.055
+          },
+          "tones": {
+            "parent": 0.02,
+            "child": 0.02,
+            "foreign": 0.0,
+            "own": 0.0
+          },
+          "dropout_windows": 0,
+          "phase_jumps": 0,
+          "phase_jump_max_deg": 0.157,
+          "phase_drift_deg_per_window": 0.0,
+          "windows_analyzed": 153,
+          "clicks": 16,
+          "child_onset_s": 6.1
+        },
+        "video": null,
+        "sync": null,
+        "frame_loss": null
+      },
+      "checks": [
+        {
+          "name": "тон главного процесса (440 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 — 100.0 % номинала 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон постороннего процесса (1320 Гц)",
+          "pass": true,
+          "detail": "уровень 0.00000 — 0.0 % номинала 0.020; не должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон программы захвата (2000 Гц)",
+          "pass": true,
+          "detail": "уровень 0.00000 — 0.0 % номинала 0.020; не должен быть",
+          "observation": false
+        },
+        {
+          "name": "звук процесса, запущенного во время записи",
+          "pass": true,
+          "detail": "процесс запущен на 6-й секунде; тон 880 Гц появился: на 6.1 с",
+          "observation": false
+        },
+        {
+          "name": "шкала времени звука без разрывов",
+          "pass": true,
+          "detail": "разрывов вперёд 0, назад 0, флагов разрыва от ОС 0 (флаг на первом буфере записи: нет), суммарно 0 мс",
+          "observation": false
+        },
+        {
+          "name": "сэмплы без потерь (фаза тона 440 Гц)",
+          "pass": true,
+          "detail": "скачков фазы 0, наибольший 0.157°, окон с провалом 0 из 153",
+          "observation": false
+        },
+        {
+          "name": "длительность записи",
+          "pass": true,
+          "detail": "записано 16.043 с при запросе 16 с; по меткам ОС 16.042 с",
+          "observation": false
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "audio": "app",
+      "video": "auto",
+      "seconds": 30,
+      "error": null,
+      "start": {
+        "audio_method": "pipewire: линковка узлов дерева процессов",
+        "video_method": "x11-composite",
+        "attempts": ["pipewire: узел захвата создан", "x11-composite: запущен"],
+        "notes": [
+          "x11-composite: пиксели — через разделяемую память (MIT-SHM)",
+          "x11-composite: расширение Composite 0.4",
+          "x11-composite: сервер опрашивается 60 раз в секунду; метка кадра — момент запроса",
+          "узел 79 процесса 62970 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 1)",
+          "узел 111 процесса 63042 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 2)",
+          "формат узла захвата: 48000 Гц, каналов 2, AudioFormat::F32LE",
+          "первая метка: задержка по данным PipeWire 21333 мкс, от начала цикла до обработки 494 мкс"
+        ]
+      },
+      "analysis": {
+        "audio": {
+          "frames": 1445888,
+          "duration_s": 30.123,
+          "span_s": 30.123,
+          "clock_diff_ppm": 4.0,
+          "buffers": 1412,
+          "buffer_frames_min": 1024,
+          "buffer_frames_median": 1024,
+          "buffer_frames_max": 1024,
+          "timeline_gaps": 0,
+          "timeline_gap_total_ms": 0.0,
+          "timeline_overlaps": 0,
+          "timestamp_jitter_ms": {
+            "n": 1411,
+            "mean": -0.0,
+            "median": -0.0,
+            "min": -0.0,
+            "max": 0.001,
+            "std": 0.0,
+            "p95": 0.0,
+            "p95_abs": 0.0,
+            "max_abs": 0.001
+          },
+          "os_discontinuities": 0,
+          "os_discontinuity_at_start": false,
+          "gaps": [],
+          "os_silent_buffers": 0,
+          "timestamp_fallbacks": 0,
+          "delivery_ms": {
+            "n": 1412,
+            "mean": 0.532,
+            "median": 0.5,
+            "min": 0.064,
+            "max": 1.143,
+            "std": 0.303,
+            "p95": 1.047,
+            "p95_abs": 1.047,
+            "max_abs": 1.143
+          },
+          "tones": {
+            "parent": 0.02,
+            "child": 0.02,
+            "foreign": 0.0,
+            "own": 0.0
+          },
+          "dropout_windows": 0,
+          "phase_jumps": 0,
+          "phase_jump_max_deg": 0.157,
+          "phase_drift_deg_per_window": 0.0,
+          "windows_analyzed": 294,
+          "clicks": 30,
+          "child_onset_s": 0.0
+        },
+        "video": {
+          "frames": 1806,
+          "span_s": 30.083,
+          "fps": 60.001,
+          "interval_ms": {
+            "n": 1805,
+            "mean": 16.666,
+            "median": 16.667,
+            "min": 16.025,
+            "max": 17.334,
+            "std": 0.254,
+            "p95": 17.081,
+            "p95_abs": 17.081,
+            "max_abs": 17.334
+          },
+          "long_intervals": 0,
+          "non_monotonic": 0,
+          "width": 640,
+          "height": 360,
+          "scale": 1.0,
+          "methods": ["x11-composite"],
+          "delivery_ms": {
+            "n": 1806,
+            "mean": 0.992,
+            "median": 1.013,
+            "min": 0.381,
+            "max": 2.163,
+            "std": 0.311,
+            "p95": 1.47,
+            "p95_abs": 1.47,
+            "max_abs": 2.163
+          },
+          "frames_without_pixels": 0,
+          "flashes": 30
+        },
+        "sync": {
+          "pairs": 30,
+          "offset_ms": {
+            "n": 30,
+            "mean": 7.071,
+            "median": 6.789,
+            "min": -2.173,
+            "max": 16.761,
+            "std": 6.214,
+            "p95": 16.463,
+            "p95_abs": 16.463,
+            "max_abs": 16.761
+          },
+          "offset_jitter_ms": {
+            "n": 30,
+            "mean": -0.0,
+            "median": -0.282,
+            "min": -9.244,
+            "max": 9.69,
+            "std": 6.214,
+            "p95": 9.392,
+            "p95_abs": 9.392,
+            "max_abs": 9.69
+          },
+          "within_tolerance": true,
+          "video_latency_ms": {
+            "n": 30,
+            "mean": 2.383,
+            "median": 2.498,
+            "min": 1.095,
+            "max": 3.818,
+            "std": 0.704,
+            "p95": 3.378,
+            "p95_abs": 3.378,
+            "max_abs": 3.818
+          },
+          "audio_latency_ms": {
+            "n": 30,
+            "mean": -0.265,
+            "median": -0.209,
+            "min": -0.888,
+            "max": 0.226,
+            "std": 0.343,
+            "p95": 0.176,
+            "p95_abs": 0.881,
+            "max_abs": 0.888
+          },
+          "source_skew_ms": {
+            "n": 46,
+            "mean": 10.101,
+            "median": 9.977,
+            "min": -0.197,
+            "max": 20.782,
+            "std": 6.432,
+            "p95": 19.776,
+            "p95_abs": 19.776,
+            "max_abs": 20.782
+          },
+          "capture_only_offset_ms": {
+            "n": 30,
+            "mean": -2.648,
+            "median": -2.738,
+            "min": -3.592,
+            "max": -1.136,
+            "std": 0.673,
+            "p95": -1.425,
+            "p95_abs": 3.431,
+            "max_abs": 3.592
+          },
+          "source_playback_delay_ms": {
+            "n": 46,
+            "mean": 32.25,
+            "median": 32.25,
+            "min": 32.25,
+            "max": 32.25,
+            "std": 0.0,
+            "p95": 32.25,
+            "p95_abs": 32.25,
+            "max_abs": 32.25
+          },
+          "audio_stamp_vs_playback_ms": {
+            "n": 30,
+            "mean": -32.515,
+            "median": -32.459,
+            "min": -33.138,
+            "max": -32.024,
+            "std": 0.343,
+            "p95": -32.074,
+            "p95_abs": 33.131,
+            "max_abs": 33.138
+          },
+          "offset_vs_playback_ms": {
+            "n": 30,
+            "mean": -34.898,
+            "median": -34.988,
+            "min": -35.842,
+            "max": -33.386,
+            "std": 0.673,
+            "p95": -33.675,
+            "p95_abs": 35.681,
+            "max_abs": 35.842
+          }
+        },
+        "frame_loss": {
+          "source_frames": 1806,
+          "source_fps": 59.998,
+          "source_interval_ms": {
+            "n": 1805,
+            "mean": 16.667,
+            "median": 16.668,
+            "min": 15.656,
+            "max": 17.701,
+            "std": 0.429,
+            "p95": 17.39,
+            "p95_abs": 17.39,
+            "max_abs": 17.701
+          },
+          "source_long_intervals": 0,
+          "captured_frames": 1806,
+          "captured_long_intervals": 0,
+          "long_explained_by_source": 0,
+          "long_only_in_capture": 0
+        }
+      },
+      "checks": [
+        {
+          "name": "тон главного процесса (440 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 — 100.0 % номинала 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон дочернего процесса (880 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 — 100.0 % номинала 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон постороннего процесса (1320 Гц)",
+          "pass": true,
+          "detail": "уровень 0.00000 — 0.0 % номинала 0.020; не должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон программы захвата (2000 Гц)",
+          "pass": true,
+          "detail": "уровень 0.00000 — 0.0 % номинала 0.020; не должен быть",
+          "observation": false
+        },
+        {
+          "name": "шкала времени звука без разрывов",
+          "pass": true,
+          "detail": "разрывов вперёд 0, назад 0, флагов разрыва от ОС 0 (флаг на первом буфере записи: нет), суммарно 0 мс",
+          "observation": false
+        },
+        {
+          "name": "сэмплы без потерь (фаза тона 440 Гц)",
+          "pass": true,
+          "detail": "скачков фазы 0, наибольший 0.157°, окон с провалом 0 из 294",
+          "observation": false
+        },
+        {
+          "name": "длительность записи",
+          "pass": true,
+          "detail": "записано 30.123 с при запросе 30 с; по меткам ОС 30.123 с",
+          "observation": false
+        },
+        {
+          "name": "видео-метки есть",
+          "pass": true,
+          "detail": "кадров 1806, 60.001 к/с, интервал p95 17.081 мс, длинных интервалов 0, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны в кадрах",
+          "pass": true,
+          "detail": "вспышек 30 за 30 с",
+          "observation": false
+        },
+        {
+          "name": "рассинхрон звука и видео: p95 модуля не больше 40 мс",
+          "pass": true,
+          "detail": "пар 30, среднее 7.071 мс, p95 модуля 16.463 мс, максимум модуля 16.761 мс; критерий — p95 ≤ 40 мс",
+          "observation": false
+        },
+        {
+          "name": "рассинхрон постоянен: после вычитания среднего p95 модуля не больше 40 мс",
+          "pass": true,
+          "detail": "после вычитания среднего: разброс 6.214 мс, p95 модуля 9.392 мс, максимум модуля 9.69 мс",
+          "observation": true
+        },
+        {
+          "name": "из чего складывается рассинхрон",
+          "pass": null,
+          "detail": "метка звука позже выдачи буфера источником на -0.265 мс (разброс 0.343), метка видео позже отрисовки кадра на 2.383 мс (разброс 0.704); по оценке библиотеки вывода источник отдаёт буфер за 32.25 мс до воспроизведения (от 32.25 до 32.25); рассинхрон от ожидаемого момента воспроизведения: среднее -34.898 мс, p95 модуля 35.681 мс",
+          "observation": true
+        }
+      ]
+    },
+    {
+      "name": "system-except-self",
+      "audio": "system-except-self",
+      "video": "none",
+      "seconds": 12,
+      "error": null,
+      "start": {
+        "audio_method": "pipewire: линковка всех узлов, кроме собственных",
+        "video_method": "",
+        "attempts": ["pipewire: узел захвата создан"],
+        "notes": [
+          "узел 88 процесса 62972 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 1)",
+          "узел 111 процесса 63042 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 2)",
+          "узел 79 процесса 62970 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 3)",
+          "формат узла захвата: 48000 Гц, каналов 2, AudioFormat::F32LE",
+          "первая метка: задержка по данным PipeWire 21333 мкс, от начала цикла до обработки 114 мкс"
+        ]
+      },
+      "analysis": {
+        "audio": {
+          "frames": 577536,
+          "duration_s": 12.032,
+          "span_s": 12.032,
+          "clock_diff_ppm": 8.0,
+          "buffers": 564,
+          "buffer_frames_min": 1024,
+          "buffer_frames_median": 1024,
+          "buffer_frames_max": 1024,
+          "timeline_gaps": 0,
+          "timeline_gap_total_ms": 0.0,
+          "timeline_overlaps": 0,
+          "timestamp_jitter_ms": {
+            "n": 563,
+            "mean": -0.0,
+            "median": -0.0,
+            "min": -0.001,
+            "max": 0.001,
+            "std": 0.0,
+            "p95": 0.001,
+            "p95_abs": 0.001,
+            "max_abs": 0.001
+          },
+          "os_discontinuities": 0,
+          "os_discontinuity_at_start": false,
+          "gaps": [],
+          "os_silent_buffers": 0,
+          "timestamp_fallbacks": 0,
+          "delivery_ms": {
+            "n": 564,
+            "mean": 0.584,
+            "median": 0.552,
+            "min": 0.067,
+            "max": 1.104,
+            "std": 0.313,
+            "p95": 1.065,
+            "p95_abs": 1.065,
+            "max_abs": 1.104
+          },
+          "tones": {
+            "parent": 0.02,
+            "child": 0.02,
+            "foreign": 0.02,
+            "own": 0.0
+          },
+          "dropout_windows": 0,
+          "phase_jumps": 0,
+          "phase_jump_max_deg": 0.157,
+          "phase_drift_deg_per_window": 0.0,
+          "windows_analyzed": 113,
+          "clicks": 12,
+          "child_onset_s": 0.0
+        },
+        "video": null,
+        "sync": null,
+        "frame_loss": null
+      },
+      "checks": [
+        {
+          "name": "тон главного процесса (440 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 — 100.0 % номинала 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон дочернего процесса (880 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 — 100.0 % номинала 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон постороннего процесса (1320 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 — 100.0 % номинала 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон программы захвата (2000 Гц)",
+          "pass": true,
+          "detail": "уровень 0.00000 — 0.0 % номинала 0.020; не должен быть",
+          "observation": false
+        },
+        {
+          "name": "шкала времени звука без разрывов",
+          "pass": true,
+          "detail": "разрывов вперёд 0, назад 0, флагов разрыва от ОС 0 (флаг на первом буфере записи: нет), суммарно 0 мс",
+          "observation": false
+        },
+        {
+          "name": "сэмплы без потерь (фаза тона 440 Гц)",
+          "pass": true,
+          "detail": "скачков фазы 0, наибольший 0.157°, окон с провалом 0 из 113",
+          "observation": false
+        },
+        {
+          "name": "длительность записи",
+          "pass": true,
+          "detail": "записано 12.032 с при запросе 12 с; по меткам ОС 12.032 с",
+          "observation": false
+        }
+      ]
+    },
+    {
+      "name": "system-all",
+      "audio": "system-all",
+      "video": "none",
+      "seconds": 12,
+      "error": null,
+      "start": {
+        "audio_method": "pipewire: monitor устройства вывода, вся система",
+        "video_method": "",
+        "attempts": ["pipewire: узел захвата создан"],
+        "notes": [
+          "формат узла захвата: 48000 Гц, каналов 2, AudioFormat::F32LE",
+          "первая метка: задержка по данным PipeWire 0 мкс, от начала цикла до обработки 136 мкс"
+        ]
+      },
+      "analysis": {
+        "audio": {
+          "frames": 578560,
+          "duration_s": 12.053,
+          "span_s": 12.053,
+          "clock_diff_ppm": 10.0,
+          "buffers": 565,
+          "buffer_frames_min": 1024,
+          "buffer_frames_median": 1024,
+          "buffer_frames_max": 1024,
+          "timeline_gaps": 0,
+          "timeline_gap_total_ms": 0.0,
+          "timeline_overlaps": 0,
+          "timestamp_jitter_ms": {
+            "n": 564,
+            "mean": -0.0,
+            "median": -0.0,
+            "min": -0.001,
+            "max": 0.0,
+            "std": 0.0,
+            "p95": 0.0,
+            "p95_abs": 0.001,
+            "max_abs": 0.001
+          },
+          "os_discontinuities": 0,
+          "os_discontinuity_at_start": false,
+          "gaps": [],
+          "os_silent_buffers": 0,
+          "timestamp_fallbacks": 0,
+          "delivery_ms": {
+            "n": 565,
+            "mean": -20.718,
+            "median": -20.67,
+            "min": -21.224,
+            "max": -20.23,
+            "std": 0.319,
+            "p95": -20.267,
+            "p95_abs": 21.18,
+            "max_abs": 21.224
+          },
+          "tones": {
+            "parent": 0.02,
+            "child": 0.02,
+            "foreign": 0.02,
+            "own": 0.02
+          },
+          "dropout_windows": 0,
+          "phase_jumps": 0,
+          "phase_jump_max_deg": 0.408,
+          "phase_drift_deg_per_window": 0.0,
+          "windows_analyzed": 113,
+          "clicks": 12,
+          "child_onset_s": 0.0
+        },
+        "video": null,
+        "sync": null,
+        "frame_loss": null
+      },
+      "checks": [
+        {
+          "name": "тон главного процесса (440 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 — 100.0 % номинала 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон дочернего процесса (880 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 — 100.0 % номинала 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон постороннего процесса (1320 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 — 100.0 % номинала 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон программы захвата (2000 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 — 100.0 % номинала 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "шкала времени звука без разрывов",
+          "pass": true,
+          "detail": "разрывов вперёд 0, назад 0, флагов разрыва от ОС 0 (флаг на первом буфере записи: нет), суммарно 0 мс",
+          "observation": false
+        },
+        {
+          "name": "сэмплы без потерь (фаза тона 440 Гц)",
+          "pass": true,
+          "detail": "скачков фазы 0, наибольший 0.408°, окон с провалом 0 из 113",
+          "observation": false
+        },
+        {
+          "name": "длительность записи",
+          "pass": true,
+          "detail": "записано 12.053 с при запросе 12 с; по меткам ОС 12.053 с",
+          "observation": false
+        }
+      ]
+    },
+    {
+      "name": "sync-compensated",
+      "audio": "app",
+      "video": "auto",
+      "seconds": 20,
+      "error": null,
+      "start": {
+        "audio_method": "pipewire: линковка узлов дерева процессов",
+        "video_method": "x11-composite",
+        "attempts": ["pipewire: узел захвата создан", "x11-composite: запущен"],
+        "notes": [
+          "x11-composite: пиксели — через разделяемую память (MIT-SHM)",
+          "x11-composite: расширение Composite 0.4",
+          "x11-composite: сервер опрашивается 60 раз в секунду; метка кадра — момент запроса",
+          "узел 79 процесса 62970 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 1)",
+          "узел 111 процесса 63042 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 2)",
+          "формат узла захвата: 48000 Гц, каналов 2, AudioFormat::F32LE",
+          "первая метка: задержка по данным PipeWire 21333 мкс, от начала цикла до обработки 228 мкс"
+        ]
+      },
+      "analysis": {
+        "audio": {
+          "frames": 964608,
+          "duration_s": 20.096,
+          "span_s": 20.096,
+          "clock_diff_ppm": -0.0,
+          "buffers": 942,
+          "buffer_frames_min": 1024,
+          "buffer_frames_median": 1024,
+          "buffer_frames_max": 1024,
+          "timeline_gaps": 0,
+          "timeline_gap_total_ms": 0.0,
+          "timeline_overlaps": 0,
+          "timestamp_jitter_ms": {
+            "n": 941,
+            "mean": 0.0,
+            "median": -0.0,
+            "min": -0.001,
+            "max": 0.001,
+            "std": 0.0,
+            "p95": 0.001,
+            "p95_abs": 0.001,
+            "max_abs": 0.001
+          },
+          "os_discontinuities": 0,
+          "os_discontinuity_at_start": false,
+          "gaps": [],
+          "os_silent_buffers": 0,
+          "timestamp_fallbacks": 0,
+          "delivery_ms": {
+            "n": 942,
+            "mean": 0.49,
+            "median": 0.477,
+            "min": 0.064,
+            "max": 1.116,
+            "std": 0.29,
+            "p95": 0.953,
+            "p95_abs": 0.953,
+            "max_abs": 1.116
+          },
+          "tones": {
+            "parent": 0.02,
+            "child": 0.02,
+            "foreign": 0.0,
+            "own": 0.0
+          },
+          "dropout_windows": 0,
+          "phase_jumps": 0,
+          "phase_jump_max_deg": 0.408,
+          "phase_drift_deg_per_window": 0.0,
+          "windows_analyzed": 193,
+          "clicks": 20,
+          "child_onset_s": 0.0
+        },
+        "video": {
+          "frames": 1204,
+          "span_s": 20.05,
+          "fps": 60.001,
+          "interval_ms": {
+            "n": 1203,
+            "mean": 16.666,
+            "median": 16.671,
+            "min": 15.728,
+            "max": 17.616,
+            "std": 0.405,
+            "p95": 17.333,
+            "p95_abs": 17.333,
+            "max_abs": 17.616
+          },
+          "long_intervals": 0,
+          "non_monotonic": 0,
+          "width": 640,
+          "height": 360,
+          "scale": 1.0,
+          "methods": ["x11-composite"],
+          "delivery_ms": {
+            "n": 1204,
+            "mean": 1.117,
+            "median": 1.129,
+            "min": 0.611,
+            "max": 2.441,
+            "std": 0.112,
+            "p95": 1.217,
+            "p95_abs": 1.217,
+            "max_abs": 2.441
+          },
+          "frames_without_pixels": 0,
+          "flashes": 20
+        },
+        "sync": {
+          "pairs": 20,
+          "offset_ms": {
+            "n": 20,
+            "mean": -33.744,
+            "median": -32.991,
+            "min": -44.589,
+            "max": -22.131,
+            "std": 6.786,
+            "p95": -24.683,
+            "p95_abs": 43.831,
+            "max_abs": 44.589
+          },
+          "offset_jitter_ms": {
+            "n": 20,
+            "mean": -0.0,
+            "median": 0.753,
+            "min": -10.845,
+            "max": 11.613,
+            "std": 6.786,
+            "p95": 9.061,
+            "p95_abs": 10.845,
+            "max_abs": 11.613
+          },
+          "within_tolerance": false,
+          "video_latency_ms": {
+            "n": 20,
+            "mean": 9.945,
+            "median": 10.112,
+            "min": 7.938,
+            "max": 11.179,
+            "std": 0.944,
+            "p95": 11.097,
+            "p95_abs": 11.097,
+            "max_abs": 11.179
+          },
+          "audio_latency_ms": {
+            "n": 20,
+            "mean": -0.313,
+            "median": -0.381,
+            "min": -0.923,
+            "max": 0.187,
+            "std": 0.354,
+            "p95": 0.167,
+            "p95_abs": 0.897,
+            "max_abs": 0.923
+          },
+          "source_skew_ms": {
+            "n": 92,
+            "mean": 1.922,
+            "median": 6.231,
+            "min": -33.403,
+            "max": 20.782,
+            "std": 15.496,
+            "p95": 19.126,
+            "p95_abs": 28.651,
+            "max_abs": 33.403
+          },
+          "capture_only_offset_ms": {
+            "n": 20,
+            "mean": -10.259,
+            "median": -10.325,
+            "min": -11.633,
+            "max": -7.771,
+            "std": 1.058,
+            "p95": -7.866,
+            "p95_abs": 11.535,
+            "max_abs": 11.633
+          },
+          "source_playback_delay_ms": {
+            "n": 92,
+            "mean": 32.25,
+            "median": 32.25,
+            "min": 32.25,
+            "max": 32.25,
+            "std": 0.0,
+            "p95": 32.25,
+            "p95_abs": 32.25,
+            "max_abs": 32.25
+          },
+          "audio_stamp_vs_playback_ms": {
+            "n": 20,
+            "mean": -32.563,
+            "median": -32.631,
+            "min": -33.173,
+            "max": -32.063,
+            "std": 0.354,
+            "p95": -32.083,
+            "p95_abs": 33.147,
+            "max_abs": 33.173
+          },
+          "offset_vs_playback_ms": {
+            "n": 20,
+            "mean": -42.509,
+            "median": -42.575,
+            "min": -43.883,
+            "max": -40.021,
+            "std": 1.058,
+            "p95": -40.116,
+            "p95_abs": 43.785,
+            "max_abs": 43.883
+          }
+        },
+        "frame_loss": {
+          "source_frames": 1205,
+          "source_fps": 59.947,
+          "source_interval_ms": {
+            "n": 1204,
+            "mean": 16.681,
+            "median": 16.699,
+            "min": 15.682,
+            "max": 33.355,
+            "std": 0.603,
+            "p95": 17.279,
+            "p95_abs": 17.279,
+            "max_abs": 33.355
+          },
+          "source_long_intervals": 1,
+          "captured_frames": 1204,
+          "captured_long_intervals": 0,
+          "long_explained_by_source": 0,
+          "long_only_in_capture": 0
+        }
+      },
+      "checks": [
+        {
+          "name": "тон главного процесса (440 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 — 100.0 % номинала 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон дочернего процесса (880 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 — 100.0 % номинала 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон постороннего процесса (1320 Гц)",
+          "pass": true,
+          "detail": "уровень 0.00000 — 0.0 % номинала 0.020; не должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон программы захвата (2000 Гц)",
+          "pass": true,
+          "detail": "уровень 0.00000 — 0.0 % номинала 0.020; не должен быть",
+          "observation": false
+        },
+        {
+          "name": "шкала времени звука без разрывов",
+          "pass": true,
+          "detail": "разрывов вперёд 0, назад 0, флагов разрыва от ОС 0 (флаг на первом буфере записи: нет), суммарно 0 мс",
+          "observation": false
+        },
+        {
+          "name": "сэмплы без потерь (фаза тона 440 Гц)",
+          "pass": true,
+          "detail": "скачков фазы 0, наибольший 0.408°, окон с провалом 0 из 193",
+          "observation": false
+        },
+        {
+          "name": "длительность записи",
+          "pass": true,
+          "detail": "записано 20.096 с при запросе 20 с; по меткам ОС 20.096 с",
+          "observation": false
+        },
+        {
+          "name": "видео-метки есть",
+          "pass": true,
+          "detail": "кадров 1204, 60.001 к/с, интервал p95 17.333 мс, длинных интервалов 0, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны в кадрах",
+          "pass": true,
+          "detail": "вспышек 20 за 20 с",
+          "observation": false
+        },
+        {
+          "name": "рассинхрон звука и видео: p95 модуля не больше 40 мс",
+          "pass": false,
+          "detail": "пар 20, среднее -33.744 мс, p95 модуля 43.831 мс, максимум модуля 44.589 мс; критерий — p95 ≤ 40 мс",
+          "observation": false
+        },
+        {
+          "name": "рассинхрон постоянен: после вычитания среднего p95 модуля не больше 40 мс",
+          "pass": true,
+          "detail": "после вычитания среднего: разброс 6.786 мс, p95 модуля 10.845 мс, максимум модуля 11.613 мс",
+          "observation": true
+        },
+        {
+          "name": "из чего складывается рассинхрон",
+          "pass": null,
+          "detail": "метка звука позже выдачи буфера источником на -0.313 мс (разброс 0.354), метка видео позже отрисовки кадра на 9.945 мс (разброс 0.944); по оценке библиотеки вывода источник отдаёт буфер за 32.25 мс до воспроизведения (от 32.25 до 32.25); рассинхрон от ожидаемого момента воспроизведения: среднее -42.509 мс, p95 модуля 43.785 мс",
+          "observation": true
+        }
+      ]
+    },
+    {
+      "name": "video-source-30",
+      "audio": "none",
+      "video": "auto",
+      "seconds": 12,
+      "error": null,
+      "start": {
+        "audio_method": "",
+        "video_method": "x11-composite",
+        "attempts": ["x11-composite: запущен"],
+        "notes": [
+          "x11-composite: пиксели — через разделяемую память (MIT-SHM)",
+          "x11-composite: расширение Composite 0.4",
+          "x11-composite: сервер опрашивается 60 раз в секунду; метка кадра — момент запроса"
+        ]
+      },
+      "analysis": {
+        "audio": null,
+        "video": {
+          "frames": 723,
+          "span_s": 12.034,
+          "fps": 59.999,
+          "interval_ms": {
+            "n": 722,
+            "mean": 16.667,
+            "median": 16.666,
+            "min": 15.891,
+            "max": 17.431,
+            "std": 0.546,
+            "p95": 17.339,
+            "p95_abs": 17.339,
+            "max_abs": 17.431
+          },
+          "long_intervals": 0,
+          "non_monotonic": 0,
+          "width": 640,
+          "height": 360,
+          "scale": 1.0,
+          "methods": ["x11-composite"],
+          "delivery_ms": {
+            "n": 723,
+            "mean": 1.919,
+            "median": 1.349,
+            "min": 0.589,
+            "max": 5.77,
+            "std": 0.863,
+            "p95": 2.877,
+            "p95_abs": 2.877,
+            "max_abs": 5.77
+          },
+          "frames_without_pixels": 0,
+          "flashes": 12
+        },
+        "sync": null,
+        "frame_loss": {
+          "source_frames": 360,
+          "source_fps": 30.0,
+          "source_interval_ms": {
+            "n": 359,
+            "mean": 33.334,
+            "median": 33.326,
+            "min": 32.629,
+            "max": 34.053,
+            "std": 0.282,
+            "p95": 33.871,
+            "p95_abs": 33.871,
+            "max_abs": 34.053
+          },
+          "source_long_intervals": 0,
+          "captured_frames": 720,
+          "captured_long_intervals": 0,
+          "long_explained_by_source": 0,
+          "long_only_in_capture": 0
+        }
+      },
+      "checks": [
+        {
+          "name": "видео-метки есть",
+          "pass": true,
+          "detail": "кадров 723, 59.999 к/с, интервал p95 17.339 мс, длинных интервалов 0, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны в кадрах",
+          "pass": true,
+          "detail": "вспышек 12 за 12 с",
+          "observation": false
+        }
+      ]
+    },
+    {
+      "name": "video-x11-composite",
+      "audio": "none",
+      "video": "x11-composite",
+      "seconds": 12,
+      "error": null,
+      "start": {
+        "audio_method": "",
+        "video_method": "x11-composite",
+        "attempts": ["x11-composite: запущен"],
+        "notes": [
+          "x11-composite: пиксели — через разделяемую память (MIT-SHM)",
+          "x11-composite: расширение Composite 0.4",
+          "x11-composite: сервер опрашивается 60 раз в секунду; метка кадра — момент запроса"
+        ]
+      },
+      "analysis": {
+        "audio": null,
+        "video": {
+          "frames": 723,
+          "span_s": 12.033,
+          "fps": 59.999,
+          "interval_ms": {
+            "n": 722,
+            "mean": 16.667,
+            "median": 16.667,
+            "min": 16.003,
+            "max": 17.428,
+            "std": 0.288,
+            "p95": 17.13,
+            "p95_abs": 17.13,
+            "max_abs": 17.428
+          },
+          "long_intervals": 0,
+          "non_monotonic": 0,
+          "width": 640,
+          "height": 360,
+          "scale": 1.0,
+          "methods": ["x11-composite"],
+          "delivery_ms": {
+            "n": 723,
+            "mean": 1.278,
+            "median": 1.256,
+            "min": 0.408,
+            "max": 6.015,
+            "std": 0.468,
+            "p95": 1.818,
+            "p95_abs": 1.818,
+            "max_abs": 6.015
+          },
+          "frames_without_pixels": 0,
+          "flashes": 12
+        },
+        "sync": null,
+        "frame_loss": {
+          "source_frames": 723,
+          "source_fps": 60.002,
+          "source_interval_ms": {
+            "n": 722,
+            "mean": 16.666,
+            "median": 16.673,
+            "min": 2.812,
+            "max": 29.836,
+            "std": 0.79,
+            "p95": 17.288,
+            "p95_abs": 17.288,
+            "max_abs": 29.836
+          },
+          "source_long_intervals": 1,
+          "captured_frames": 723,
+          "captured_long_intervals": 0,
+          "long_explained_by_source": 0,
+          "long_only_in_capture": 0
+        }
+      },
+      "checks": [
+        {
+          "name": "видео-метки есть",
+          "pass": true,
+          "detail": "кадров 723, 59.999 к/с, интервал p95 17.13 мс, длинных интервалов 0, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны в кадрах",
+          "pass": true,
+          "detail": "вспышек 12 за 12 с",
+          "observation": false
+        },
+        {
+          "name": "сработал ожидаемый метод видео",
+          "pass": true,
+          "detail": "ожидался x11-composite, сработал x11-composite",
+          "observation": false
+        }
+      ]
+    },
+    {
+      "name": "video-x11-screen",
+      "audio": "none",
+      "video": "x11-screen",
+      "seconds": 12,
+      "error": null,
+      "start": {
+        "audio_method": "",
+        "video_method": "x11-screen",
+        "attempts": ["x11-screen: запущен"],
+        "notes": [
+          "x11-screen: пиксели — через разделяемую память (MIT-SHM)",
+          "x11-screen: снимается весь экран 1920×1080; яркость — в центре окна источника",
+          "x11-screen: сервер опрашивается 60 раз в секунду; метка кадра — момент запроса"
+        ]
+      },
+      "analysis": {
+        "audio": null,
+        "video": {
+          "frames": 722,
+          "span_s": 12.016,
+          "fps": 60.002,
+          "interval_ms": {
+            "n": 721,
+            "mean": 16.666,
+            "median": 16.666,
+            "min": 15.812,
+            "max": 17.546,
+            "std": 0.364,
+            "p95": 17.294,
+            "p95_abs": 17.294,
+            "max_abs": 17.546
+          },
+          "long_intervals": 0,
+          "non_monotonic": 0,
+          "width": 1920,
+          "height": 1080,
+          "scale": 1.0,
+          "methods": ["x11-screen"],
+          "delivery_ms": {
+            "n": 722,
+            "mean": 3.498,
+            "median": 3.491,
+            "min": 2.934,
+            "max": 4.508,
+            "std": 0.139,
+            "p95": 3.641,
+            "p95_abs": 3.641,
+            "max_abs": 4.508
+          },
+          "frames_without_pixels": 0,
+          "flashes": 12
+        },
+        "sync": null,
+        "frame_loss": {
+          "source_frames": 720,
+          "source_fps": 60.002,
+          "source_interval_ms": {
+            "n": 719,
+            "mean": 16.666,
+            "median": 16.672,
+            "min": 15.883,
+            "max": 17.591,
+            "std": 0.368,
+            "p95": 17.314,
+            "p95_abs": 17.314,
+            "max_abs": 17.591
+          },
+          "source_long_intervals": 0,
+          "captured_frames": 720,
+          "captured_long_intervals": 0,
+          "long_explained_by_source": 0,
+          "long_only_in_capture": 0
+        }
+      },
+      "checks": [
+        {
+          "name": "видео-метки есть",
+          "pass": true,
+          "detail": "кадров 722, 60.002 к/с, интервал p95 17.294 мс, длинных интервалов 0, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны в кадрах",
+          "pass": true,
+          "detail": "вспышек 12 за 12 с",
+          "observation": false
+        },
+        {
+          "name": "сработал ожидаемый метод видео",
+          "pass": true,
+          "detail": "ожидался x11-screen, сработал x11-screen",
+          "observation": false
+        }
+      ]
+    },
+    {
+      "name": "auto-without-composite",
+      "audio": "none",
+      "video": "auto",
+      "seconds": 12,
+      "error": null,
+      "start": {
+        "audio_method": "",
+        "video_method": "x11-screen",
+        "attempts": ["x11-composite: отказ сымитирован", "x11-screen: запущен"],
+        "notes": [
+          "x11-screen: пиксели — через разделяемую память (MIT-SHM)",
+          "x11-screen: снимается весь экран 1920×1080; яркость — в центре окна источника",
+          "x11-screen: сервер опрашивается 60 раз в секунду; метка кадра — момент запроса"
+        ]
+      },
+      "analysis": {
+        "audio": null,
+        "video": {
+          "frames": 723,
+          "span_s": 12.033,
+          "fps": 60.001,
+          "interval_ms": {
+            "n": 722,
+            "mean": 16.667,
+            "median": 16.668,
+            "min": 15.697,
+            "max": 17.65,
+            "std": 0.43,
+            "p95": 17.452,
+            "p95_abs": 17.452,
+            "max_abs": 17.65
+          },
+          "long_intervals": 0,
+          "non_monotonic": 0,
+          "width": 1920,
+          "height": 1080,
+          "scale": 1.0,
+          "methods": ["x11-screen"],
+          "delivery_ms": {
+            "n": 723,
+            "mean": 3.556,
+            "median": 3.474,
+            "min": 3.232,
+            "max": 5.365,
+            "std": 0.333,
+            "p95": 4.326,
+            "p95_abs": 4.326,
+            "max_abs": 5.365
+          },
+          "frames_without_pixels": 0,
+          "flashes": 12
+        },
+        "sync": null,
+        "frame_loss": {
+          "source_frames": 718,
+          "source_fps": 60.005,
+          "source_interval_ms": {
+            "n": 717,
+            "mean": 16.665,
+            "median": 16.686,
+            "min": 1.109,
+            "max": 31.448,
+            "std": 0.854,
+            "p95": 17.126,
+            "p95_abs": 17.126,
+            "max_abs": 31.448
+          },
+          "source_long_intervals": 1,
+          "captured_frames": 718,
+          "captured_long_intervals": 0,
+          "long_explained_by_source": 0,
+          "long_only_in_capture": 0
+        }
+      },
+      "checks": [
+        {
+          "name": "видео-метки есть",
+          "pass": true,
+          "detail": "кадров 723, 60.001 к/с, интервал p95 17.452 мс, длинных интервалов 0, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны в кадрах",
+          "pass": true,
+          "detail": "вспышек 12 за 12 с",
+          "observation": false
+        },
+        {
+          "name": "сработал ожидаемый метод видео",
+          "pass": true,
+          "detail": "ожидался x11-screen, сработал x11-screen",
+          "observation": false
+        }
+      ]
+    },
+    {
+      "name": "x11-occluded-composite",
+      "audio": "none",
+      "video": "x11-composite",
+      "seconds": 12,
+      "error": null,
+      "start": {
+        "audio_method": "",
+        "video_method": "x11-composite",
+        "attempts": ["x11-composite: запущен"],
+        "notes": [
+          "x11-composite: пиксели — через разделяемую память (MIT-SHM)",
+          "x11-composite: расширение Composite 0.4",
+          "x11-composite: сервер опрашивается 60 раз в секунду; метка кадра — момент запроса",
+          "на 4-й секунде: окно источника закрыто чёрным окном 640×360",
+          "на 8-й секунде: закрывающее окно убрано",
+          "кадров до действия 241, во время 241, после 241"
+        ]
+      },
+      "analysis": {
+        "audio": null,
+        "video": {
+          "frames": 723,
+          "span_s": 12.033,
+          "fps": 60.002,
+          "interval_ms": {
+            "n": 722,
+            "mean": 16.666,
+            "median": 16.667,
+            "min": 15.765,
+            "max": 17.506,
+            "std": 0.368,
+            "p95": 17.367,
+            "p95_abs": 17.367,
+            "max_abs": 17.506
+          },
+          "long_intervals": 0,
+          "non_monotonic": 0,
+          "width": 640,
+          "height": 360,
+          "scale": 1.0,
+          "methods": ["x11-composite"],
+          "delivery_ms": {
+            "n": 723,
+            "mean": 1.247,
+            "median": 1.149,
+            "min": 0.421,
+            "max": 4.575,
+            "std": 0.551,
+            "p95": 1.413,
+            "p95_abs": 1.413,
+            "max_abs": 4.575
+          },
+          "frames_without_pixels": 0,
+          "flashes": 12
+        },
+        "sync": null,
+        "frame_loss": {
+          "source_frames": 716,
+          "source_fps": 60.003,
+          "source_interval_ms": {
+            "n": 715,
+            "mean": 16.666,
+            "median": 16.669,
+            "min": 13.461,
+            "max": 20.121,
+            "std": 0.768,
+            "p95": 17.407,
+            "p95_abs": 17.407,
+            "max_abs": 20.121
+          },
+          "source_long_intervals": 0,
+          "captured_frames": 716,
+          "captured_long_intervals": 0,
+          "long_explained_by_source": 0,
+          "long_only_in_capture": 0
+        }
+      },
+      "checks": [
+        {
+          "name": "видео-метки есть",
+          "pass": true,
+          "detail": "кадров 723, 60.002 к/с, интервал p95 17.367 мс, длинных интервалов 0, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны, пока окно закрыто другим окном",
+          "pass": true,
+          "detail": "вспышек 12 за 12 с; действие — с 4-й по 8-ю секунду",
+          "observation": true
+        },
+        {
+          "name": "сработал ожидаемый метод видео",
+          "pass": true,
+          "detail": "ожидался x11-composite, сработал x11-composite",
+          "observation": false
+        }
+      ]
+    },
+    {
+      "name": "x11-occluded-screen",
+      "audio": "none",
+      "video": "x11-screen",
+      "seconds": 12,
+      "error": null,
+      "start": {
+        "audio_method": "",
+        "video_method": "x11-screen",
+        "attempts": ["x11-screen: запущен"],
+        "notes": [
+          "x11-screen: пиксели — через разделяемую память (MIT-SHM)",
+          "x11-screen: снимается весь экран 1920×1080; яркость — в центре окна источника",
+          "x11-screen: сервер опрашивается 60 раз в секунду; метка кадра — момент запроса",
+          "на 4-й секунде: окно источника закрыто чёрным окном 640×360",
+          "на 8-й секунде: закрывающее окно убрано",
+          "кадров до действия 241, во время 241, после 241"
+        ]
+      },
+      "analysis": {
+        "audio": null,
+        "video": {
+          "frames": 723,
+          "span_s": 12.033,
+          "fps": 60.002,
+          "interval_ms": {
+            "n": 722,
+            "mean": 16.666,
+            "median": 16.666,
+            "min": 16.103,
+            "max": 17.231,
+            "std": 0.206,
+            "p95": 17.012,
+            "p95_abs": 17.012,
+            "max_abs": 17.231
+          },
+          "long_intervals": 0,
+          "non_monotonic": 0,
+          "width": 1920,
+          "height": 1080,
+          "scale": 1.0,
+          "methods": ["x11-screen"],
+          "delivery_ms": {
+            "n": 723,
+            "mean": 3.457,
+            "median": 3.321,
+            "min": 2.758,
+            "max": 7.762,
+            "std": 0.52,
+            "p95": 4.414,
+            "p95_abs": 4.414,
+            "max_abs": 7.762
+          },
+          "frames_without_pixels": 0,
+          "flashes": 9
+        },
+        "sync": null,
+        "frame_loss": {
+          "source_frames": 725,
+          "source_fps": 60.001,
+          "source_interval_ms": {
+            "n": 724,
+            "mean": 16.666,
+            "median": 16.669,
+            "min": 15.678,
+            "max": 17.624,
+            "std": 0.39,
+            "p95": 17.33,
+            "p95_abs": 17.33,
+            "max_abs": 17.624
+          },
+          "source_long_intervals": 0,
+          "captured_frames": 723,
+          "captured_long_intervals": 0,
+          "long_explained_by_source": 0,
+          "long_only_in_capture": 0
+        }
+      },
+      "checks": [
+        {
+          "name": "видео-метки есть",
+          "pass": true,
+          "detail": "кадров 723, 60.002 к/с, интервал p95 17.012 мс, длинных интервалов 0, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны, пока окно закрыто другим окном",
+          "pass": false,
+          "detail": "вспышек 9 за 12 с; действие — с 4-й по 8-ю секунду",
+          "observation": true
+        },
+        {
+          "name": "сработал ожидаемый метод видео",
+          "pass": true,
+          "detail": "ожидался x11-screen, сработал x11-screen",
+          "observation": false
+        }
+      ]
+    },
+    {
+      "name": "x11-minimized-composite",
+      "audio": "none",
+      "video": "x11-composite",
+      "seconds": 12,
+      "error": null,
+      "start": {
+        "audio_method": "",
+        "video_method": "x11-composite",
+        "attempts": ["x11-composite: запущен"],
+        "notes": [
+          "x11-composite: пиксели — через разделяемую память (MIT-SHM)",
+          "x11-composite: расширение Composite 0.4",
+          "x11-composite: сервер опрашивается 60 раз в секунду; метка кадра — момент запроса",
+          "x11-composite: кадр не получен на 4.0-й секунде: сервер не дал картинку окна: X11Error(X11Error { error_kind: Match, error_code: 8, sequence: 1215, bad_value: 58720260, minor_opcode: 6, major_opcode: 142, extension_name: Some(\"Composite\"), request_name: Some(\"NameWindowPixmap\") })",
+          "x11-composite: кадры вернулись на 8.0-й секунде после 241 неудачных запросов",
+          "на 4-й секунде: окно источника свёрнуто (по данным сервера окно скрыто)",
+          "на 8-й секунде: окно источника развёрнуто (по данным сервера окно показано)",
+          "кадров до действия 241, во время 0, после 241"
+        ]
+      },
+      "analysis": {
+        "audio": null,
+        "video": {
+          "frames": 482,
+          "span_s": 12.034,
+          "fps": 39.971,
+          "interval_ms": {
+            "n": 481,
+            "mean": 25.018,
+            "median": 16.756,
+            "min": 12.46,
+            "max": 4032.725,
+            "std": 182.927,
+            "p95": 17.223,
+            "p95_abs": 17.223,
+            "max_abs": 4032.725
+          },
+          "long_intervals": 1,
+          "non_monotonic": 0,
+          "width": 640,
+          "height": 360,
+          "scale": 1.0,
+          "methods": ["x11-composite"],
+          "delivery_ms": {
+            "n": 482,
+            "mean": 1.15,
+            "median": 1.132,
+            "min": 0.516,
+            "max": 21.225,
+            "std": 1.05,
+            "p95": 1.359,
+            "p95_abs": 1.359,
+            "max_abs": 21.225
+          },
+          "frames_without_pixels": 0,
+          "flashes": 9
+        },
+        "sync": null,
+        "frame_loss": {
+          "source_frames": 725,
+          "source_fps": 60.088,
+          "source_interval_ms": {
+            "n": 724,
+            "mean": 16.642,
+            "median": 16.687,
+            "min": 2.354,
+            "max": 31.303,
+            "std": 1.151,
+            "p95": 17.27,
+            "p95_abs": 17.27,
+            "max_abs": 31.303
+          },
+          "source_long_intervals": 2,
+          "captured_frames": 482,
+          "captured_long_intervals": 1,
+          "long_explained_by_source": 1,
+          "long_only_in_capture": 0
+        }
+      },
+      "checks": [
+        {
+          "name": "видео-метки есть",
+          "pass": true,
+          "detail": "кадров 482, 39.971 к/с, интервал p95 17.223 мс, длинных интервалов 1, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны, пока окно свёрнуто",
+          "pass": false,
+          "detail": "вспышек 9 за 12 с; действие — с 4-й по 8-ю секунду",
+          "observation": true
+        },
+        {
+          "name": "сработал ожидаемый метод видео",
+          "pass": true,
+          "detail": "ожидался x11-composite, сработал x11-composite",
+          "observation": false
+        }
+      ]
+    },
+    {
+      "name": "x11-resize-composite",
+      "audio": "none",
+      "video": "x11-composite",
+      "seconds": 12,
+      "error": null,
+      "start": {
+        "audio_method": "",
+        "video_method": "x11-composite",
+        "attempts": ["x11-composite: запущен"],
+        "notes": [
+          "x11-composite: пиксели — через разделяемую память (MIT-SHM)",
+          "x11-composite: расширение Composite 0.4",
+          "x11-composite: сервер опрашивается 60 раз в секунду; метка кадра — момент запроса",
+          "x11-composite: размер кадра изменился на 4.0-й секунде: 640×360 → 800×450",
+          "x11-composite: размер кадра изменился на 8.0-й секунде: 800×450 → 640×360",
+          "на 4-й секунде: размер окна источника: 640×360 → 800×450",
+          "на 8-й секунде: размер окна источника: 800×450 → 640×360",
+          "кадров до действия 241, во время 240, после 241"
+        ]
+      },
+      "analysis": {
+        "audio": null,
+        "video": {
+          "frames": 722,
+          "span_s": 12.016,
+          "fps": 60.002,
+          "interval_ms": {
+            "n": 721,
+            "mean": 16.666,
+            "median": 16.688,
+            "min": 15.879,
+            "max": 17.44,
+            "std": 0.385,
+            "p95": 17.314,
+            "p95_abs": 17.314,
+            "max_abs": 17.44
+          },
+          "long_intervals": 0,
+          "non_monotonic": 0,
+          "width": 640,
+          "height": 360,
+          "scale": 1.0,
+          "methods": ["x11-composite"],
+          "delivery_ms": {
+            "n": 722,
+            "mean": 1.178,
+            "median": 1.153,
+            "min": 0.533,
+            "max": 4.132,
+            "std": 0.259,
+            "p95": 1.446,
+            "p95_abs": 1.446,
+            "max_abs": 4.132
+          },
+          "frames_without_pixels": 0,
+          "flashes": 12
+        },
+        "sync": null,
+        "frame_loss": {
+          "source_frames": 722,
+          "source_fps": 60.17,
+          "source_interval_ms": {
+            "n": 721,
+            "mean": 16.62,
+            "median": 16.739,
+            "min": 0.583,
+            "max": 17.486,
+            "std": 0.805,
+            "p95": 17.072,
+            "p95_abs": 17.072,
+            "max_abs": 17.486
+          },
+          "source_long_intervals": 0,
+          "captured_frames": 720,
+          "captured_long_intervals": 0,
+          "long_explained_by_source": 0,
+          "long_only_in_capture": 0
+        }
+      },
+      "checks": [
+        {
+          "name": "видео-метки есть",
+          "pass": true,
+          "detail": "кадров 722, 60.002 к/с, интервал p95 17.314 мс, длинных интервалов 0, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны, пока окно меняет размер",
+          "pass": true,
+          "detail": "вспышек 12 за 12 с; действие — с 4-й по 8-ю секунду",
+          "observation": true
+        },
+        {
+          "name": "сработал ожидаемый метод видео",
+          "pass": true,
+          "detail": "ожидался x11-composite, сработал x11-composite",
+          "observation": false
+        }
+      ]
+    }
+  ],
+  "passed": 59,
+  "failed": 1,
+  "unclear": 0
+}
