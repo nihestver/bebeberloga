@@ -420,6 +420,9 @@ struct Scenario {
     fps: u32,
     /// Частота перерисовки окна тестового источника.
     source_fps: u32,
+    /// Источник откладывает вспышку на задержку своего вывода звука — как программа,
+    /// которая сама выравнивает звук и картинку.
+    compensate: bool,
 }
 
 impl Scenario {
@@ -439,6 +442,7 @@ impl Scenario {
             output: None,
             fps: 60,
             source_fps: 60,
+            compensate: false,
         }
     }
 }
@@ -459,6 +463,12 @@ fn scenarios(main_s: u64, short_s: u64) -> Vec<Scenario> {
         ),
         Scenario::new("system-all", SystemAll, VideoMode::None, short_s),
     ];
+    // Рассинхрон при источнике, который сам выравнивает картинку под задержку вывода
+    // звука: остаётся то, что вносят метки захвата.
+    list.push(Scenario {
+        compensate: true,
+        ..Scenario::new("sync-compensated", App, VideoMode::Auto, short_s + 8)
+    });
     // Источник рисует вдвое реже частоты экрана 60 Гц: каждый кадр гарантированно
     // попадает на экран, и недобор кадров показывает потери самого захвата, а не
     // несовпадение таймера источника с развёрткой.
@@ -565,6 +575,13 @@ fn scenarios(main_s: u64, short_s: u64) -> Vec<Scenario> {
                 ..Scenario::new(name, NoAudio, mode, short_s)
             });
         }
+        // WGC с наименьшим интервалом обновления 1 мс: пропадают ли кадры из-за
+        // ограничителя частоты.
+        list.push(Scenario {
+            variant: "wgc-fast",
+            expect_video: "wgc",
+            ..Scenario::new("video-wgc-fast", NoAudio, VideoMode::Wgc, short_s)
+        });
         list.push(Scenario {
             fail: &["wgc"],
             expect_video: "dxgi",
@@ -1033,6 +1050,7 @@ fn cmd_selftest(
         "stop",
         "spawn-child",
         "set-fps",
+        "set-compensate",
         "source-parent.json",
         "source-child.json",
         "source-foreign.json",
@@ -1169,6 +1187,7 @@ fn cmd_selftest(
         let mut results = Vec::new();
         let mut mapping: Option<Mapping> = None;
         let mut source_fps = 60u32;
+        let mut compensate = false;
         for sc in &plan {
             eprintln!("s5cap: сценарий {} ({} с)", sc.name, sc.seconds);
             let dir = out.join(sc.name);
@@ -1181,6 +1200,15 @@ fn cmd_selftest(
                 fps: sc.fps,
                 variant: sc.variant.to_owned(),
             };
+            if sc.compensate != compensate {
+                let _ = fs::write(
+                    out.join("set-compensate"),
+                    if sc.compensate { "1" } else { "0" },
+                );
+                compensate = sc.compensate;
+                // Источник узнаёт задержку вывода по первому щелчку после команды.
+                std::thread::sleep(Duration::from_millis(2300));
+            }
             if sc.source_fps != source_fps {
                 // Источник читает файл-команду раз в 0,2 с и меняет частоту перерисовки.
                 let _ = fs::write(out.join("set-fps"), sc.source_fps.to_string());

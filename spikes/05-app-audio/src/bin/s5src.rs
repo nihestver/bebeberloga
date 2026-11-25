@@ -109,7 +109,12 @@ struct App {
     deadline: Instant,
     next_frame: Instant,
     next_mark_ns: u64,
+    flash_from_ns: u64,
     flash_until_ns: u64,
+    /// Выравнивать ли вспышку под задержку вывода звука (файл-команда `set-compensate`).
+    compensate: bool,
+    /// Последняя оценка задержки вывода звука от библиотеки вывода, нс.
+    playback_delay_ns: u64,
     flash_logged: bool,
     last_stop_check: Instant,
     frame_no: u64,
@@ -132,6 +137,17 @@ impl App {
                 self.frame_period = Duration::from_micros(1_000_000 / fps);
             }
         }
+        let _ = fs::remove_file(file);
+    }
+
+    /// Включить или выключить выравнивание вспышки под задержку вывода звука:
+    /// файл `set-compensate` с `1` или `0`.
+    fn handle_compensate_command(&mut self) {
+        let file = self.args.out.join("set-compensate");
+        let Ok(text) = fs::read_to_string(&file) else {
+            return;
+        };
+        self.compensate = text.trim() == "1";
         let _ = fs::remove_file(file);
     }
 
@@ -167,6 +183,7 @@ impl App {
     fn drain_click_marks(&mut self) {
         while let Ok((t_ns, delay_ns)) = self.click_marks.try_recv() {
             let _ = writeln!(self.marks, "click\t{t_ns}\t{delay_ns}");
+            self.playback_delay_ns = delay_ns;
         }
     }
 
@@ -180,7 +197,7 @@ impl App {
         };
         surface.resize(w, h).map_err(|e| e.to_string())?;
         let now = now_ns();
-        let lit = now < self.flash_until_ns;
+        let lit = now >= self.flash_from_ns && now < self.flash_until_ns;
         let (width, height) = (size.width as usize, size.height as usize);
         let mut buffer = surface.buffer_mut().map_err(|e| e.to_string())?;
         let background = if lit { 0x00FF_FFFF } else { 0x0020_2020 };
@@ -261,15 +278,28 @@ impl ApplicationHandler for App {
                 event_loop.exit();
                 return;
             }
+            // Журналы сбрасываются на диск каждые 0,2 с: программа захвата копирует их
+            // сразу после записи сценария.
+            let _ = self.frames.flush();
+            let _ = self.marks.flush();
             self.handle_child_commands();
             self.handle_fps_command();
+            self.handle_compensate_command();
         }
         self.drain_click_marks();
         let now_mono = now_ns();
         if now_mono >= self.next_mark_ns {
-            // Вспышка и щелчок запрашиваются в один момент.
+            // Вспышка и щелчок запрашиваются в один момент. С выравниванием вспышка
+            // откладывается на задержку вывода звука — так делает программа, которая
+            // сама следит за совпадением звука и картинки.
             self.next_mark_ns += MARK_PERIOD_MS * 1_000_000;
-            self.flash_until_ns = now_mono + FLASH_MS * 1_000_000;
+            let delay = if self.compensate {
+                self.playback_delay_ns
+            } else {
+                0
+            };
+            self.flash_from_ns = now_mono + delay;
+            self.flash_until_ns = self.flash_from_ns + FLASH_MS * 1_000_000;
             self.flash_logged = false;
             self.click_requests.fetch_add(1, Ordering::Relaxed);
             let _ = self.marks.flush();
@@ -337,7 +367,10 @@ fn run_parent(args: Args) -> Res<()> {
         click_marks: rx,
         next_frame: Instant::now(),
         next_mark_ns: now_ns() + 1_000_000_000,
+        flash_from_ns: 0,
         flash_until_ns: 0,
+        compensate: false,
+        playback_delay_ns: 0,
         flash_logged: true,
         last_stop_check: Instant::now(),
         frame_no: 0,

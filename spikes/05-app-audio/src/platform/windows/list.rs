@@ -20,6 +20,7 @@ use windows::Win32::Media::Audio::{
     eConsole, eRender, AudioSessionStateActive, IAudioClient, IAudioSessionControl2,
     IAudioSessionManager2, IMMDeviceEnumerator, MMDeviceEnumerator, DEVICE_STATE_ACTIVE,
 };
+use windows::Win32::Storage::FileSystem::FILE_FLAGS_AND_ATTRIBUTES;
 use windows::Win32::System::Com::{
     CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_ALL, COINIT_MULTITHREADED,
 };
@@ -31,11 +32,13 @@ use windows::Win32::System::Threading::{
     PROCESS_QUERY_LIMITED_INFORMATION,
 };
 use windows::Win32::UI::HiDpi::GetDpiForWindow;
+use windows::Win32::UI::Shell::{SHGetFileInfoW, SHFILEINFOW, SHGFI_ICON, SHGFI_LARGEICON};
 use windows::Win32::UI::WindowsAndMessaging::{
-    EnumChildWindows, EnumWindows, GetClassLongPtrW, GetClassNameW, GetIconInfo, GetWindowLongPtrW,
-    GetWindowRect, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId, IsIconic,
-    IsWindowVisible, SendMessageTimeoutW, GCLP_HICON, GCLP_HICONSM, GWL_EXSTYLE, HICON, ICONINFO,
-    ICON_BIG, ICON_SMALL2, SMTO_ABORTIFHUNG, WM_GETICON, WS_EX_TOOLWINDOW,
+    DestroyIcon, EnumChildWindows, EnumWindows, GetClassLongPtrW, GetClassNameW, GetIconInfo,
+    GetWindowLongPtrW, GetWindowRect, GetWindowTextLengthW, GetWindowTextW,
+    GetWindowThreadProcessId, IsIconic, IsWindowVisible, SendMessageTimeoutW, GCLP_HICON,
+    GCLP_HICONSM, GWL_EXSTYLE, HICON, ICONINFO, ICON_BIG, ICON_SMALL2, SMTO_ABORTIFHUNG,
+    WM_GETICON, WS_EX_TOOLWINDOW,
 };
 
 use crate::model::{AudioNodeInfo, EnvInfo, Icon, ProcInfo, Res, WindowInfo};
@@ -78,8 +81,8 @@ unsafe extern "system" fn find_foreign_child(hwnd: HWND, lparam: LPARAM) -> BOOL
     BOOL(1)
 }
 
-/// Короткое имя исполняемого файла процесса (без пути).
-fn exe_name(pid: u32) -> Option<String> {
+/// Полный путь исполняемого файла процесса. В сводки и журналы не попадает.
+fn exe_path(pid: u32) -> Option<String> {
     // SAFETY: дескриптор закрывается ниже; буфер и его размер согласованы.
     unsafe {
         let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
@@ -96,8 +99,35 @@ fn exe_name(pid: u32) -> Option<String> {
         if !ok {
             return None;
         }
-        let full = String::from_utf16_lossy(&buf[..size as usize]);
-        Some(full.rsplit(['\\', '/']).next().unwrap_or("").to_owned())
+        Some(String::from_utf16_lossy(&buf[..size as usize]))
+    }
+}
+
+/// Короткое имя исполняемого файла процесса (без пути).
+fn exe_name(pid: u32) -> Option<String> {
+    let full = exe_path(pid)?;
+    Some(full.rsplit(['\\', '/']).next().unwrap_or("").to_owned())
+}
+
+/// Иконка исполняемого файла процесса — запасной путь для окон без своей иконки.
+fn exe_icon(pid: u32) -> Option<Icon> {
+    let path: Vec<u16> = exe_path(pid)?.encode_utf16().chain(Some(0)).collect();
+    let mut info = SHFILEINFOW::default();
+    // SAFETY: путь завершён нулём, структура на стеке; полученную иконку освобождаем.
+    unsafe {
+        let got = SHGetFileInfoW(
+            PCWSTR(path.as_ptr()),
+            FILE_FLAGS_AND_ATTRIBUTES(0),
+            Some(&mut info),
+            std::mem::size_of::<SHFILEINFOW>() as u32,
+            SHGFI_ICON | SHGFI_LARGEICON,
+        );
+        if got == 0 || info.hIcon.is_invalid() {
+            return None;
+        }
+        let icon = hicon_to_rgba(info.hIcon);
+        let _ = DestroyIcon(info.hIcon);
+        icon
     }
 }
 
@@ -174,8 +204,8 @@ fn hicon_to_rgba(hicon: HICON) -> Option<Icon> {
     }
 }
 
-/// Иконка окна: сначала у самого окна, затем у его класса.
-fn window_icon(hwnd: HWND) -> (Option<Icon>, &'static str) {
+/// Иконка окна: сначала у самого окна, затем у его класса, затем у исполняемого файла.
+fn window_icon(hwnd: HWND, pid: u32) -> (Option<Icon>, &'static str) {
     // SAFETY: запросы к окну с тайм-аутом; дескриптор иконки принадлежит окну и не освобождается.
     unsafe {
         for (kind, source) in [
@@ -210,7 +240,10 @@ fn window_icon(hwnd: HWND) -> (Option<Icon>, &'static str) {
             }
         }
     }
-    (None, "нет")
+    match exe_icon(pid) {
+        Some(icon) => (Some(icon), "исполняемый файл"),
+        None => (None, "нет"),
+    }
 }
 
 /// Масштаб экрана, на котором находится окно: 96 точек на дюйм — это 100 %.
@@ -304,7 +337,7 @@ pub fn list_windows(with_icons: bool) -> Res<Vec<WindowInfo>> {
                 let _ = GetWindowRect(hwnd, &mut rect);
             }
             let icon = if with_icons {
-                let (icon, source) = window_icon(hwnd);
+                let (icon, source) = window_icon(hwnd, pid);
                 notes.push(format!("иконка: {source}"));
                 icon
             } else {

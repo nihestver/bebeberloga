@@ -12,7 +12,7 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use windows::core::{IInspectable, Interface};
-use windows::Foundation::TypedEventHandler;
+use windows::Foundation::{TimeSpan, TypedEventHandler};
 use windows::Graphics::Capture::{
     Direct3D11CaptureFramePool, GraphicsCaptureItem, GraphicsCaptureSession,
 };
@@ -203,7 +203,13 @@ fn adapter_name(device: &ID3D11Device) -> String {
 type Ready = Sender<Result<Vec<String>, String>>;
 
 /// Windows Graphics Capture: кадры окна приходят обратными вызовами пула кадров.
-fn run_wgc(window: WindowHandle, sink: Arc<VideoSink>, stop: Arc<AtomicBool>, ready: Ready) {
+fn run_wgc(
+    window: WindowHandle,
+    fast: bool,
+    sink: Arc<VideoSink>,
+    stop: Arc<AtomicBool>,
+    ready: Ready,
+) {
     com_init();
     let frames = Arc::new(AtomicU64::new(0));
     let mut notes = Vec::new();
@@ -234,6 +240,22 @@ fn run_wgc(window: WindowHandle, sink: Arc<VideoSink>, stop: Arc<AtomicBool>, re
         match session.SetIsBorderRequired(false) {
             Ok(()) => notes.push("рамка захвата отключена".to_owned()),
             Err(e) => notes.push(format!("рамку захвата отключить нельзя: {e}")),
+        }
+        // Система не отдаёт кадры чаще наименьшего интервала обновления: если он близок
+        // к периоду источника, часть кадров пропадает. В варианте `wgc-fast` интервал
+        // уменьшается до 1 мс.
+        match session.MinUpdateInterval() {
+            Ok(interval) => notes.push(format!(
+                "наименьший интервал обновления по умолчанию: {:.2} мс",
+                interval.Duration as f64 / 10_000.0
+            )),
+            Err(e) => notes.push(format!("наименьший интервал обновления не читается: {e}")),
+        }
+        if fast {
+            match session.SetMinUpdateInterval(TimeSpan { Duration: 10_000 }) {
+                Ok(()) => notes.push("наименьший интервал обновления задан: 1 мс".to_owned()),
+                Err(e) => notes.push(format!("наименьший интервал обновления не задаётся: {e}")),
+            }
         }
         let counter = frames.clone();
         let handler_sink = sink.clone();
@@ -507,6 +529,7 @@ pub fn start(
     method: VideoMethod,
     window_id: u64,
     fps: u32,
+    fast: bool,
     sink: Arc<VideoSink>,
 ) -> Result<(VideoCapture, Vec<String>), String> {
     let window = WindowHandle(window_id as isize);
@@ -519,7 +542,7 @@ pub fn start(
     let thread = std::thread::Builder::new()
         .name(format!("s5-video-{}", method.name()))
         .spawn(move || match method {
-            VideoMethod::Wgc => run_wgc(window, sink, thread_stop, tx),
+            VideoMethod::Wgc => run_wgc(window, fast, sink, thread_stop, tx),
             VideoMethod::Dxgi => run_dxgi(window, sink, thread_stop, tx),
             VideoMethod::Gdi => run_gdi(window, fps, sink, thread_stop, tx),
         })

@@ -98,7 +98,8 @@ pub fn start_capture(
                     .push(format!("{}: отказ сымитирован", method.name()));
                 continue;
             }
-            match video::start(method, window.id, req.fps, sink.clone()) {
+            let fast = req.variant.split(',').any(|f| f == "wgc-fast");
+            match video::start(method, window.id, req.fps, fast, sink.clone()) {
                 Ok((capture, notes)) => {
                     info.attempts.push(format!("{}: запущен", method.name()));
                     info.video_method = method.name().to_owned();

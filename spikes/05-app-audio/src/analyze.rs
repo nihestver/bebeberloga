@@ -735,14 +735,23 @@ pub fn read_source_frames(path: &Path) -> Res<Vec<u64>> {
 /// Кто теряет кадры: длинные интервалы захвата сопоставляются с длинными интервалами
 /// источника. `source` — моменты отрисовки по той же монотонной шкале.
 pub fn analyze_frame_loss(marks: &[VideoMark], source: &[u64]) -> Option<FrameLossReport> {
-    let (first, last) = (marks.first()?.t_ns, marks.last()?.t_ns);
     // Захват ставит кадру метку позже момента отрисовки; запас в 50 мс покрывает задержку.
     const SLACK_NS: u64 = 50_000_000;
+    // Сравнение — только на общем отрезке двух журналов: журнал источника может
+    // кончаться раньше записи (он сбрасывается на диск с отставанием).
+    let first = marks.first()?.t_ns;
+    let last = marks.last()?.t_ns.min(*source.last()?);
     let src: Vec<u64> = source
         .iter()
         .copied()
         .filter(|t| *t + SLACK_NS >= first && *t <= last)
         .collect();
+    let kept: Vec<VideoMark> = marks
+        .iter()
+        .filter(|m| m.t_ns <= last + SLACK_NS)
+        .cloned()
+        .collect();
+    let marks = kept.as_slice();
     if src.len() < 10 {
         return None;
     }
