@@ -63,6 +63,11 @@ trial-host host: build
 only scenarios seconds="30": build
     {{ cap }} selftest --seconds {{ seconds }} --only {{ scenarios }} --out out/only
 
+# Windows: недобор кадров WGC при частоте источника 60 и 59 к/с и при пределе захвата 59 к/с;
+# три сценария по 2 минуты, весь запуск — около 6,5 минуты
+wgc-rate seconds="120": build
+    {{ cap }} selftest --only wgc-rate-60,wgc-rate-source-59,wgc-rate-limit-59 --rate-seconds {{ seconds }} --out out/wgc-rate
+
 # сводка прогона (trial, full или only): без заголовков окон, имён и путей — её и нужно вернуть
 summary run="trial":
     cat out/{{ run }}/selftest.json

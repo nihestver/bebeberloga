@@ -205,7 +205,7 @@ type Ready = Sender<Result<Vec<String>, String>>;
 /// Windows Graphics Capture: кадры окна приходят обратными вызовами пула кадров.
 fn run_wgc(
     window: WindowHandle,
-    fast: bool,
+    min_interval_hns: Option<i64>,
     sink: Arc<VideoSink>,
     stop: Arc<AtomicBool>,
     ready: Ready,
@@ -242,8 +242,8 @@ fn run_wgc(
             Err(e) => notes.push(format!("рамку захвата отключить нельзя: {e}")),
         }
         // Система не отдаёт кадры чаще наименьшего интервала обновления: если он близок
-        // к периоду источника, часть кадров пропадает. В варианте `wgc-fast` интервал
-        // уменьшается до 1 мс.
+        // к периоду источника, часть кадров пропадает. Варианты `wgc-fast` и
+        // `wgc-limit-59` задают свой интервал: 1 мс и период 59 к/с.
         match session.MinUpdateInterval() {
             Ok(interval) => notes.push(format!(
                 "наименьший интервал обновления по умолчанию: {:.2} мс",
@@ -251,9 +251,12 @@ fn run_wgc(
             )),
             Err(e) => notes.push(format!("наименьший интервал обновления не читается: {e}")),
         }
-        if fast {
-            match session.SetMinUpdateInterval(TimeSpan { Duration: 10_000 }) {
-                Ok(()) => notes.push("наименьший интервал обновления задан: 1 мс".to_owned()),
+        if let Some(hns) = min_interval_hns {
+            match session.SetMinUpdateInterval(TimeSpan { Duration: hns }) {
+                Ok(()) => notes.push(format!(
+                    "наименьший интервал обновления задан: {:.2} мс",
+                    hns as f64 / 10_000.0
+                )),
                 Err(e) => notes.push(format!("наименьший интервал обновления не задаётся: {e}")),
             }
         }
@@ -529,7 +532,7 @@ pub fn start(
     method: VideoMethod,
     window_id: u64,
     fps: u32,
-    fast: bool,
+    min_interval_hns: Option<i64>,
     sink: Arc<VideoSink>,
 ) -> Result<(VideoCapture, Vec<String>), String> {
     let window = WindowHandle(window_id as isize);
@@ -542,7 +545,7 @@ pub fn start(
     let thread = std::thread::Builder::new()
         .name(format!("s5-video-{}", method.name()))
         .spawn(move || match method {
-            VideoMethod::Wgc => run_wgc(window, fast, sink, thread_stop, tx),
+            VideoMethod::Wgc => run_wgc(window, min_interval_hns, sink, thread_stop, tx),
             VideoMethod::Dxgi => run_dxgi(window, sink, thread_stop, tx),
             VideoMethod::Gdi => run_gdi(window, fps, sink, thread_stop, tx),
         })

@@ -98,7 +98,11 @@ enum Cmd {
         short_seconds: u64,
         #[arg(long)]
         out: PathBuf,
-        /// Только эти сценарии, через запятую (по умолчанию — все для этой ОС).
+        /// Длительность сценариев `wgc-rate-*`, с.
+        #[arg(long, default_value_t = 120)]
+        rate_seconds: u64,
+        /// Только эти сценарии, через запятую (по умолчанию — все для этой ОС, кроме
+        /// дополнительных `wgc-rate-*`).
         #[arg(long, default_value = "")]
         only: String,
         /// Звуковой хост cpal для тестового источника (Linux: alsa, pulseaudio, pipewire).
@@ -423,6 +427,8 @@ struct Scenario {
     /// Источник откладывает вспышку на задержку своего вывода звука — как программа,
     /// которая сама выравнивает звук и картинку.
     compensate: bool,
+    /// Дополнительный сценарий: в общий прогон не входит, запускается только по имени.
+    optional: bool,
 }
 
 impl Scenario {
@@ -443,11 +449,12 @@ impl Scenario {
             fps: 60,
             source_fps: 60,
             compensate: false,
+            optional: false,
         }
     }
 }
 
-fn scenarios(main_s: u64, short_s: u64) -> Vec<Scenario> {
+fn scenarios(main_s: u64, short_s: u64, rate_s: u64) -> Vec<Scenario> {
     use AudioMode::{App, None as NoAudio, SystemAll, SystemExceptSelf};
     let mut list = vec![
         Scenario {
@@ -591,6 +598,28 @@ fn scenarios(main_s: u64, short_s: u64) -> Vec<Scenario> {
             fail: &["wgc", "dxgi"],
             expect_video: "gdi",
             ..Scenario::new("auto-without-wgc-dxgi", NoAudio, VideoMode::Auto, short_s)
+        });
+        // Гипотеза: WGC недобирает кадры потому, что частота источника равна частоте
+        // экрана (60 Гц). Три сценария подряд в одном запуске: источник 60 к/с — база;
+        // источник 59 к/с; источник 60 к/с с наименьшим интервалом обновления захвата
+        // в период 59 к/с. Длительность — около периода, за который момент отрисовки
+        // проходит весь период кадра относительно развёртки (на стенде 129 с).
+        list.push(Scenario {
+            expect_video: "wgc",
+            optional: true,
+            ..Scenario::new("wgc-rate-60", NoAudio, VideoMode::Wgc, rate_s)
+        });
+        list.push(Scenario {
+            source_fps: 59,
+            expect_video: "wgc",
+            optional: true,
+            ..Scenario::new("wgc-rate-source-59", NoAudio, VideoMode::Wgc, rate_s)
+        });
+        list.push(Scenario {
+            variant: "wgc-limit-59",
+            expect_video: "wgc",
+            optional: true,
+            ..Scenario::new("wgc-rate-limit-59", NoAudio, VideoMode::Wgc, rate_s)
         });
     }
     list
@@ -839,6 +868,22 @@ fn evaluate(sc: &Scenario, start: &StartInfo, an: &Analysis) -> Vec<Check> {
                 f.long_only_in_capture
             ),
         ));
+        // Сколько кадров источника захват не отдал, в пересчёте на секунду.
+        let lost = f.source_frames as f64 - f.captured_frames as f64;
+        let span_s = if f.source_fps > 0.0 {
+            f.source_frames as f64 / f.source_fps
+        } else {
+            0.0
+        };
+        if span_s > 0.0 {
+            out.push(inform(
+                "недобор кадров захвата",
+                format!(
+                    "{lost:.0} кадров за {span_s:.1} с — {:.2} в секунду",
+                    lost / span_s
+                ),
+            ));
+        }
     }
     if let Some(s) = &an.sync {
         out.push(check(
@@ -1032,6 +1077,7 @@ struct SelftestReport {
 fn cmd_selftest(
     main_s: u64,
     short_s: u64,
+    rate_s: u64,
     out: PathBuf,
     only: String,
     audio_host: Option<String>,
@@ -1058,10 +1104,20 @@ fn cmd_selftest(
         let _ = fs::remove_file(out.join(stale));
     }
     let only: Vec<&str> = only.split(',').filter(|s| !s.is_empty()).collect();
-    let plan: Vec<Scenario> = scenarios(main_s, short_s)
+    // Дополнительные сценарии идут только по имени.
+    let plan: Vec<Scenario> = scenarios(main_s, short_s, rate_s)
         .into_iter()
-        .filter(|s| only.is_empty() || only.contains(&s.name))
+        .filter(|s| {
+            if only.is_empty() {
+                !s.optional
+            } else {
+                only.contains(&s.name)
+            }
+        })
         .collect();
+    if plan.is_empty() {
+        return Err("ни один сценарий не выбран: проверьте имена в --only".into());
+    }
     // Запас для времени жизни источника — щедрый; оценка для человека — по замеру на
     // стенде: около секунды сверх длительности на сценарий и десять секунд на запуск.
     let total: u64 = plan.iter().map(|s| s.seconds + 3).sum::<u64>() + 30;
@@ -1450,10 +1506,11 @@ fn main() {
         Cmd::Selftest {
             seconds,
             short_seconds,
+            rate_seconds,
             out,
             only,
             audio_host,
-        } => cmd_selftest(seconds, short_seconds, out, only, audio_host),
+        } => cmd_selftest(seconds, short_seconds, rate_seconds, out, only, audio_host),
         Cmd::RestoreOutput { out } => restore_output(&out),
         Cmd::Env => (|| {
             println!("{}", serde_json::to_string_pretty(&platform::env_info())?);

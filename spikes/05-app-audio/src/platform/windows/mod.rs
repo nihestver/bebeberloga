@@ -98,8 +98,14 @@ pub fn start_capture(
                     .push(format!("{}: отказ сымитирован", method.name()));
                 continue;
             }
-            let fast = req.variant.split(',').any(|f| f == "wgc-fast");
-            match video::start(method, window.id, req.fps, fast, sink.clone()) {
+            // Наименьший интервал обновления WGC в единицах по 100 нс: `wgc-fast` — 1 мс,
+            // `wgc-limit-59` — период 59 к/с; без варианта остаётся значение системы.
+            let min_interval_hns = req.variant.split(',').find_map(|f| match f {
+                "wgc-fast" => Some(10_000),
+                "wgc-limit-59" => Some(10_000_000 / 59),
+                _ => None,
+            });
+            match video::start(method, window.id, req.fps, min_interval_hns, sink.clone()) {
                 Ok((capture, notes)) => {
                     info.attempts.push(format!("{}: запущен", method.name()));
                     info.video_method = method.name().to_owned();
