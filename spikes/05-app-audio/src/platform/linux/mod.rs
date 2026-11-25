@@ -65,25 +65,16 @@ pub fn start_capture(
     let mut audio_capture = None;
     let mut video_stop: Option<Box<dyn FnOnce() + Send>> = None;
 
-    if let Some(sink) = audio {
-        let method = match req.audio {
-            AudioMode::App => Some(AudioMethod::Tree(
-                req.root_pid().ok_or("для звука приложения нужен PID")?,
-            )),
-            AudioMode::SystemExceptSelf => Some(AudioMethod::AllExceptSelf),
-            AudioMode::SystemAll => Some(AudioMethod::Monitor),
-            AudioMode::None => None,
-        };
-        if let Some(method) = method {
-            let capture = pw_audio::start(method, sink, notes.clone())
-                .map_err(|e| format!("звук не захвачен: {e}"))?;
-            info.audio_method = method.describe().to_owned();
-            info.attempts
-                .push("pipewire: узел захвата создан".to_owned());
-            audio_capture = Some(capture);
-        }
-    }
-
+    // Видео запускается первым: портал ждёт, пока человек выберет источник в системном
+    // окне, и это ожидание не должно попасть в запись звука.
+    let audio_method = match (&audio, req.audio) {
+        (None, _) | (_, AudioMode::None) => None,
+        (_, AudioMode::App) => Some(AudioMethod::Tree(
+            req.root_pid().ok_or("для звука приложения нужен PID")?,
+        )),
+        (_, AudioMode::SystemExceptSelf) => Some(AudioMethod::AllExceptSelf),
+        (_, AudioMode::SystemAll) => Some(AudioMethod::Monitor),
+    };
     if let Some(sink) = video {
         let chain: Vec<VideoMode> = match req.video {
             VideoMode::None => Vec::new(),
@@ -144,13 +135,26 @@ pub fn start_capture(
         }
         if video_stop.is_none()
             && req.video != VideoMode::None
-            && (req.video != VideoMode::Auto || audio_capture.is_none())
+            && (req.video != VideoMode::Auto || audio_method.is_none())
         {
-            if let Some(mut a) = audio_capture.take() {
-                a.stop();
-            }
             return Err(format!("видео не захвачено: {}", info.attempts.join("; ")).into());
         }
+    }
+
+    if let (Some(sink), Some(method)) = (audio, audio_method) {
+        let capture = match pw_audio::start(method, sink, notes.clone()) {
+            Ok(capture) => capture,
+            Err(e) => {
+                if let Some(stop) = video_stop.take() {
+                    stop();
+                }
+                return Err(format!("звук не захвачен: {e}").into());
+            }
+        };
+        info.audio_method = method.describe().to_owned();
+        info.attempts
+            .push("pipewire: узел захвата создан".to_owned());
+        audio_capture = Some(capture);
     }
 
     Ok(Running::with_notes(

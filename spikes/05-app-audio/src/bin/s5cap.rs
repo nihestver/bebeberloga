@@ -1354,7 +1354,10 @@ fn cmd_selftest(
         let mut window: Option<WindowInfo> = None;
         let mut windows_total = 0;
         let mut list_error = None;
-        let deadline = Instant::now() + Duration::from_secs(20);
+        // В сеансе Wayland списка окон у программы нет (источник — не клиент X-сервера):
+        // ждать окно там незачем, хватит одной попытки с запасом на запуск источника.
+        let no_window_list = cfg!(target_os = "linux") && !platform::x11_session();
+        let deadline = Instant::now() + Duration::from_secs(if no_window_list { 2 } else { 20 });
         while window.is_none() && Instant::now() < deadline {
             match platform::list_windows(true) {
                 Ok(all) => {
