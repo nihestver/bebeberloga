@@ -6,7 +6,7 @@
 //! Используется тестовым источником (тон, щелчки) и самой программой захвата
 //! («собственный» тон, который в запись попасть не должен).
 
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 
@@ -16,6 +16,16 @@ use cpal::{FromSample, OutputCallbackInfo, SampleFormat, SizedSample, StreamConf
 use crate::clock::now_ns;
 use crate::model::Res;
 use crate::signal::ToneGen;
+
+/// Режим тишины: звуковой поток работает как обычно, но отдаёт нули.
+static SILENT: AtomicBool = AtomicBool::new(false);
+
+/// Включить режим тишины для всех тонов этого процесса. Поток вывода, его таймеры и
+/// метки щелчков остаются теми же — меняются только сэмплы. Для прогонов, где звук
+/// не записывается.
+pub fn set_silent(silent: bool) {
+    SILENT.store(silent, Ordering::Relaxed);
+}
 
 /// Управление щелчками: счётчик запросов и канал для меток.
 pub struct ClickCtl {
@@ -106,8 +116,10 @@ where
                     let _ = ctl.marks.send((now_ns(), delay));
                 }
             }
+            let silent = SILENT.load(Ordering::Relaxed);
             for frame in data.chunks_mut(channels) {
-                let v = T::from_sample(gen.next_sample());
+                let sample = gen.next_sample();
+                let v = T::from_sample(if silent { 0.0 } else { sample });
                 for s in frame.iter_mut() {
                     *s = v;
                 }

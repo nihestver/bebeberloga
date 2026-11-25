@@ -61,6 +61,9 @@ struct Args {
     /// процесса подхватывается на ходу).
     #[arg(long)]
     child_on_file: bool,
+    /// Тишина: звуковой поток работает, но отдаёт нули (для прогонов без записи звука).
+    #[arg(long)]
+    silent: bool,
 }
 
 fn write_info(args: &Args, player: &TonePlayer, child_pid: Option<u32>) -> Res<()> {
@@ -329,6 +332,9 @@ fn spawn_child(args: &Args) -> Res<Child> {
     if let Some(host) = &args.audio_host {
         cmd.arg("--audio-host").arg(host);
     }
+    if args.silent {
+        cmd.arg("--silent");
+    }
     Ok(cmd.spawn()?)
 }
 
@@ -402,6 +408,7 @@ fn main() {
     // Источник запускается без консоли: причина отказа остаётся в файле каталога прогона.
     let error_file = args.out.join(format!("source-{}.err", args.role));
     let _ = fs::remove_file(&error_file);
+    tone::set_silent(args.silent);
     let result = match args.role.as_str() {
         "parent" => run_parent(args),
         "child" => run_headless(&args, TONE_CHILD_HZ),

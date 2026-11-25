@@ -202,10 +202,20 @@ fn adapter_name(device: &ID3D11Device) -> String {
 
 type Ready = Sender<Result<Vec<String>, String>>;
 
+/// Настройки захвата WGC, которые меняют сценарии самотеста.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct WgcOptions {
+    /// Наименьший интервал обновления в единицах по 100 нс; `None` — значение системы.
+    pub min_interval_hns: Option<i64>,
+    /// Ждать остановки, просыпаясь с этим периодом в мс (прежнее поведение, для
+    /// сравнения); `None` — спать без пробуждений.
+    pub poll_ms: Option<u64>,
+}
+
 /// Windows Graphics Capture: кадры окна приходят обратными вызовами пула кадров.
 fn run_wgc(
     window: WindowHandle,
-    min_interval_hns: Option<i64>,
+    options: WgcOptions,
     sink: Arc<VideoSink>,
     stop: Arc<AtomicBool>,
     ready: Ready,
@@ -251,7 +261,7 @@ fn run_wgc(
             )),
             Err(e) => notes.push(format!("наименьший интервал обновления не читается: {e}")),
         }
-        if let Some(hns) = min_interval_hns {
+        if let Some(hns) = options.min_interval_hns {
             match session.SetMinUpdateInterval(TimeSpan { Duration: hns }) {
                 Ok(()) => notes.push(format!(
                     "наименьший интервал обновления задан: {:.2} мс",
@@ -304,9 +314,19 @@ fn run_wgc(
         let _ = ready.send(Err("за 3 с не пришло ни одного кадра".to_owned()));
         return;
     }
+    notes.push(match options.poll_ms {
+        Some(ms) => format!("поток захвата ждёт остановки, просыпаясь раз в {ms} мс"),
+        None => "поток захвата ждёт остановки без пробуждений".to_owned(),
+    });
     let _ = ready.send(Ok(notes));
-    while !stop.load(Ordering::Relaxed) {
-        std::thread::sleep(Duration::from_millis(50));
+    // Кадры приходят в потоках пула системы; этот поток только держит пул и сеанс
+    // живыми до остановки. Без `poll_ms` он спит, пока `VideoCapture::stop` его не
+    // разбудит: периодических пробуждений в процессе захвата не остаётся.
+    while !stop.load(Ordering::Acquire) {
+        match options.poll_ms {
+            Some(ms) => std::thread::sleep(Duration::from_millis(ms)),
+            None => std::thread::park(),
+        }
     }
     let _ = session.Close();
     let _ = pool.Close();
@@ -520,8 +540,10 @@ pub struct VideoCapture {
 
 impl VideoCapture {
     pub fn stop(&mut self) {
-        self.stop.store(true, Ordering::Relaxed);
+        self.stop.store(true, Ordering::Release);
         if let Some(t) = self.thread.take() {
+            // Поток WGC спит без пробуждений: разбудить его после установки флага.
+            t.thread().unpark();
             let _ = t.join();
         }
     }
@@ -532,7 +554,7 @@ pub fn start(
     method: VideoMethod,
     window_id: u64,
     fps: u32,
-    min_interval_hns: Option<i64>,
+    wgc: WgcOptions,
     sink: Arc<VideoSink>,
 ) -> Result<(VideoCapture, Vec<String>), String> {
     let window = WindowHandle(window_id as isize);
@@ -545,7 +567,7 @@ pub fn start(
     let thread = std::thread::Builder::new()
         .name(format!("s5-video-{}", method.name()))
         .spawn(move || match method {
-            VideoMethod::Wgc => run_wgc(window, min_interval_hns, sink, thread_stop, tx),
+            VideoMethod::Wgc => run_wgc(window, wgc, sink, thread_stop, tx),
             VideoMethod::Dxgi => run_dxgi(window, sink, thread_stop, tx),
             VideoMethod::Gdi => run_gdi(window, fps, sink, thread_stop, tx),
         })

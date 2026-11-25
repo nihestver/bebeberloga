@@ -105,7 +105,18 @@ pub fn start_capture(
                 "wgc-limit-59" => Some(10_000_000 / 59),
                 _ => None,
             });
-            match video::start(method, window.id, req.fps, min_interval_hns, sink.clone()) {
+            // Прежнее ожидание остановки в потоке WGC с пробуждением раз в 50 мс —
+            // только для сравнения; без варианта поток спит без пробуждений.
+            let poll_ms = req
+                .variant
+                .split(',')
+                .any(|f| f == "wgc-poll-50")
+                .then_some(50);
+            let wgc = video::WgcOptions {
+                min_interval_hns,
+                poll_ms,
+            };
+            match video::start(method, window.id, req.fps, wgc, sink.clone()) {
                 Ok((capture, notes)) => {
                     info.attempts.push(format!("{}: запущен", method.name()));
                     info.video_method = method.name().to_owned();

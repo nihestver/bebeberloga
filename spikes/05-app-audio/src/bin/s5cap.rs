@@ -98,16 +98,20 @@ enum Cmd {
         short_seconds: u64,
         #[arg(long)]
         out: PathBuf,
-        /// Длительность сценариев `wgc-rate-*`, с.
+        /// Длительность сценариев `wgc-rate-*` и `wgc-wait-*`, с.
         #[arg(long, default_value_t = 120)]
         rate_seconds: u64,
         /// Только эти сценарии, через запятую (по умолчанию — все для этой ОС, кроме
-        /// дополнительных `wgc-rate-*`).
+        /// дополнительных `wgc-rate-*` и `wgc-wait-*`).
         #[arg(long, default_value = "")]
         only: String,
         /// Звуковой хост cpal для тестового источника (Linux: alsa, pulseaudio, pipewire).
         #[arg(long)]
         audio_host: Option<String>,
+        /// Тишина: источник, посторонний процесс и сама программа отдают в звуковой
+        /// поток нули. Только для сценариев без записи звука.
+        #[arg(long)]
+        silent: bool,
     },
     /// Вернуть устройству вывода состояние, сохранённое перед сценарием с выключенным
     /// звуком (нужно, только если прогон был прерван посреди такого сценария).
@@ -621,6 +625,26 @@ fn scenarios(main_s: u64, short_s: u64, rate_s: u64) -> Vec<Scenario> {
             optional: true,
             ..Scenario::new("wgc-rate-limit-59", NoAudio, VideoMode::Wgc, rate_s)
         });
+        // Пропуски кадров WGC ложились на сетку 50 мс, а поток, создавший захват, ждал
+        // остановки, просыпаясь раз в 50 мс. Теперь он спит без пробуждений; вариант
+        // `wgc-poll-50` возвращает прежнее ожидание. Порядок «без пробуждений — 50 мс —
+        // без пробуждений» отделяет действие ожидания от разброса между прогонами.
+        list.push(Scenario {
+            expect_video: "wgc",
+            optional: true,
+            ..Scenario::new("wgc-wait-none-1", NoAudio, VideoMode::Wgc, rate_s)
+        });
+        list.push(Scenario {
+            variant: "wgc-poll-50",
+            expect_video: "wgc",
+            optional: true,
+            ..Scenario::new("wgc-wait-poll-50", NoAudio, VideoMode::Wgc, rate_s)
+        });
+        list.push(Scenario {
+            expect_video: "wgc",
+            optional: true,
+            ..Scenario::new("wgc-wait-none-2", NoAudio, VideoMode::Wgc, rate_s)
+        });
     }
     list
 }
@@ -1081,6 +1105,7 @@ fn cmd_selftest(
     out: PathBuf,
     only: String,
     audio_host: Option<String>,
+    silent: bool,
 ) -> Res<()> {
     fs::create_dir_all(&out)?;
     let out = plain_path(fs::canonicalize(&out)?);
@@ -1118,6 +1143,16 @@ fn cmd_selftest(
     if plan.is_empty() {
         return Err("ни один сценарий не выбран: проверьте имена в --only".into());
     }
+    if silent {
+        if let Some(sc) = plan.iter().find(|s| s.audio != AudioMode::None) {
+            return Err(format!(
+                "--silent годится только для сценариев без записи звука, а в `{}` звук пишется",
+                sc.name
+            )
+            .into());
+        }
+        tone::set_silent(true);
+    }
     // Запас для времени жизни источника — щедрый; оценка для человека — по замеру на
     // стенде: около секунды сверх длительности на сценарий и десять секунд на запуск.
     let total: u64 = plan.iter().map(|s| s.seconds + 3).sum::<u64>() + 30;
@@ -1143,6 +1178,9 @@ fn cmd_selftest(
         extra.push("--audio-host".to_owned());
         extra.push(host.clone());
     }
+    if silent {
+        extra.push("--silent".to_owned());
+    }
     let mut launched: Vec<Launched> = Vec::new();
     let mut source_launch = Vec::new();
     let result = (|| -> Res<SelftestReport> {
@@ -1154,10 +1192,13 @@ fn cmd_selftest(
         )?;
         source_launch.push(format!("источник: {}", l.how));
         launched.push(l);
-        let foreign_extra: Vec<String> = audio_host
+        let mut foreign_extra: Vec<String> = audio_host
             .iter()
             .flat_map(|h| ["--audio-host".to_owned(), h.clone()])
             .collect();
+        if silent {
+            foreign_extra.push("--silent".to_owned());
+        }
         let l = platform::launch_source(
             &src_exe,
             "foreign",
@@ -1510,7 +1551,16 @@ fn main() {
             out,
             only,
             audio_host,
-        } => cmd_selftest(seconds, short_seconds, rate_seconds, out, only, audio_host),
+            silent,
+        } => cmd_selftest(
+            seconds,
+            short_seconds,
+            rate_seconds,
+            out,
+            only,
+            audio_host,
+            silent,
+        ),
         Cmd::RestoreOutput { out } => restore_output(&out),
         Cmd::Env => (|| {
             println!("{}", serde_json::to_string_pretty(&platform::env_info())?);

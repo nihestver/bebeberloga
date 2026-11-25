@@ -68,6 +68,11 @@ only scenarios seconds="30": build
 wgc-rate seconds="120": build
     {{ cap }} selftest --only wgc-rate-60,wgc-rate-source-59,wgc-rate-limit-59 --rate-seconds {{ seconds }} --out out/wgc-rate
 
+# Windows: перепроверка недобора кадров WGC без пробуждений потока захвата раз в 50 мс:
+# без пробуждений — прежнее ожидание 50 мс — без пробуждений, по 2 минуты; звук источника выключен
+wgc-wait seconds="120": build
+    {{ cap }} selftest --silent --only wgc-wait-none-1,wgc-wait-poll-50,wgc-wait-none-2 --rate-seconds {{ seconds }} --out out/wgc-wait
+
 # сводка прогона (trial, full или only): без заголовков окон, имён и путей — её и нужно вернуть
 summary run="trial":
     cat out/{{ run }}/selftest.json
