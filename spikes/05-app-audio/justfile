@@ -46,13 +46,14 @@ env: build
 list: build
     {{ cap }} list
 
-# пробный прогон: все сценарии этой ОС, основной — 30 с; около 4 минут на Windows, 2,5 на Linux, 5 на macOS
-trial: build
-    {{ cap }} selftest --seconds 30 --out out/trial
+# пробный прогон: все сценарии этой ОС, основной — 30 с; около 4 минут на Windows, 2,5 на Linux, 5 на macOS.
+# Метка добавляется к имени каталога, чтобы прогоны в разных сеансах не затирали друг друга: just trial x11 → out/trial-x11
+trial tag="": build
+    {{ cap }} selftest --seconds 30 --out out/trial{{ if tag == "" { "" } else { "-" + tag } }}
 
-# полный прогон: основной сценарий 10 минут; около 14 минут на Windows, 14,5 на macOS, 12 на Linux
-selftest: build
-    {{ cap }} selftest --seconds 600 --out out/full
+# полный прогон: основной сценарий 10 минут; около 14 минут на Windows, 14,5 на macOS, 12 на Linux; метка — как у trial
+selftest tag="": build
+    {{ cap }} selftest --seconds 600 --out out/full{{ if tag == "" { "" } else { "-" + tag } }}
 
 # пробный прогон, в котором тестовый источник выводит звук через названный путь (Linux: alsa, pulseaudio, pipewire)
 trial-host host: build
