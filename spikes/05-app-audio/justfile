@@ -59,6 +59,11 @@ selftest tag="": build
 trial-host host: build
     {{ cap }} selftest --seconds 30 --audio-host {{ host }} --out out/trial-{{ host }}
 
+# то же, но только сценарии со звуком, без видео: системное окно выбора источника не появляется,
+# человек у стенда не нужен; около минуты
+audio-host host: build
+    {{ cap }} selftest --seconds 30 --audio-host {{ host }} --only late-child,system-except-self,system-all --out out/audio-{{ host }}
+
 # только перечисленные сценарии: just only main,video-wgc 60
 only scenarios seconds="30": build
     {{ cap }} selftest --seconds {{ seconds }} --only {{ scenarios }} --out out/only
