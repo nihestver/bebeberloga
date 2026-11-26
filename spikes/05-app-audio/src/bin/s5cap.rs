@@ -669,12 +669,20 @@ fn scenarios(main_s: u64, short_s: u64, rate_s: u64) -> Vec<Scenario> {
                 ..Scenario::new(name, NoAudio, mode, third * 3)
             });
         }
-        // Портал ScreenCast в сеансе X11 — запасной путь; показывает системное окно
-        // выбора, поэтому идёт только по имени.
+    } else if cfg!(target_os = "linux") {
+        // Сеанс Wayland, портал. На стенде поток окна шёл 40 к/с при источнике 60 к/с.
+        // Опыт: в запросе формата явно названа наибольшая частота кадров — 60 и 120.
+        // Выбор источника к этому времени запомнен, системное окно не появляется.
         list.push(Scenario {
+            variant: "portal-max-fps",
             expect_video: "portal",
-            optional: true,
-            ..Scenario::new("x11-portal", NoAudio, VideoMode::Portal, short_s)
+            ..Scenario::new("video-portal-max-60", NoAudio, VideoMode::Portal, short_s)
+        });
+        list.push(Scenario {
+            variant: "portal-max-fps",
+            expect_video: "portal",
+            fps: 120,
+            ..Scenario::new("video-portal-max-120", NoAudio, VideoMode::Portal, short_s)
         });
     }
     if cfg!(windows) {
@@ -1338,9 +1346,28 @@ fn cmd_selftest(
         }
         tone::set_silent(true);
     }
+    // Сеанс с системным окном выбора источника (Linux, не X11): источник выбирает человек.
+    let portal_session = cfg!(target_os = "linux") && !platform::x11_session();
+    let video_scenarios = plan.iter().filter(|s| s.video != VideoMode::None).count() as u64;
+    if portal_session && video_scenarios > 0 {
+        // Прошлый выбор мог быть другим окном или всем экраном: прогон начинается с
+        // чистого листа, окно выбора появится один раз — перед первым сценарием с видео.
+        platform::forget_video_choice();
+        eprintln!(
+            "s5cap: перед первым сценарием с видео появится системное окно выбора источника — выберите окно «S5 Source …» (не весь экран); на выбор две минуты"
+        );
+    }
     // Запас для времени жизни источника — щедрый; оценка для человека — по замеру на
     // стенде: около секунды сверх длительности на сценарий и десять секунд на запуск.
-    let total: u64 = plan.iter().map(|s| s.seconds + 3).sum::<u64>() + 30;
+    // В сеансе с окном выбора к запасу добавляется ожидание человека перед каждым
+    // сценарием с видео: первый прогон на стенде источник не дожил до конца.
+    let total: u64 = plan.iter().map(|s| s.seconds + 3).sum::<u64>()
+        + 30
+        + if portal_session {
+            video_scenarios * 150
+        } else {
+            0
+        };
     let estimate: u64 = plan.iter().map(|s| s.seconds + 1).sum::<u64>() + 10;
     eprintln!(
         "s5cap: сценариев {}, ожидаемая длительность около {} с",
@@ -1419,7 +1446,7 @@ fn cmd_selftest(
         let mut list_error = None;
         // В сеансе Wayland списка окон у программы нет (источник — не клиент X-сервера):
         // ждать окно там незачем, хватит одной попытки с запасом на запуск источника.
-        let no_window_list = cfg!(target_os = "linux") && !platform::x11_session();
+        let no_window_list = portal_session;
         let deadline = Instant::now() + Duration::from_secs(if no_window_list { 2 } else { 20 });
         while window.is_none() && Instant::now() < deadline {
             if let Some(reason) = source_failure(&out, &mut launched) {
@@ -1526,7 +1553,13 @@ fn cmd_selftest(
                 video: sc.video,
                 fail: sc.fail.iter().map(|s| (*s).to_owned()).collect(),
                 fps: sc.fps,
-                variant: sc.variant.to_owned(),
+                // В сеансе с окном выбора: без видео сценарий не начинается, а выбор
+                // всего экрана вместо окна — ошибка.
+                variant: if portal_session {
+                    format!("{},video-required,portal-window-only", sc.variant)
+                } else {
+                    sc.variant.to_owned()
+                },
             };
             if sc.compensate != compensate {
                 let _ = fs::write(
@@ -1591,6 +1624,15 @@ fn cmd_selftest(
             if let Some(e) = &error {
                 checks.push(check("захват запущен", Some(false), e.clone()));
             }
+            // Источник не выбран или выбран не тот: остальные сценарии с видео дадут то же.
+            let stop_run = portal_session && error.is_some() && sc.video != VideoMode::None;
+            if stop_run {
+                eprintln!(
+                    "s5cap: прогон остановлен на сценарии {}: {}",
+                    sc.name,
+                    error.as_deref().unwrap_or_default()
+                );
+            }
             results.push(ScenarioResult {
                 name: sc.name.to_owned(),
                 audio: sc.audio,
@@ -1608,6 +1650,9 @@ fn cmd_selftest(
             {
                 let child_pid = read_pid(&out.join("source-child.json"), "pid");
                 mapping = Some(build_mapping(parent_pid, child_pid, foreign_pid));
+            }
+            if stop_run {
+                break;
             }
         }
         if mapping.is_none() {

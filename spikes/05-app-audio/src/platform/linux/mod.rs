@@ -53,7 +53,7 @@ pub fn env_info() -> EnvInfo {
 /// Звук: дерево процессов → линковка узлов этих процессов; система без собственного
 /// процесса → линковка всех узлов, кроме своих; вся система → monitor устройства вывода.
 /// Видео: в сеансе Wayland — портал ScreenCast; в сеансе X11 — окно через Composite,
-/// затем весь экран, и только потом портал. Если видео запрошено как `auto` и ни один
+/// затем весь экран; портал в сеансе X11 не используется (ADR-0034). Если видео запрошено как `auto` и ни один
 /// метод не сработал, запись звука продолжается без видео.
 pub fn start_capture(
     req: &CaptureRequest,
@@ -78,11 +78,10 @@ pub fn start_capture(
     if let Some(sink) = video {
         let chain: Vec<VideoMode> = match req.video {
             VideoMode::None => Vec::new(),
-            VideoMode::Auto if x11_session() => vec![
-                VideoMode::X11Composite,
-                VideoMode::X11Screen,
-                VideoMode::Portal,
-            ],
+            // В сеансе X11 — только свой захват: портал там не используется (ADR-0034).
+            VideoMode::Auto if x11_session() => {
+                vec![VideoMode::X11Composite, VideoMode::X11Screen]
+            }
             VideoMode::Auto => vec![VideoMode::Portal],
             mode @ (VideoMode::Portal | VideoMode::X11Composite | VideoMode::X11Screen) => {
                 vec![mode]
@@ -97,32 +96,38 @@ pub fn start_capture(
                 info.attempts.push(format!("{name}: отказ сымитирован"));
                 continue;
             }
-            let started: Result<Box<dyn FnOnce() + Send>, String> =
-                match method {
-                    VideoMode::Portal => portal_video::start(req.fps, sink.clone(), notes.clone())
-                        .map(|mut capture| {
-                            Box::new(move || capture.stop()) as Box<dyn FnOnce() + Send>
-                        }),
-                    _ => {
-                        let x11 = if method == VideoMode::X11Composite {
-                            X11Method::Composite
-                        } else {
-                            X11Method::Screen
-                        };
-                        match req.window.as_ref() {
-                            None => Err("для захвата X11 нужно окно".to_owned()),
-                            Some(window) => {
-                                x11_video::start(x11, window, req.fps, sink.clone(), notes.clone())
-                                    .map(|(stop, start_notes)| {
-                                        info.notes.extend(
-                                            start_notes.into_iter().map(|n| format!("{name}: {n}")),
-                                        );
-                                        stop
-                                    })
-                            }
+            let started: Result<Box<dyn FnOnce() + Send>, String> = match method {
+                VideoMode::Portal => portal_video::start(
+                    req.fps,
+                    portal_video::PortalOptions {
+                        window_only: req.variant.contains("portal-window-only"),
+                        max_framerate: req.variant.contains("portal-max-fps"),
+                    },
+                    sink.clone(),
+                    notes.clone(),
+                )
+                .map(|mut capture| Box::new(move || capture.stop()) as Box<dyn FnOnce() + Send>),
+                _ => {
+                    let x11 = if method == VideoMode::X11Composite {
+                        X11Method::Composite
+                    } else {
+                        X11Method::Screen
+                    };
+                    match req.window.as_ref() {
+                        None => Err("для захвата X11 нужно окно".to_owned()),
+                        Some(window) => {
+                            x11_video::start(x11, window, req.fps, sink.clone(), notes.clone()).map(
+                                |(stop, start_notes)| {
+                                    info.notes.extend(
+                                        start_notes.into_iter().map(|n| format!("{name}: {n}")),
+                                    );
+                                    stop
+                                },
+                            )
                         }
                     }
-                };
+                }
+            };
             match started {
                 Ok(stop) => {
                     info.video_method = name.to_owned();
@@ -133,9 +138,13 @@ pub fn start_capture(
                 Err(e) => info.attempts.push(format!("{name}: {e}")),
             }
         }
+        // Вариант `video-required`: без видео запись не начинается и при методе `auto`
+        // (самотест не тратит десять минут на запись без картинки).
         if video_stop.is_none()
             && req.video != VideoMode::None
-            && (req.video != VideoMode::Auto || audio_method.is_none())
+            && (req.video != VideoMode::Auto
+                || audio_method.is_none()
+                || req.variant.contains("video-required"))
         {
             return Err(format!("видео не захвачено: {}", info.attempts.join("; ")).into());
         }
@@ -185,6 +194,11 @@ pub fn launch_source(exe: &Path, _role: &str, _out: &Path, args: &[String]) -> R
         child: Some(child),
         how: "потомок программы захвата".to_owned(),
     })
+}
+
+/// Забыть выбор источника, запомненный порталом для этой программы.
+pub fn forget_video_choice() {
+    portal_video::forget_choice();
 }
 
 /// Подготовка процесса: на этой ОС ничего не требуется.

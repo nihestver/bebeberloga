@@ -56,6 +56,11 @@ fn token_file() -> PathBuf {
     dir.join("s5-portal-restore-token")
 }
 
+/// Забыть сохранённый выбор источника: следующий запуск снова покажет системное окно.
+pub fn forget_choice() {
+    let _ = std::fs::remove_file(token_file());
+}
+
 /// Попросить систему не гасить экран, пока жив возвращённый поток.
 ///
 /// Запрет держится, пока открыто соединение с порталом, поэтому поток спит до флага.
@@ -144,7 +149,10 @@ struct PortalStream {
 }
 
 /// Переговоры с порталом: выбор источника и доступ к PipeWire.
-fn open_portal(notes: &Arc<Mutex<Vec<String>>>) -> Res<(PortalStream, Box<dyn FnOnce() + Send>)> {
+fn open_portal(
+    notes: &Arc<Mutex<Vec<String>>>,
+    window_only: bool,
+) -> Res<(PortalStream, Box<dyn FnOnce() + Send>)> {
     let saved = std::fs::read_to_string(token_file()).ok();
     let saved = saved.as_deref().map(str::trim).filter(|t| !t.is_empty());
     let started = Instant::now();
@@ -228,10 +236,20 @@ fn open_portal(notes: &Arc<Mutex<Vec<String>>>) -> Res<(PortalStream, Box<dyn Fn
                 .to_owned(),
         );
     }
-    let closer = Box::new(move || {
+    let closer: Box<dyn FnOnce() + Send> = Box::new(move || {
         let _ = block_on(session.close());
         drop(proxy);
     });
+    if window_only && source != "окно" {
+        // Самотест меряет яркость в окне источника: с монитором прогон не имеет смысла.
+        // Выбор забываем, чтобы следующий запуск снова показал системное окно.
+        closer();
+        forget_choice();
+        return Err(format!(
+            "в системном окне выбран не окно тестового источника, а {source}; выбор забыт — повторите прогон и выберите окно «S5 Source …»"
+        )
+        .into());
+    }
     Ok((
         PortalStream {
             node_id: stream.pipe_wire_node_id(),
@@ -253,6 +271,71 @@ struct VideoFormat {
     bgr: bool,
     /// Байт на пиксель: 4 или 3.
     bytes_per_pixel: usize,
+    /// Последняя область окна внутри кадра (x, y, ширина, высота), если источник её сообщил.
+    crop: Option<(i32, i32, u32, u32)>,
+    /// Сколько раз область окна менялась.
+    crop_changes: u32,
+    /// Разовая диагностика «где в кадре есть картинка» уже записана.
+    probed: bool,
+}
+
+/// Параметр «приложить к кадрам метаданные такого вида и размера».
+fn meta_param(kind: u32, size: usize) -> Res<Vec<u8>> {
+    serialize(spa::pod::Object {
+        type_: spa::utils::SpaTypes::ObjectParamMeta.as_raw(),
+        id: spa::param::ParamType::Meta.as_raw(),
+        properties: vec![
+            spa::pod::Property {
+                key: spa::sys::SPA_PARAM_META_type,
+                flags: spa::pod::PropertyFlags::empty(),
+                value: spa::pod::Value::Id(spa::utils::Id(kind)),
+            },
+            spa::pod::Property {
+                key: spa::sys::SPA_PARAM_META_size,
+                flags: spa::pod::PropertyFlags::empty(),
+                value: spa::pod::Value::Int(size as i32),
+            },
+        ],
+    })
+}
+
+/// Яркость точки кадра или −1, если точка вне данных.
+fn luma_at(bytes: &[u8], stride: usize, bpp: usize, bgr: bool, x: usize, y: usize) -> i32 {
+    let Some(at) = y
+        .checked_mul(stride)
+        .and_then(|row| row.checked_add(x * bpp))
+    else {
+        return -1;
+    };
+    match bytes.get(at..at + bpp) {
+        Some(px) if bgr => luma_bgra(px),
+        Some(px) => luma_rgba(px),
+        None => -1,
+    }
+}
+
+/// Где в кадре есть картинка: границы точек редкой сетки 32×18, которые не чёрные.
+fn lit_bounds(
+    bytes: &[u8],
+    stride: usize,
+    bpp: usize,
+    bgr: bool,
+    w: usize,
+    h: usize,
+) -> Option<(usize, usize, usize, usize)> {
+    let mut bounds: Option<(usize, usize, usize, usize)> = None;
+    for row in 0..18 {
+        for col in 0..32 {
+            let (x, y) = ((col * 2 + 1) * w / 64, (row * 2 + 1) * h / 36);
+            if luma_at(bytes, stride, bpp, bgr, x, y) > 8 {
+                bounds = Some(match bounds {
+                    None => (x, y, x, y),
+                    Some((x0, y0, x1, y1)) => (x0.min(x), y0.min(y), x1.max(x), y1.max(y)),
+                });
+            }
+        }
+    }
+    bounds
 }
 
 fn serialize(object: spa::pod::Object) -> Res<Vec<u8>> {
@@ -268,6 +351,7 @@ fn serialize(object: spa::pod::Object) -> Res<Vec<u8>> {
 /// Поток PipeWire: чтение кадров узла, выданного порталом.
 fn video_thread(
     fps: u32,
+    options: PortalOptions,
     sink: Arc<VideoSink>,
     stop: Arc<AtomicBool>,
     ready: Sender<Result<(), String>>,
@@ -299,7 +383,12 @@ fn video_thread(
                 )
             }
             None => {
-                let (portal, close) = open_portal(&notes)?;
+                let (portal, close) = open_portal(&notes, options.window_only)?;
+                if stop.load(Ordering::Relaxed) {
+                    // Ожидание выбора уже прервано по времени: захват не начинаем.
+                    close();
+                    return Ok(());
+                }
                 let method = if portal.restored {
                     "portal(restored)"
                 } else {
@@ -327,9 +416,15 @@ fn video_thread(
     let frames = Arc::new(AtomicU64::new(0));
     let with_pts = Arc::new(AtomicU64::new(0));
     let without_pixels = Arc::new(AtomicU64::new(0));
-    let (count, count_pts, count_blind) =
-        (frames.clone(), with_pts.clone(), without_pixels.clone());
+    let with_crop = Arc::new(AtomicU64::new(0));
+    let (count, count_pts, count_blind, count_crop) = (
+        frames.clone(),
+        with_pts.clone(),
+        without_pixels.clone(),
+        with_crop.clone(),
+    );
     let format_notes = notes.clone();
+    let crop_notes = notes.clone();
     let state_notes = notes.clone();
     let _listener = stream
         .add_local_listener_with_user_data(VideoFormat::default())
@@ -363,28 +458,22 @@ fn video_thread(
                 spa::param::video::VideoFormat::RGB | spa::param::video::VideoFormat::BGR => 3,
                 _ => 4,
             };
-            // Просим источник прикладывать к кадрам заголовок с меткой времени.
-            let meta = spa::pod::Object {
-                type_: spa::utils::SpaTypes::ObjectParamMeta.as_raw(),
-                id: spa::param::ParamType::Meta.as_raw(),
-                properties: vec![
-                    spa::pod::Property {
-                        key: spa::sys::SPA_PARAM_META_type,
-                        flags: spa::pod::PropertyFlags::empty(),
-                        value: spa::pod::Value::Id(spa::utils::Id(spa::sys::SPA_META_Header)),
-                    },
-                    spa::pod::Property {
-                        key: spa::sys::SPA_PARAM_META_size,
-                        flags: spa::pod::PropertyFlags::empty(),
-                        value: spa::pod::Value::Int(
-                            std::mem::size_of::<spa::sys::spa_meta_header>() as i32,
-                        ),
-                    },
-                ],
-            };
-            if let Ok(bytes) = serialize(meta) {
-                if let Some(pod) = spa::pod::Pod::from_bytes(&bytes) {
-                    let _ = stream.update_params(&mut [pod]);
+            // Просим источник прикладывать к кадрам заголовок с меткой времени и область
+            // окна: поток окна может идти в кадре размером с экран, где окно занимает часть.
+            let header = meta_param(
+                spa::sys::SPA_META_Header,
+                std::mem::size_of::<spa::sys::spa_meta_header>(),
+            );
+            let crop = meta_param(
+                spa::sys::SPA_META_VideoCrop,
+                std::mem::size_of::<spa::sys::spa_meta_region>(),
+            );
+            if let (Ok(header), Ok(crop)) = (header, crop) {
+                if let (Some(header), Some(crop)) = (
+                    spa::pod::Pod::from_bytes(&header),
+                    spa::pod::Pod::from_bytes(&crop),
+                ) {
+                    let _ = stream.update_params(&mut [header, crop]);
                 }
             }
             if let Ok(mut n) = format_notes.lock() {
@@ -415,22 +504,76 @@ fn video_thread(
                 }
                 None => arrival,
             };
+            // Область окна внутри кадра, если источник её сообщил.
+            let crop = buffer
+                .find_meta::<spa::buffer::meta::MetaVideoCrop>()
+                .map(|c| c.meta_region())
+                .filter(|r| r.is_valid())
+                .map(|r| {
+                    (
+                        r.position().x,
+                        r.position().y,
+                        r.size().width,
+                        r.size().height,
+                    )
+                });
+            if crop.is_some() {
+                count_crop.fetch_add(1, Ordering::Relaxed);
+            }
+            if crop != format.crop {
+                format.crop_changes += 1;
+                // Первые изменения — в замечания; дальше только счёт (окно могут двигать).
+                if format.crop_changes <= 4 {
+                    if let Ok(mut n) = crop_notes.lock() {
+                        n.push(match crop {
+                            Some((x, y, w, h)) => format!(
+                                "область окна в кадре {}×{}: {w}×{h} от точки ({x}, {y})",
+                                format.width, format.height
+                            ),
+                            None => "источник перестал сообщать область окна".to_owned(),
+                        });
+                    }
+                }
+                format.crop = crop;
+            }
+            let (frame_w, frame_h) = (format.width as usize, format.height as usize);
+            // Контрольная точка — центр области окна, а без неё — центр кадра.
+            let (px, py, mark_w, mark_h) = match crop {
+                Some((x, y, w, h)) => (
+                    (x.max(0) as usize + w as usize / 2).min(frame_w.saturating_sub(1)),
+                    (y.max(0) as usize + h as usize / 2).min(frame_h.saturating_sub(1)),
+                    w,
+                    h,
+                ),
+                None => (frame_w / 2, frame_h / 2, format.width, format.height),
+            };
             let mut luma = -1;
             if let Some(data) = buffer.datas_mut().first_mut() {
                 let stride = data.chunk().stride().max(0) as usize;
-                let (w, h) = (format.width as usize, format.height as usize);
                 let (bgr, bpp) = (format.bgr, format.bytes_per_pixel.max(3));
                 if let Some(bytes) = data.data() {
-                    let at = (h / 2) * stride + (w / 2) * bpp;
-                    if let Some(px) = bytes.get(at..at + bpp) {
-                        luma = if bgr { luma_bgra(px) } else { luma_rgba(px) };
+                    luma = luma_at(bytes, stride, bpp, bgr, px, py);
+                    if !format.probed {
+                        format.probed = true;
+                        let lit = lit_bounds(bytes, stride, bpp, bgr, frame_w, frame_h);
+                        if let Ok(mut n) = crop_notes.lock() {
+                            n.push(match lit {
+                                Some((x0, y0, x1, y1)) => format!(
+                                    "первый кадр {frame_w}×{frame_h}: не чёрные точки сетки лежат от ({x0}, {y0}) до ({x1}, {y1}); контрольная точка — ({px}, {py}); область окна от источника: {}",
+                                    if crop.is_some() { "есть" } else { "нет" }
+                                ),
+                                None => format!(
+                                    "первый кадр {frame_w}×{frame_h}: все точки сетки чёрные; контрольная точка — ({px}, {py})"
+                                ),
+                            });
+                        }
                     }
                 }
             }
             if luma < 0 {
                 count_blind.fetch_add(1, Ordering::Relaxed);
             }
-            sink.frame(t_ns, format.width, format.height, luma, method);
+            sink.frame(t_ns, mark_w, mark_h, luma, method);
             count.fetch_add(1, Ordering::Relaxed);
         })
         .register()?;
@@ -492,6 +635,31 @@ fn video_thread(
             spa::utils::Fraction { num: 240, denom: 1 }
         ),
     );
+    let mut object = object;
+    if options.max_framerate {
+        // Опыт: явно назвать наибольшую частоту кадров. Без этого свойства источник
+        // берёт свою; на стенде поток окна шёл 40 к/с при источнике 60 к/с.
+        object.properties.push(spa::pod::property!(
+            spa::param::format::FormatProperties::VideoMaxFramerate,
+            Choice,
+            Range,
+            Fraction,
+            spa::utils::Fraction {
+                num: fps.max(1),
+                denom: 1
+            },
+            spa::utils::Fraction { num: 1, denom: 1 },
+            spa::utils::Fraction {
+                num: fps.max(1),
+                denom: 1
+            }
+        ));
+        if let Ok(mut n) = notes.lock() {
+            n.push(format!(
+                "в запросе формата названа наибольшая частота кадров {fps}/1"
+            ));
+        }
+    }
     let format_bytes = serialize(object)?;
     let format_pod =
         spa::pod::Pod::from_bytes(&format_bytes).ok_or("параметр формата не разобран")?;
@@ -536,9 +704,10 @@ fn video_thread(
     let _ = stream.disconnect();
     if let Ok(mut n) = notes.lock() {
         n.push(format!(
-            "источник видео — {described}; кадров {}, из них с меткой времени от источника {}, без доступа к пикселям {}",
+            "источник видео — {described}; кадров {}, из них с меткой времени от источника {}, с областью окна {}, без доступа к пикселям {}",
             frames.load(Ordering::Relaxed),
             with_pts.load(Ordering::Relaxed),
+            with_crop.load(Ordering::Relaxed),
             without_pixels.load(Ordering::Relaxed)
         ));
     }
@@ -564,8 +733,18 @@ impl VideoCapture {
 }
 
 /// Запустить захват. Ждёт, пока пользователь выберет источник в системном окне (до 2 минут).
+/// Особенности запуска захвата через портал.
+#[derive(Clone, Copy, Default)]
+pub struct PortalOptions {
+    /// Принимать только окно: выбор монитора — ошибка (самотест меряет яркость в окне).
+    pub window_only: bool,
+    /// Назвать в запросе формата наибольшую частоту кадров, равную запрошенной.
+    pub max_framerate: bool,
+}
+
 pub fn start(
     fps: u32,
+    options: PortalOptions,
     sink: Arc<VideoSink>,
     notes: Arc<Mutex<Vec<String>>>,
 ) -> Result<VideoCapture, String> {
@@ -576,7 +755,7 @@ pub fn start(
         .name("s5-video-portal".to_owned())
         .spawn(move || {
             let fallback = tx.clone();
-            if let Err(e) = video_thread(fps, sink, thread_stop, tx, notes) {
+            if let Err(e) = video_thread(fps, options, sink, thread_stop, tx, notes) {
                 let _ = fallback.send(Err(e.to_string()));
             }
         })
