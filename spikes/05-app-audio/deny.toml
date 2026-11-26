@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 Bebeberloga contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# cargo deny для спайка: лицензии — подмножество разрешённых в LICENSING.md, встречающееся
+# в графе зависимостей; уязвимости из advisory-db. Граф проверяется для трёх ОС спайка.
+
+[graph]
+all-features = false
+targets = [
+  "aarch64-apple-darwin",
+  "x86_64-pc-windows-msvc",
+  "x86_64-unknown-linux-gnu",
+  "aarch64-unknown-linux-gnu",
+]
+
+[advisories]
+version = 2
+ignore = []
+
+[licenses]
+version = 2
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Zlib",
+  "Unlicense",
+  "Unicode-3.0",
+]
+confidence-threshold = 0.9
+# target-lexicon — зависимость времени сборки (скрипты сборки привязок PipeWire), в
+# программу не попадает. Лицензия разрешена решением владельца от 2026-11-24 только
+# для этого крейта (LICENSING.md, «Только инструменты разработки и сборки»).
+exceptions = [
+  { allow = ["Apache-2.0 WITH LLVM-exception"], crate = "target-lexicon" },
+]
+
+[bans]
+multiple-versions = "allow"
+wildcards = "allow"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

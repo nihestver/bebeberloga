@@ -26,3 +26,6 @@ coverage/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
+
+# файлы из чатов Claude (claude.ai), не часть проекта
+/Claude outputs/
