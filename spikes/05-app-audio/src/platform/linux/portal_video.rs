@@ -314,6 +314,35 @@ fn luma_at(bytes: &[u8], stride: usize, bpp: usize, bgr: bool, x: usize, y: usiz
     }
 }
 
+/// Первая и последняя не чёрная точка вдоль линии.
+type Span = Option<(usize, usize)>;
+
+/// Границы картинки по строке и по столбцу контрольной точки, с точностью до пикселя:
+/// (первый и последний не чёрный x в строке `py`, первый и последний не чёрный y в столбце `px`).
+#[allow(clippy::too_many_arguments)]
+fn lit_extent(
+    bytes: &[u8],
+    stride: usize,
+    bpp: usize,
+    bgr: bool,
+    w: usize,
+    h: usize,
+    px: usize,
+    py: usize,
+) -> (Span, Span) {
+    let span = |points: &mut dyn Iterator<Item = (usize, i32)>| {
+        points
+            .filter(|(_, luma)| *luma > 8)
+            .fold(None, |acc: Span, (at, _)| match acc {
+                None => Some((at, at)),
+                Some((first, _)) => Some((first, at)),
+            })
+    };
+    let row = span(&mut (0..w).map(|x| (x, luma_at(bytes, stride, bpp, bgr, x, py))));
+    let column = span(&mut (0..h).map(|y| (y, luma_at(bytes, stride, bpp, bgr, px, y))));
+    (row, column)
+}
+
 /// Где в кадре есть картинка: границы точек редкой сетки 32×18, которые не чёрные.
 fn lit_bounds(
     bytes: &[u8],
@@ -478,12 +507,14 @@ fn video_thread(
             }
             if let Ok(mut n) = format_notes.lock() {
                 n.push(format!(
-                    "формат видео: {:?}, {}×{}, частота {}/{}",
+                    "формат видео: {:?}, {}×{}, частота {}/{}, наибольшая частота {}/{}",
                     info.format(),
                     format.width,
                     format.height,
                     info.framerate().num,
-                    info.framerate().denom
+                    info.framerate().denom,
+                    info.max_framerate().num,
+                    info.max_framerate().denom
                 ));
             }
         })
@@ -556,7 +587,19 @@ fn video_thread(
                     if !format.probed {
                         format.probed = true;
                         let lit = lit_bounds(bytes, stride, bpp, bgr, frame_w, frame_h);
+                        let (row, column) =
+                            lit_extent(bytes, stride, bpp, bgr, frame_w, frame_h, px, py);
                         if let Ok(mut n) = crop_notes.lock() {
+                            // Точный размер картинки окна в кадре — для сравнения с областью
+                            // окна, которую сообщил источник.
+                            n.push(format!(
+                                "первый кадр: по строке контрольной точки картинка занимает x {}, по её столбцу — y {}",
+                                row.map(|(a, b)| format!("от {a} до {b}"))
+                                    .unwrap_or_else(|| "— нет".to_owned()),
+                                column
+                                    .map(|(a, b)| format!("от {a} до {b}"))
+                                    .unwrap_or_else(|| "— нет".to_owned()),
+                            ));
                             n.push(match lit {
                                 Some((x0, y0, x1, y1)) => format!(
                                     "первый кадр {frame_w}×{frame_h}: не чёрные точки сетки лежат от ({x0}, {y0}) до ({x1}, {y1}); контрольная точка — ({px}, {py}); область окна от источника: {}",

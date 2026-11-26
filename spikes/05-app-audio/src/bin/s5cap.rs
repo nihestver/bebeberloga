@@ -670,20 +670,31 @@ fn scenarios(main_s: u64, short_s: u64, rate_s: u64) -> Vec<Scenario> {
             });
         }
     } else if cfg!(target_os = "linux") {
-        // Сеанс Wayland, портал. На стенде поток окна шёл 40 к/с при источнике 60 к/с.
-        // Опыт: в запросе формата явно названа наибольшая частота кадров — 60 и 120.
-        // Выбор источника к этому времени запомнен, системное окно не появляется.
-        list.push(Scenario {
-            variant: "portal-max-fps",
-            expect_video: "portal",
-            ..Scenario::new("video-portal-max-60", NoAudio, VideoMode::Portal, short_s)
-        });
+        // Сеанс Wayland, портал. На стенде поток окна шёл 40 к/с при источнике 60 к/с и
+        // все кадры при 30 к/с. Выбор источника к этому времени запомнен, системное
+        // окно не появляется.
+        // Опыт 1: в запросе формата явно названа наибольшая частота кадров 120 (60 и 120
+        // в пробном прогоне ничего не изменили; о какой частоте договорились, теперь
+        // видно в замечании «формат видео»).
         list.push(Scenario {
             variant: "portal-max-fps",
             expect_video: "portal",
             fps: 120,
             ..Scenario::new("video-portal-max-120", NoAudio, VideoMode::Portal, short_s)
         });
+        // Опыт 2: источник рисует чуть реже экрана (59 к/с) и заметно реже (50 к/с).
+        // Если захват пропускает кадр, пришедший раньше периода 60 к/с после прошлого,
+        // здесь кадры дойдут почти все; если на кадр уходит больше периода — нет.
+        for (name, source_fps) in [
+            ("video-portal-source-59", 59),
+            ("video-portal-source-50", 50),
+        ] {
+            list.push(Scenario {
+                source_fps,
+                expect_video: "portal",
+                ..Scenario::new(name, NoAudio, VideoMode::Portal, short_s)
+            });
+        }
     }
     if cfg!(windows) {
         // Отказ process loopback: по цепочке должен сработать режим «система без своего процесса».
