@@ -226,7 +226,7 @@ Tauri легче и ближе к FOSS-духу, но на Linux использ�
 | --- | --- | --- |
 | Windows | Windows Graphics Capture (окно/монитор) → DXGI Desktop Duplication (монитор) → GDI BitBlt (крайний случай) | Кадры остаются на GPU (D3D11-текстура → энкодер, zero-copy); захват и энкодер на одном адаптере (важно для ноутбуков с двумя GPU); захват игр через DLL-инъекцию — после 1.0 из-за риска с античитами |
 | macOS | ScreenCaptureKit: окно, приложение, дисплей | IOSurface → VideoToolbox без копий; на 14+ системный пикер, на 13 — собственный |
-| Linux | Сеанс Wayland: xdg-desktop-portal ScreenCast → PipeWire. Сеанс X11: XComposite/XShm, запасной путь — портал ScreenCast (ADR-0034) | DMA-BUF → VAAPI/NVENC без копий, где драйвер позволяет |
+| Linux | Сеанс Wayland: xdg-desktop-portal ScreenCast → PipeWire. Сеанс X11: только XComposite/XShm, портал не используется; если захват не работает, стрим окна недоступен, и пользователь видит сообщение (ADR-0034) | DMA-BUF → VAAPI/NVENC без копий, где драйвер позволяет |
 
 **Захват звука: процесс и все его дочерние процессы**
 
