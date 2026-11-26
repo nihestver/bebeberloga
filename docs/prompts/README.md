@@ -84,7 +84,7 @@ flowchart LR
 | S2 | Спайк: E2EE звонка в LiveKit | [`S2-livekit-e2ee.md`](S2-livekit-e2ee.md) | 0 | S1 | не начат |
 | S3 | Спайк: захват в Electron | [`S3-electron-capture.md`](S3-electron-capture.md) | 0 | — | готово (PR #23) |
 | S4 | Спайк: MLS Delivery Service | [`S4-mls-ds.md`](S4-mls-ds.md) | 0 | — | готово (PR #11) |
-| S5 | Спайк: звук приложения | [`S5-app-audio.md`](S5-app-audio.md) | 0 | — | не начат |
+| S5 | Спайк: звук приложения | [`S5-app-audio.md`](S5-app-audio.md) | 0 | — | готово (PR #63) |
 | S6 | Спайк: E2EE-стрим 1080p60 | [`S6-e2ee-stream.md`](S6-e2ee-stream.md) | 0 | S2, S3, S5 | не начат |
 | B1 | Протокол: Protobuf, gateway, REST | [`B01-protocol.md`](B01-protocol.md) | 0 | A1–A5 | готово (PR #3, #6) |
 | B2 | Криптографический дизайн | [`B02-crypto-design.md`](B02-crypto-design.md) | 0 | B1 (S1, S4 желательно) | готово (PR #12) |

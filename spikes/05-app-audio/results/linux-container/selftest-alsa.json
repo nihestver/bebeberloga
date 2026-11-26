@@ -1,0 +1,684 @@
+{
+  "env": {
+    "os": "Linux",
+    "os_version": "Debian GNU/Linux 13 (trixie)",
+    "arch": "aarch64",
+    "session": "",
+    "details": [
+      ["ядро", "7.0.14-linuxkit"],
+      ["PipeWire", "Compiled with libpipewire 1.4.2"],
+      ["WirePlumber", "Compiled with libwireplumber 0.5.8"],
+      ["сервер PipeWire", "1.4.2"]
+    ]
+  },
+  "source_launch": [
+    "источник: потомок программы захвата",
+    "посторонний процесс: потомок программы захвата"
+  ],
+  "source_audio": {
+    "audio_host": "ALSA",
+    "channels": 2,
+    "child_pid": null,
+    "pid": 41,
+    "role": "parent",
+    "sample_format": "f32",
+    "sample_rate": 48000,
+    "title": "S5 Source 39"
+  },
+  "window": {
+    "found": true,
+    "pid_matches_source": true,
+    "width": 640,
+    "height": 360,
+    "scale": 0.0,
+    "icon": [48, 48],
+    "notes": [],
+    "windows_total": 1
+  },
+  "mapping": {
+    "tree": [
+      {
+        "pid": 41,
+        "ppid": 39,
+        "name": "s5src",
+        "depth": 0
+      },
+      {
+        "pid": 58,
+        "ppid": 41,
+        "name": "s5src",
+        "depth": 1
+      }
+    ],
+    "child_in_tree": true,
+    "foreign_outside_tree": true,
+    "nodes_in_tree": [
+      {
+        "pid": 41,
+        "node_id": 49,
+        "kind": "Stream/Output/Audio",
+        "active": true,
+        "extra": [
+          ["media.class", "Stream/Output/Audio"],
+          ["application.process.id", "нет"],
+          ["pipewire.sec.pid клиента", "41"]
+        ]
+      },
+      {
+        "pid": 58,
+        "node_id": 74,
+        "kind": "Stream/Output/Audio",
+        "active": true,
+        "extra": [
+          ["media.class", "Stream/Output/Audio"],
+          ["application.process.id", "нет"],
+          ["pipewire.sec.pid клиента", "58"]
+        ]
+      }
+    ],
+    "foreign_has_node": true,
+    "nodes_total": 6,
+    "error": null
+  },
+  "own_tone": "играет: 48000 Гц, каналов 2, f32",
+  "scenarios": [
+    {
+      "name": "late-child",
+      "audio": "app",
+      "video": "none",
+      "seconds": 14,
+      "error": null,
+      "start": {
+        "audio_method": "pipewire: линковка узлов дерева процессов",
+        "video_method": "",
+        "attempts": ["pipewire: узел захвата создан"],
+        "notes": [
+          "узел 49 процесса 41 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 1)",
+          "формат узла захвата: 48000 Гц, каналов 2, AudioFormat::F32LE",
+          "первая метка: задержка по данным PipeWire 0 мкс, от начала цикла до обработки 727 мкс",
+          "узел 74 процесса 58 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 2)"
+        ]
+      },
+      "analysis": {
+        "audio": {
+          "frames": 673280,
+          "duration_s": 14.027,
+          "span_s": 14.027,
+          "clock_diff_ppm": 0.0,
+          "buffers": 1315,
+          "buffer_frames_min": 512,
+          "buffer_frames_median": 512,
+          "buffer_frames_max": 512,
+          "timeline_gaps": 0,
+          "timeline_gap_total_ms": 0.0,
+          "timeline_overlaps": 0,
+          "timestamp_jitter_ms": {
+            "n": 1314,
+            "mean": -0.0,
+            "median": -0.0,
+            "min": -0.0,
+            "max": -0.0,
+            "std": 0.0,
+            "p95": -0.0,
+            "p95_abs": 0.0,
+            "max_abs": 0.0
+          },
+          "os_discontinuities": 0,
+          "os_silent_buffers": 0,
+          "timestamp_fallbacks": 0,
+          "delivery_ms": {
+            "n": 1315,
+            "mean": -8.862,
+            "median": -8.542,
+            "min": -10.517,
+            "max": -7.334,
+            "std": 0.713,
+            "p95": -8.023,
+            "p95_abs": 10.178,
+            "max_abs": 10.517
+          },
+          "tones": {
+            "parent": 0.02,
+            "child": 0.02,
+            "foreign": 0.0,
+            "own": 0.0
+          },
+          "dropout_windows": 0,
+          "phase_jumps": 0,
+          "phase_jump_max_deg": 0.157,
+          "phase_drift_deg_per_window": 0.0,
+          "windows_analyzed": 133,
+          "clicks": 14,
+          "child_onset_s": 5.1
+        },
+        "video": null,
+        "sync": null,
+        "frame_loss": null
+      },
+      "checks": [
+        {
+          "name": "тон главного процесса (440 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 при номинале 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон постороннего процесса (1320 Гц)",
+          "pass": true,
+          "detail": "уровень 0.00000 при номинале 0.020; не должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон программы захвата (2000 Гц)",
+          "pass": true,
+          "detail": "уровень 0.00000 при номинале 0.020; не должен быть",
+          "observation": false
+        },
+        {
+          "name": "звук процесса, запущенного во время записи",
+          "pass": true,
+          "detail": "процесс запущен на 5-й секунде; тон 880 Гц появился: на 5.1 с",
+          "observation": false
+        },
+        {
+          "name": "шкала времени звука без разрывов",
+          "pass": true,
+          "detail": "разрывов вперёд 0, назад 0, флагов разрыва от ОС 0, суммарно 0 мс",
+          "observation": false
+        },
+        {
+          "name": "сэмплы без потерь (фаза тона 440 Гц)",
+          "pass": true,
+          "detail": "скачков фазы 0, наибольший 0.157°, окон с провалом 0 из 133",
+          "observation": false
+        },
+        {
+          "name": "длительность записи",
+          "pass": true,
+          "detail": "записано 14.027 с при запросе 14 с; по меткам ОС 14.027 с",
+          "observation": false
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "audio": "app",
+      "video": "auto",
+      "seconds": 20,
+      "error": null,
+      "start": {
+        "audio_method": "pipewire: линковка узлов дерева процессов",
+        "video_method": "",
+        "attempts": [
+          "pipewire: узел захвата создан",
+          "portal: портал ScreenCast: Portal request failed: org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.portal.Desktop was not provided by any .service files"
+        ],
+        "notes": [
+          "узел 49 процесса 41 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 1)",
+          "узел 74 процесса 58 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 2)",
+          "формат узла захвата: 48000 Гц, каналов 2, AudioFormat::F32LE",
+          "первая метка: задержка по данным PipeWire 0 мкс, от начала цикла до обработки 873 мкс"
+        ]
+      },
+      "analysis": {
+        "audio": {
+          "frames": 948224,
+          "duration_s": 19.755,
+          "span_s": 20.096,
+          "clock_diff_ppm": -16985.0,
+          "buffers": 1852,
+          "buffer_frames_min": 512,
+          "buffer_frames_median": 512,
+          "buffer_frames_max": 512,
+          "timeline_gaps": 11,
+          "timeline_gap_total_ms": 352.0,
+          "timeline_overlaps": 1,
+          "timestamp_jitter_ms": {
+            "n": 1839,
+            "mean": -0.0,
+            "median": -0.0,
+            "min": -0.0,
+            "max": -0.0,
+            "std": 0.0,
+            "p95": -0.0,
+            "p95_abs": 0.0,
+            "max_abs": 0.0
+          },
+          "os_discontinuities": 0,
+          "os_silent_buffers": 0,
+          "timestamp_fallbacks": 0,
+          "delivery_ms": {
+            "n": 1852,
+            "mean": -8.826,
+            "median": -8.605,
+            "min": -10.438,
+            "max": 1.173,
+            "std": 0.987,
+            "p95": -7.982,
+            "p95_abs": 10.127,
+            "max_abs": 10.438
+          },
+          "tones": {
+            "parent": 0.02,
+            "child": 0.02,
+            "foreign": 0.0,
+            "own": 0.0
+          },
+          "dropout_windows": 1,
+          "phase_jumps": 3,
+          "phase_jump_max_deg": 109.182,
+          "phase_drift_deg_per_window": 0.0,
+          "windows_analyzed": 190,
+          "clicks": 20,
+          "child_onset_s": 0.0
+        },
+        "video": {
+          "frames": 0,
+          "span_s": 0.0,
+          "fps": 0.0,
+          "interval_ms": {
+            "n": 0,
+            "mean": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "std": 0.0,
+            "p95": 0.0,
+            "p95_abs": 0.0,
+            "max_abs": 0.0
+          },
+          "long_intervals": 0,
+          "non_monotonic": 0,
+          "width": 0,
+          "height": 0,
+          "scale": 0.0,
+          "methods": [],
+          "delivery_ms": {
+            "n": 0,
+            "mean": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "std": 0.0,
+            "p95": 0.0,
+            "p95_abs": 0.0,
+            "max_abs": 0.0
+          },
+          "frames_without_pixels": 0,
+          "flashes": 0
+        },
+        "sync": {
+          "pairs": 0,
+          "offset_ms": {
+            "n": 0,
+            "mean": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "std": 0.0,
+            "p95": 0.0,
+            "p95_abs": 0.0,
+            "max_abs": 0.0
+          },
+          "offset_jitter_ms": {
+            "n": 0,
+            "mean": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "std": 0.0,
+            "p95": 0.0,
+            "p95_abs": 0.0,
+            "max_abs": 0.0
+          },
+          "within_tolerance": false,
+          "video_latency_ms": {
+            "n": 0,
+            "mean": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "std": 0.0,
+            "p95": 0.0,
+            "p95_abs": 0.0,
+            "max_abs": 0.0
+          },
+          "audio_latency_ms": {
+            "n": 19,
+            "mean": 29.654,
+            "median": 20.272,
+            "min": 18.753,
+            "max": 200.684,
+            "std": 40.318,
+            "p95": 21.042,
+            "p95_abs": 21.042,
+            "max_abs": 200.684
+          },
+          "source_skew_ms": {
+            "n": 33,
+            "mean": 5.18,
+            "median": 5.832,
+            "min": -1.023,
+            "max": 11.423,
+            "std": 3.595,
+            "p95": 10.071,
+            "p95_abs": 10.071,
+            "max_abs": 11.423
+          },
+          "capture_only_offset_ms": {
+            "n": 0,
+            "mean": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "std": 0.0,
+            "p95": 0.0,
+            "p95_abs": 0.0,
+            "max_abs": 0.0
+          }
+        },
+        "frame_loss": null
+      },
+      "checks": [
+        {
+          "name": "тон главного процесса (440 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 при номинале 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон дочернего процесса (880 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 при номинале 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон постороннего процесса (1320 Гц)",
+          "pass": true,
+          "detail": "уровень 0.00000 при номинале 0.020; не должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон программы захвата (2000 Гц)",
+          "pass": true,
+          "detail": "уровень 0.00000 при номинале 0.020; не должен быть",
+          "observation": false
+        },
+        {
+          "name": "шкала времени звука без разрывов",
+          "pass": false,
+          "detail": "разрывов вперёд 11, назад 1, флагов разрыва от ОС 0, суммарно 352 мс",
+          "observation": false
+        },
+        {
+          "name": "сэмплы без потерь (фаза тона 440 Гц)",
+          "pass": false,
+          "detail": "скачков фазы 3, наибольший 109.182°, окон с провалом 1 из 190",
+          "observation": false
+        },
+        {
+          "name": "длительность записи",
+          "pass": true,
+          "detail": "записано 19.755 с при запросе 20 с; по меткам ОС 20.096 с",
+          "observation": false
+        },
+        {
+          "name": "видео-метки есть",
+          "pass": false,
+          "detail": "кадров 0, 0 к/с, интервал p95 0 мс, длинных интервалов 0, неубывающих меток 0",
+          "observation": false
+        },
+        {
+          "name": "вспышки видны в кадрах",
+          "pass": false,
+          "detail": "вспышек 0 за 20 с",
+          "observation": false
+        },
+        {
+          "name": "рассинхрон звука и видео: p95 модуля не больше 40 мс",
+          "pass": null,
+          "detail": "пар 0, среднее 0 мс, p95 модуля 0 мс, максимум модуля 0 мс; критерий — p95 ≤ 40 мс",
+          "observation": false
+        }
+      ]
+    },
+    {
+      "name": "system-except-self",
+      "audio": "system-except-self",
+      "video": "none",
+      "seconds": 10,
+      "error": null,
+      "start": {
+        "audio_method": "pipewire: линковка всех узлов, кроме собственных",
+        "video_method": "",
+        "attempts": ["pipewire: узел захвата создан"],
+        "notes": [
+          "узел 74 процесса 58 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 1)",
+          "узел 49 процесса 41 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 2)",
+          "узел 50 процесса 43 подключён; PID взят из pipewire.sec.pid клиента (всего узлов: 3)",
+          "формат узла захвата: 48000 Гц, каналов 2, AudioFormat::F32LE",
+          "первая метка: задержка по данным PipeWire 0 мкс, от начала цикла до обработки 310 мкс"
+        ]
+      },
+      "analysis": {
+        "audio": {
+          "frames": 484352,
+          "duration_s": 10.091,
+          "span_s": 10.091,
+          "clock_diff_ppm": 0.0,
+          "buffers": 946,
+          "buffer_frames_min": 512,
+          "buffer_frames_median": 512,
+          "buffer_frames_max": 512,
+          "timeline_gaps": 0,
+          "timeline_gap_total_ms": 0.0,
+          "timeline_overlaps": 0,
+          "timestamp_jitter_ms": {
+            "n": 945,
+            "mean": -0.0,
+            "median": -0.0,
+            "min": -0.0,
+            "max": -0.0,
+            "std": 0.0,
+            "p95": -0.0,
+            "p95_abs": 0.0,
+            "max_abs": 0.0
+          },
+          "os_discontinuities": 0,
+          "os_silent_buffers": 0,
+          "timestamp_fallbacks": 0,
+          "delivery_ms": {
+            "n": 946,
+            "mean": -8.817,
+            "median": -8.52,
+            "min": -10.38,
+            "max": -7.049,
+            "std": 0.684,
+            "p95": -8.018,
+            "p95_abs": 10.111,
+            "max_abs": 10.38
+          },
+          "tones": {
+            "parent": 0.02,
+            "child": 0.02,
+            "foreign": 0.02,
+            "own": 0.0
+          },
+          "dropout_windows": 0,
+          "phase_jumps": 0,
+          "phase_jump_max_deg": 0.151,
+          "phase_drift_deg_per_window": 0.0,
+          "windows_analyzed": 93,
+          "clicks": 10,
+          "child_onset_s": 0.0
+        },
+        "video": null,
+        "sync": null,
+        "frame_loss": null
+      },
+      "checks": [
+        {
+          "name": "тон главного процесса (440 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 при номинале 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон дочернего процесса (880 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 при номинале 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон постороннего процесса (1320 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 при номинале 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон программы захвата (2000 Гц)",
+          "pass": true,
+          "detail": "уровень 0.00000 при номинале 0.020; не должен быть",
+          "observation": false
+        },
+        {
+          "name": "шкала времени звука без разрывов",
+          "pass": true,
+          "detail": "разрывов вперёд 0, назад 0, флагов разрыва от ОС 0, суммарно 0 мс",
+          "observation": false
+        },
+        {
+          "name": "сэмплы без потерь (фаза тона 440 Гц)",
+          "pass": true,
+          "detail": "скачков фазы 0, наибольший 0.151°, окон с провалом 0 из 93",
+          "observation": false
+        },
+        {
+          "name": "длительность записи",
+          "pass": true,
+          "detail": "записано 10.091 с при запросе 10 с; по меткам ОС 10.091 с",
+          "observation": false
+        }
+      ]
+    },
+    {
+      "name": "system-all",
+      "audio": "system-all",
+      "video": "none",
+      "seconds": 10,
+      "error": null,
+      "start": {
+        "audio_method": "pipewire: monitor устройства вывода, вся система",
+        "video_method": "",
+        "attempts": ["pipewire: узел захвата создан"],
+        "notes": [
+          "формат узла захвата: 48000 Гц, каналов 2, AudioFormat::F32LE",
+          "первая метка: задержка по данным PipeWire 0 мкс, от начала цикла до обработки 683 мкс"
+        ]
+      },
+      "analysis": {
+        "audio": {
+          "frames": 484352,
+          "duration_s": 10.091,
+          "span_s": 10.091,
+          "clock_diff_ppm": 0.0,
+          "buffers": 946,
+          "buffer_frames_min": 512,
+          "buffer_frames_median": 512,
+          "buffer_frames_max": 512,
+          "timeline_gaps": 0,
+          "timeline_gap_total_ms": 0.0,
+          "timeline_overlaps": 0,
+          "timestamp_jitter_ms": {
+            "n": 945,
+            "mean": -0.0,
+            "median": -0.0,
+            "min": -0.0,
+            "max": -0.0,
+            "std": 0.0,
+            "p95": -0.0,
+            "p95_abs": 0.0,
+            "max_abs": 0.0
+          },
+          "os_discontinuities": 0,
+          "os_silent_buffers": 0,
+          "timestamp_fallbacks": 0,
+          "delivery_ms": {
+            "n": 946,
+            "mean": -8.866,
+            "median": -8.572,
+            "min": -10.524,
+            "max": -7.414,
+            "std": 0.658,
+            "p95": -8.099,
+            "p95_abs": 10.149,
+            "max_abs": 10.524
+          },
+          "tones": {
+            "parent": 0.02,
+            "child": 0.02,
+            "foreign": 0.02,
+            "own": 0.02
+          },
+          "dropout_windows": 0,
+          "phase_jumps": 0,
+          "phase_jump_max_deg": 0.14,
+          "phase_drift_deg_per_window": 0.0,
+          "windows_analyzed": 93,
+          "clicks": 10,
+          "child_onset_s": 0.0
+        },
+        "video": null,
+        "sync": null,
+        "frame_loss": null
+      },
+      "checks": [
+        {
+          "name": "тон главного процесса (440 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 при номинале 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон дочернего процесса (880 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 при номинале 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон постороннего процесса (1320 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 при номинале 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "тон программы захвата (2000 Гц)",
+          "pass": true,
+          "detail": "уровень 0.02000 при номинале 0.020; должен быть",
+          "observation": false
+        },
+        {
+          "name": "шкала времени звука без разрывов",
+          "pass": true,
+          "detail": "разрывов вперёд 0, назад 0, флагов разрыва от ОС 0, суммарно 0 мс",
+          "observation": false
+        },
+        {
+          "name": "сэмплы без потерь (фаза тона 440 Гц)",
+          "pass": true,
+          "detail": "скачков фазы 0, наибольший 0.14°, окон с провалом 0 из 93",
+          "observation": false
+        },
+        {
+          "name": "длительность записи",
+          "pass": true,
+          "detail": "записано 10.091 с при запросе 10 с; по меткам ОС 10.091 с",
+          "observation": false
+        }
+      ]
+    }
+  ],
+  "passed": 26,
+  "failed": 4,
+  "unclear": 1
+}
